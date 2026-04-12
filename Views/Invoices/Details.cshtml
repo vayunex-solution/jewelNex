@@ -1,6 +1,8 @@
 @model JewelleryApp.Models.Jewellery.Invoice
+@inject JewelleryApp.Data.ApplicationDbContext Context
 @{
     ViewData["Title"] = "Invoice Details";
+    var settings = Context.ShopSettings.FirstOrDefault() ?? new JewelleryApp.Models.Jewellery.ShopSetting();
 }
 
 <header class="no-print">
@@ -20,12 +22,12 @@
     <div class="print-header">
         <div class="logo">
             <div class="logo-jj" style="border: 2px solid var(--primary-gold); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">JJ</div>
-            <h1>JAIN<span>JEWELLERS</span></h1>
+            <h1>@settings.ShopName.Split(' ')[0]<span>@(settings.ShopName.Contains(" ") ? settings.ShopName.Substring(settings.ShopName.indexOf(' ') + 1) : "")</span></h1>
         </div>
         <div class="shop-info">
-            <h3>Luxury Gold & Silver Jewellery</h3>
-            <p>NEAR GURU RAVIDAS MANDIR, KHALSA COLLEGE ROAD</p>
-            <p>YAMUNA NAGAR -135001 | Phone: +91 98968 91036</p>
+            <h3>@settings.Tagline</h3>
+            <p>@settings.Address1, @settings.Address2</p>
+            <p>@settings.CityState | Phone: +91 @settings.Phone1</p>
         </div>
     </div>
 
@@ -79,7 +81,7 @@
     <div class="print-footer-grid">
         <div class="sig-section">
             <div class="sig-box">Customer Signature</div>
-            <div class="sig-box">For JAIN JEWELLERS</div>
+            <div class="sig-box">For @settings.ShopName</div>
         </div>
         <div class="totals-section">
             <div class="total-row">

@@ -1,6 +1,8 @@
 @model JewelleryApp.Models.Jewellery.Invoice
+@inject JewelleryApp.Data.ApplicationDbContext Context
 @{
     ViewData["Title"] = "Rough Estimate";
+    var settings = Context.ShopSettings.FirstOrDefault() ?? new JewelleryApp.Models.Jewellery.ShopSetting();
 }
 
 <div class="no-print actions-bar">
@@ -16,16 +18,16 @@
             </div>
             <div class="title-section">
                 <div class="estimate-note">ROUGH ESTIMATE</div>
-                <h1 class="shop-name">JAIN JEWELLERS</h1>
-                <div class="tagline">Deals in : All Types of Gold & Silver Jewellery</div>
+                <h1 class="shop-name">@settings.ShopName</h1>
+                <div class="tagline">@settings.Tagline</div>
             </div>
             <div class="contact-section">
-                <p>M. : 9896891036</p>
-                <p>M. : 9996955557</p>
+                <p>M. : @settings.Phone1</p>
+                <p>M. : @settings.Phone2</p>
             </div>
         </div>
         <div class="address-bar">
-            NEAR GURU RAVIDAS MANDIR, KHALSA COLLEGE ROAD, YAMUNA NAGAR -135001
+            @settings.Address1, @settings.Address2, @settings.CityState
         </div>
     </div>
 
@@ -106,7 +108,7 @@
                 <div class="sig-line">Customer Signature</div>
             </div>
             <div class="sig-col text-right">
-                <div class="for-shop">For JAIN JEWELLERS</div>
+                <div class="for-shop">For @settings.ShopName</div>
                 <div class="sig-line">Authorised Signature</div>
             </div>
         </div>

@@ -1,6 +1,8 @@
 @model JewelleryApp.Models.Jewellery.Invoice
+@inject JewelleryApp.Data.ApplicationDbContext Context
 @{
     ViewData["Title"] = "Tax Invoice";
+    var settings = Context.ShopSettings.FirstOrDefault() ?? new JewelleryApp.Models.Jewellery.ShopSetting();
 }
 
 <div class="no-print actions-bar">
@@ -11,16 +13,16 @@
 <div class="estimate-container tax-invoice">
     <div class="invoice-header-top">
         <div class="gst-pan">
-            <p>GSTIN : 06AASPJ9552E1ZD</p>
-            <p>PAN : AASPJ9552E</p>
+            <p>GSTIN : @settings.GSTIN</p>
+            <p>PAN : @settings.PAN</p>
         </div>
         <div class="invoice-title">
             <h2>TAX INVOICE</h2>
-            <p>State Code : 06</p>
+            <p>State Code : @settings.StateCode</p>
         </div>
         <div class="contact-section-top">
-            <p>M. : 9896891036</p>
-            <p>M. : 9996955557</p>
+            <p>M. : @settings.Phone1</p>
+            <p>M. : @settings.Phone2</p>
         </div>
     </div>
 
@@ -30,12 +32,12 @@
                 <div class="jj-circle">JJ</div>
             </div>
             <div class="title-section">
-                <h1 class="shop-name">JAIN JEWELLERS</h1>
-                <div class="tagline">Deals in : All Types of Gold & Silver Jewellery</div>
+                <h1 class="shop-name">@settings.ShopName</h1>
+                <div class="tagline">@settings.Tagline</div>
             </div>
         </div>
         <div class="address-bar">
-            NEAR GURU RAVIDAS MANDIR, KHALSA COLLEGE ROAD, YAMUNA NAGAR -135001
+            @settings.Address1, @settings.Address2, @settings.CityState
         </div>
     </div>
 
@@ -92,9 +94,9 @@
     <div class="tax-footer-grid">
         <div class="bank-details-section">
             <div class="bank-title">Bank Details :</div>
-            <p><strong>Bank of Maharashtra</strong>, Near Lal Dwara, Jagadhri Road, Ynr.</p>
-            <p><strong>A/C No. :</strong> 60550126417</p>
-            <p><strong>IFS Code :</strong> MAHB0001309</p>
+            <p><strong>@settings.BankName</strong>, @settings.BankBranch</p>
+            <p><strong>A/C No. :</strong> @settings.AccountNo</p>
+            <p><strong>IFS Code :</strong> @settings.IFSCCode</p>
             
             <div class="cheque-line">
                 <strong>Cheque No./Cash</strong> <span class="data-field">@Model.PaymentMode</span>
@@ -137,7 +139,7 @@
             <p>All disputes subject to Jagadhri Jurisdiction only.</p>
         </div>
         <div class="for-shop-footer">
-            <p class="for-jain">For JAIN JEWELLERS</p>
+            <p class="for-jain">For @settings.ShopName</p>
             <div class="sig-section-tax">
                 <div class="sig-box-tax">Customer Signature</div>
                 <div class="sig-box-tax">Authorised Signature</div>
