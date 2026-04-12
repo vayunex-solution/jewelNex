@@ -76,6 +76,14 @@
             }
         </tbody>
         <tfoot>
+            @if (Model.Discount > 0)
+            {
+                <tr>
+                    <td colspan="4" class="text-right"><strong>Discount</strong></td>
+                    <td class="amount-rs"><strong>@((int)Model.Discount)</strong></td>
+                    <td class="amount-p"><strong>@(((int)((Model.Discount - (int)Model.Discount) * 100)).ToString("00"))</strong></td>
+                </tr>
+            }
             <tr>
                 <td colspan="4" class="text-right"><strong>TOTAL</strong></td>
                 <td class="amount-rs"><strong>@((int)Model.TotalAmount)</strong></td>

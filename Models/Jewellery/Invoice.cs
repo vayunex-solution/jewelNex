@@ -38,6 +38,9 @@ namespace JewelleryApp.Models.Jewellery
         public decimal GstRate { get; set; } = 3.00m; // Total GST % (e.g. 3.00 for 1.5+1.5)
 
         [Column(TypeName = "decimal(18, 2)")]
+        public decimal Discount { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
         public decimal TotalAmount { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]

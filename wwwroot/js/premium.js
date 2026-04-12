@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (gstInput) gstInput.oninput = calculateInvoice;
+    if (el('discount-input')) el('discount-input').oninput = calculateInvoice;
     if (paidInput) paidInput.oninput = updateOutstanding;
 
     // Fetch Master Data on Load
@@ -195,7 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (labelCGST) labelCGST.textContent = `CGST (${halfRate}%):`;
         if (labelSGST) labelSGST.textContent = `SGST (${halfRate}%):`;
 
-        const totalWithGst = subTotalVal + cgstVal + sgstVal;
+        const discountVal = parseFloat(el('discount-input')?.value) || 0;
+        const totalWithGst = (subTotalVal + cgstVal + sgstVal) - discountVal;
         const roundedTotal = Math.round(totalWithGst);
         const roundOffVal = roundedTotal - totalWithGst;
 
@@ -236,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     paymentMode: document.querySelector('input[name="payment-mode"]:checked')?.value || "Cash",
                     paidAmount: parseFloat(el('paid-amount')?.value) || 0,
                     gstRate: parseFloat(el('gst-rate-input')?.value) || 0,
+                    discount: parseFloat(el('discount-input')?.value) || 0,
                     remarks: el('remarks')?.value || "",
                     customer: {
                         name: el('cust-name')?.value || "",

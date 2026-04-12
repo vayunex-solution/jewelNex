@@ -94,6 +94,13 @@
                 <span>SGST (@((Model.GstRate / 2).ToString("F2"))%):</span>
                 <span>₹ @Model.SGST.ToString("N2")</span>
             </div>
+            @if (Model.Discount > 0)
+            {
+                <div class="total-row" style="color: #d9534f; font-weight: 500;">
+                    <span>Discount:</span>
+                    <span>- ₹ @Model.Discount.ToString("N2")</span>
+                </div>
+            }
             <div class="total-row grand">
                 <span>Grand Total:</span>
                 <span>₹ @Model.TotalAmount.ToString("N0")</span>

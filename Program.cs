@@ -11,11 +11,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
-// Automatically create database if it doesn't exist
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.EnsureCreated();
+    
+    // Manual migration for Discount column if it doesn't exist
+    try
+    {
+        context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN Discount decimal(18, 2) NOT NULL DEFAULT 0;");
+    }
+    catch { /* Column probably already exists */ }
 }
 
 // Configure the HTTP request pipeline.
