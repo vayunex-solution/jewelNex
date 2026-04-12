@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Aura Jewels</title>
+    <title>@ViewData["Title"] - Jain Jewellers</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
         <header class="top-nav glass">
             <div class="nav-container">
                 <div class="logo">
-                   <i class="fas fa-crown logo-icon" style="color:var(--primary-gold); font-size:1.5rem;"></i>
-                   <h1 class="logo-text">AURA<span>JEWELS</span></h1>
+                   <div class="logo-circle" style="background: var(--primary-gold); color: white; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px;">JJ</div>
+                   <h1 class="logo-text">JAIN<span>JEWELLERS</span></h1>
                 </div>
                 
                 <nav class="main-menu">
@@ -35,6 +35,9 @@
                     </a>
                     <a asp-controller="Reports" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reports" ? "active" : "")">
                         <i class="fas fa-chart-line"></i> Reports
+                    </a>
+                    <a asp-controller="Settings" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Settings" ? "active" : "")">
+                        <i class="fas fa-cog"></i> Settings
                     </a>
                 </nav>
 

@@ -1,0 +1,129 @@
+@model JewelleryApp.Models.Jewellery.ShopSetting
+@{
+    ViewData["Title"] = "Shop Settings";
+}
+
+<header>
+    <div class="header-title">
+        <h2>Shop Settings</h2>
+        <p>Manage your shop identity that appears on your bills</p>
+    </div>
+</header>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success glass-alert">
+        <i class="fas fa-check-circle"></i> @TempData["Success"]
+    </div>
+}
+
+<form asp-action="Update" method="post" class="settings-form">
+    <input type="hidden" asp-for="Id" />
+    <div class="invoice-form-grid">
+        <section class="form-card glass">
+            <h3><i class="fas fa-id-card"></i> Basic Information</h3>
+            <div class="form-group">
+                <label asp-for="ShopName"></label>
+                <input asp-for="ShopName" class="form-control" />
+                <span asp-validation-for="ShopName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Tagline"></label>
+                <input asp-for="Tagline" class="form-control" />
+            </div>
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label asp-for="Phone1"></label>
+                    <input asp-for="Phone1" class="form-control" />
+                </div>
+                <div class="form-group col-6">
+                    <label asp-for="Phone2"></label>
+                    <input asp-for="Phone2" class="form-control" />
+                </div>
+            </div>
+        </section>
+
+        <section class="form-card glass">
+            <h3><i class="fas fa-map-marker-alt"></i> Address Details</h3>
+            <div class="form-group">
+                <label asp-for="Address1"></label>
+                <input asp-for="Address1" class="form-control" placeholder="Main Street Name" />
+            </div>
+            <div class="form-group">
+                <label asp-for="Address2"></label>
+                <input asp-for="Address2" class="form-control" placeholder="Area / Landmark" />
+            </div>
+            <div class="form-group">
+                <label asp-for="CityState"></label>
+                <input asp-for="CityState" class="form-control" placeholder="City - Zip Code" />
+            </div>
+        </section>
+
+        <section class="form-card glass">
+            <h3><i class="fas fa-file-invoice-dollar"></i> Tax & Identiﬁcation</h3>
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label asp-for="GSTIN"></label>
+                    <input asp-for="GSTIN" class="form-control" />
+                </div>
+                <div class="form-group col-6">
+                    <label asp-for="PAN"></label>
+                    <input asp-for="PAN" class="form-control" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="StateCode"></label>
+                <input asp-for="StateCode" class="form-control" />
+            </div>
+        </section>
+
+        <section class="form-card glass">
+            <h3><i class="fas fa-university"></i> Bank Details</h3>
+            <div class="form-group">
+                <label asp-for="BankName"></label>
+                <input asp-for="BankName" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="BankBranch"></label>
+                <input asp-for="BankBranch" class="form-control" />
+            </div>
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label asp-for="AccountNo"></label>
+                    <input asp-for="AccountNo" class="form-control" />
+                </div>
+                <div class="form-group col-6">
+                    <label asp-for="IFSCCode"></label>
+                    <input asp-for="IFSCCode" class="form-control" />
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="form-actions-bottom card glass">
+        <button type="submit" class="btn btn-primary btn-large">
+            <i class="fas fa-save"></i> Save All Settings
+        </button>
+    </div>
+</form>
+
+<style>
+    .settings-form { margin-top: 20px; }
+    .form-actions-bottom {
+        padding: 20px;
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+        border-radius: 12px;
+    }
+    .btn-large { padding: 15px 40px; font-size: 1.1rem; }
+    .glass-alert {
+        background: rgba(40, 167, 69, 0.1);
+        border: 1px solid rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(5px);
+    }
+</style>

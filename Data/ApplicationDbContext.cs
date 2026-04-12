@@ -14,6 +14,7 @@ namespace JewelleryApp.Data
         public DbSet<Invoice> Invoices { get; set; } = default!;
         public DbSet<InvoiceItem> InvoiceItems { get; set; } = default!;
         public DbSet<ItemMaster> ItemsMaster { get; set; } = default!;
+        public DbSet<ShopSetting> ShopSettings { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
