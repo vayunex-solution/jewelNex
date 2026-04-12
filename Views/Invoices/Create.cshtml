@@ -1,0 +1,180 @@
+@model JewelleryApp.Models.Jewellery.Invoice
+@{
+    ViewData["Title"] = "Create Invoice";
+}
+
+<header>
+    <div class="header-title">
+        <h2>Create Invoice</h2>
+        <p>Generate a professional jewellery invoice for your customer</p>
+    </div>
+    <div class="header-actions">
+        <button class="btn btn-secondary" onclick="window.print()"><i class="fas fa-eye"></i> Preview</button>
+        <button class="btn btn-primary" id="save-invoice-btn"><i class="fas fa-save"></i> Save & Print</button>
+    </div>
+</header>
+
+<div class="invoice-form-grid">
+    <!-- Shop & Customer Details -->
+    <section class="form-card glass">
+        <h3><i class="fas fa-store"></i> Shop & Customer</h3>
+        <div class="form-row">
+            <div class="form-group col-6">
+                <label>Invoice Number</label>
+                <input type="text" id="invoice-no" value="INV-@(DateTime.Now.ToString("yyyyMMdd"))-001" readonly>
+            </div>
+            <div class="form-group col-6">
+                <label>Date</label>
+                <input type="date" id="invoice-date" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+            </div>
+        </div>
+        <hr>
+        <div class="form-group">
+            <label>Customer Name</label>
+            <div class="input-with-icon">
+                <i class="fas fa-user"></i>
+                <select id="cust-name-select" class="form-control">
+                    <option value="">-- Select Customer --</option>
+                    <!-- Options populated via JS -->
+                    <option value="custom">New Customer (Manual Entry)</option>
+                </select>
+            </div>
+            <input type="text" id="cust-name" placeholder="Enter customer name" style="display:none; margin-top:10px;">
+        </div>
+        <div class="form-row">
+            <div class="form-group col-6">
+                <label>Mobile Number</label>
+                <input type="tel" id="cust-mobile" placeholder="+91 XXXXX XXXXX">
+            </div>
+            <div class="form-group col-6">
+                <label>GSTIN (Optional)</label>
+                <input type="text" id="cust-gstin" placeholder="Ex: 22AAAAA0000A1Z5">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Address</label>
+            <textarea id="cust-address" rows="2" placeholder="Customer address..."></textarea>
+        </div>
+    </section>
+
+    <!-- Calculation Quick View -->
+    <section class="summary-card gold-gradient">
+        <div class="summary-header">
+            <span>Total Amount</span>
+            <h2 id="summary-total">₹ 0.00</h2>
+        </div>
+        <div class="summary-details">
+            <div class="summary-line">
+                <span>Sub Total</span>
+                <span id="summary-subtotal">₹ 0.00</span>
+            </div>
+            <div class="summary-line">
+                <span>GST (3%)</span>
+                <span id="summary-gst">₹ 0.00</span>
+            </div>
+        </div>
+        <div class="stamp-container">
+            <div class="premium-stamp">AUTHENTIC QUALITY</div>
+        </div>
+    </section>
+
+    <!-- Product Table -->
+    <section class="form-card full-width glass">
+        <div class="section-header">
+            <h3><i class="fas fa-gem"></i> Items & Products</h3>
+            <button type="button" class="btn btn-small btn-outline" id="add-row-btn"><i class="fas fa-plus"></i> Add Item</button>
+        </div>
+        <div class="table-container">
+            <table id="product-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th style="width: 280px;">Item & Category</th>
+                        <th style="width: 120px;">HUID Num</th>
+                        <th style="width: 100px;">Purity</th>
+                        <th>Gross Wt</th>
+                        <th>Net Wt</th>
+                        <th>Rate</th>
+                        <th>Making</th>
+                        <th style="width: 150px;">Amount</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-items">
+                    <!-- Dynamic Rows added via JS -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Payment & Additional -->
+    <section class="form-card glass">
+        <h3><i class="fas fa-credit-card"></i> Payment Information</h3>
+        <div class="payment-modes">
+            <label class="payment-option">
+                <input type="radio" name="payment-mode" value="Cash" checked>
+                <span class="radio-card"><i class="fas fa-money-bill-wave"></i> Cash</span>
+            </label>
+            <label class="payment-option">
+                <input type="radio" name="payment-mode" value="UPI">
+                <span class="radio-card"><i class="fas fa-mobile-alt"></i> UPI</span>
+            </label>
+            <label class="payment-option">
+                <input type="radio" name="payment-mode" value="Card">
+                <span class="radio-card"><i class="fas fa-credit-card"></i> Card</span>
+            </label>
+        </div>
+        <div class="form-group" style="margin-top: 20px;">
+            <label>Remarks</label>
+            <input type="text" id="remarks" placeholder="Add any notes here...">
+        </div>
+    </section>
+
+    <!-- Grand Total Detailed -->
+    <section class="form-card glass total-breakdown">
+        <div class="total-row">
+            <span>Gold Value</span>
+            <span id="break-gold-value">₹ 0.00</span>
+        </div>
+        <div class="total-row">
+            <span>Total Making Charges</span>
+            <span id="break-making-charges">₹ 0.00</span>
+        </div>
+        <div class="total-row">
+            <span>Sub Total:</span>
+            <span id="break-sub-total">₹ 0.00</span>
+        </div>
+        <div class="total-row" style="background: rgba(212, 175, 55, 0.05); padding: 5px 10px; border-radius: 8px;">
+            <label style="margin:0; font-size: 0.8rem;">GST Rate (%)</label>
+            <input type="number" id="gst-rate-input" step="0.01" value="3.00" style="width: 80px; padding: 5px; font-size: 0.8rem; border: 1px solid var(--primary-gold); text-align: center;">
+        </div>
+        <div class="total-row">
+            <span id="label-cgst">CGST (1.5%):</span>
+            <span id="break-cgst">₹ 0.00</span>
+        </div>
+        <div class="total-row">
+            <span id="label-sgst">SGST (1.5%):</span>
+            <span id="break-sgst">₹ 0.00</span>
+        </div>
+        <div class="total-row grand">
+            <span>Grand Total</span>
+            <span id="break-total-amount">₹ 0.00</span>
+        </div>
+        <div class="total-row" style="margin-top: 20px;">
+            <label style="margin:0;">Amount Paid Now (₹)</label>
+            <input type="number" id="paid-amount" step="0.01" value="0.00" style="width: 150px; text-align: right;">
+        </div>
+        <div class="total-row rounded">
+            <span>Outstanding Balance</span>
+            <span id="outstanding-balance">₹ 0.00</span>
+        </div>
+        <div class="total-row rounded">
+            <span>Rounded Off</span>
+            <span id="break-rounded">₹ 0.00</span>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/js/premium.js"></script>
+}

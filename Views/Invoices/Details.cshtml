@@ -1,0 +1,138 @@
+@model JewelleryApp.Models.Jewellery.Invoice
+@{
+    ViewData["Title"] = "Invoice Details";
+}
+
+<header class="no-print">
+    <div class="header-title">
+        <h2>Invoice Details</h2>
+        <p>Viewing Invoice #@Model.InvoiceNo</p>
+    </div>
+    <div class="header-actions">
+        <a asp-action="Estimate" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-file-invoice"></i> Rough Estimate</a>
+        <a asp-action="TaxInvoice" asp-route-id="@Model.Id" class="btn btn-success"><i class="fas fa-file-invoice-dollar"></i> Tax Invoice</a>
+        <button class="btn btn-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print Original</button>
+        <a asp-action="Index" class="btn btn-outline">Back to List</a>
+    </div>
+</header>
+
+<div class="form-card full-width glass invoice-print-area">
+    <div class="print-header">
+        <div class="logo">
+            <div class="logo-jj" style="border: 2px solid var(--primary-gold); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">JJ</div>
+            <h1>JAIN<span>JEWELLERS</span></h1>
+        </div>
+        <div class="shop-info">
+            <h3>Luxury Gold & Silver Jewellery</h3>
+            <p>NEAR GURU RAVIDAS MANDIR, KHALSA COLLEGE ROAD</p>
+            <p>YAMUNA NAGAR -135001 | Phone: +91 98968 91036</p>
+        </div>
+    </div>
+
+    <div class="invoice-meta-grid">
+        <div class="meta-section">
+            <label>Billed To:</label>
+            <h4>@Model.Customer?.Name</h4>
+            <p>Mobile: @Model.Customer?.Mobile</p>
+            <p>@Model.Customer?.Address</p>
+        </div>
+        <div class="meta-section text-right">
+            <p><strong>Invoice No:</strong> @Model.InvoiceNo</p>
+            <p><strong>Date:</strong> @Model.Date.ToString("dd MMMM yyyy")</p>
+            <p><strong>Payment Mode:</strong> @Model.PaymentMode</p>
+        </div>
+    </div>
+
+    <table class="print-table">
+        <thead>
+            <tr>
+                <th style="width: 50px;">SR</th>
+                <th style="width: 200px;">ITEM NAME</th>
+                <th style="width: 100px;">HUID</th>
+                <th style="width: 80px;">PURITY</th>
+                <th class="ar">GROSS WT</th>
+                <th class="ar">NET WT</th>
+                <th class="ar">RATE (₹/G)</th>
+                <th class="ar">MAKING</th>
+                <th class="ar">AMOUNT</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ int i = 1; }
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@(i++)</td>
+                    <td><strong>@item.ItemName</strong></td>
+                    <td>@item.HUID</td>
+                    <td>@item.Purity</td>
+                    <td class="ar">@item.GrossWt.ToString("N3")g</td>
+                    <td class="ar">@item.NetWt.ToString("N3")g</td>
+                    <td class="ar">@item.Rate.ToString("N2")</td>
+                    <td class="ar">@item.MakingCharges.ToString("N2")</td>
+                    <td class="ar"><strong>₹ @item.Amount.ToString("N2")</strong></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="print-footer-grid">
+        <div class="sig-section">
+            <div class="sig-box">Customer Signature</div>
+            <div class="sig-box">For JAIN JEWELLERS</div>
+        </div>
+        <div class="totals-section">
+            <div class="total-row">
+                <span>Sub Total:</span>
+                <span>₹ @Model.SubTotal.ToString("N2")</span>
+            </div>
+            <div class="total-row">
+                <span>CGST (@((Model.GstRate / 2).ToString("F2"))%):</span>
+                <span>₹ @Model.CGST.ToString("N2")</span>
+            </div>
+            <div class="total-row">
+                <span>SGST (@((Model.GstRate / 2).ToString("F2"))%):</span>
+                <span>₹ @Model.SGST.ToString("N2")</span>
+            </div>
+            <div class="total-row grand">
+                <span>Grand Total:</span>
+                <span>₹ @Model.TotalAmount.ToString("N0")</span>
+            </div>
+            <p class="text-right" style="font-size: 0.8rem; color: #777; margin-top: 5px;">Rounded Off: ₹ @Model.RoundedOff.ToString("F2")</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .invoice-print-area { padding: 40px; margin-top: 20px; border: 1px solid #f0f0f0; }
+    .invoice-meta-grid { display: grid; grid-template-columns: 1fr 1fr; margin: 40px 0; border-top: 1px solid #eee; padding-top: 25px; }
+    .meta-section h4 { font-size: 1.6rem; color: var(--secondary-charcoal); margin-bottom: 5px; }
+    .text-right { text-align: right; }
+    
+    .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #eee; }
+    .print-table th { background: #fafafa; padding: 12px 15px; text-align: left; border-bottom: 2px solid var(--primary-gold); color: var(--text-secondary); text-transform: uppercase; font-size: 0.8rem; }
+    .print-table td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    
+    .ar { text-align: right; } /* Align Right class */
+
+    .print-footer-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; margin-top: 40px; }
+    .sig-section { display: flex; gap: 40px; align-items: flex-end; padding-bottom: 20px; }
+    .sig-box { border-top: 1px solid #333; width: 180px; text-align: center; padding-top: 10px; font-weight: 600; font-size: 0.9rem; }
+    
+    .totals-section { background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #eee; }
+    .totals-section .total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 1.1rem; }
+    .totals-section .total-row.grand { border-top: 2px solid #ccc; margin-top: 12px; padding-top: 12px; font-weight: 700; font-size: 1.8rem; color: var(--primary-gold-dark); }
+    
+    .print-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+    .shop-info { text-align: right; }
+    .shop-info h3 { font-size: 1.8rem; color: var(--secondary-charcoal); margin-bottom: 5px; }
+
+    @@media print {
+        .no-print, header, .top-nav { display: none !important; }
+        .content-full { padding: 0 !important; margin: 0 !important; width: 100% !important; max-width: none !important; }
+        .app-container { display: block; }
+        .form-card { box-shadow: none !important; border: none !important; background: white !important; }
+        body { background: white !important; padding: 0; }
+        .invoice-print-area { border: none; padding: 0; }
+    }
+</style>

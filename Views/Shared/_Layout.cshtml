@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Aura Jewels</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/premium/style.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header class="top-nav glass">
+            <div class="nav-container">
+                <div class="logo">
+                   <i class="fas fa-crown logo-icon" style="color:var(--primary-gold); font-size:1.5rem;"></i>
+                   <h1 class="logo-text">AURA<span>JEWELS</span></h1>
+                </div>
+                
+                <nav class="main-menu">
+                    <a asp-controller="Invoices" asp-action="Create" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "Create" ? "active" : "")">
+                        <i class="fas fa-file-invoice"></i> New Invoice
+                    </a>
+                    <a asp-controller="Invoices" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Invoices" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                        <i class="fas fa-history"></i> History
+                    </a>
+                    <a asp-controller="ItemMaster" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "ItemMaster" ? "active" : "")">
+                        <i class="fas fa-gem"></i> Item Master
+                    </a>
+                    <a asp-controller="Customers" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Customers" ? "active" : "")">
+                        <i class="fas fa-users"></i> Customers
+                    </a>
+                    <a asp-controller="Reports" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reports" ? "active" : "")">
+                        <i class="fas fa-chart-line"></i> Reports
+                    </a>
+                </nav>
+
+                <div class="nav-actions">
+                    <button id="theme-toggle" class="theme-btn"><i class="fas fa-moon"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="content-full">
+            @RenderBody()
+        </main>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    
+    <script>
+        const themeBtn = document.getElementById('theme-toggle');
+        if (themeBtn) {
+            themeBtn.onclick = () => {
+                document.body.classList.toggle('dark');
+                const isDark = document.body.classList.contains('dark');
+                localStorage.setItem('theme-dark', isDark);
+                themeBtn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            };
+        }
+        
+        // Restore state on load
+        if (localStorage.getItem('theme-dark') === 'true') {
+            document.body.classList.add('dark');
+            if(themeBtn) themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+@model IEnumerable<JewelleryApp.Models.Jewellery.Invoice>
+@{
+    ViewData["Title"] = "Invoice History";
+}
+
+<header>
+    <div class="header-title">
+        <h2>Invoice History</h2>
+        <p>Manage and view all your jewelry sales records</p>
+    </div>
+    <div class="header-actions">
+        <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus"></i> New Invoice</a>
+    </div>
+</header>
+
+<div class="form-card full-width glass">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Invoice No</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Date.ToString("dd MMM yyyy")</td>
+                        <td><strong>@item.InvoiceNo</strong></td>
+                        <td>@item.Customer?.Name</td>
+                        <td>₹ @item.TotalAmount.ToString("N2")</td>
+                        <td>
+                            <span class="badge @(item.PaymentMode == "Cash" ? "bg-success" : "bg-primary")">
+                                @item.PaymentMode
+                            </span>
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-small btn-secondary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                            <i class="fas fa-box-open" style="font-size: 3rem; display: block; margin-bottom: 10px;"></i>
+                            No invoices found. Create your first one!
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        background: var(--primary-gold);
+        color: white;
+    }
+    .bg-success { background: #28a745 !important; }
+    .bg-primary { background: #007bff !important; }
+</style>

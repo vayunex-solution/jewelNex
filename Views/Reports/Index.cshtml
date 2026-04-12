@@ -1,0 +1,119 @@
+@model JewelleryApp.Controllers.ReportSummary
+@{
+    ViewData["Title"] = "Financial Reports";
+}
+
+<header>
+    <div class="header-title">
+        <h2>Financial Reports</h2>
+        <p>Overall collection summary and customer outstanding</p>
+    </div>
+</header>
+
+<div class="report-dashboard">
+    <div class="summary-grid">
+        <div class="report-card cash">
+            <div class="card-icon"><i class="fas fa-money-bill-wave"></i></div>
+            <div class="card-info">
+                <h3>Cash Received</h3>
+                <p>₹ @Model.TotalCash.ToString("N2")</p>
+            </div>
+        </div>
+        <div class="report-card upi">
+            <div class="card-icon"><i class="fas fa-mobile-alt"></i></div>
+            <div class="card-info">
+                <h3>UPI Received</h3>
+                <p>₹ @Model.TotalUPI.ToString("N2")</p>
+            </div>
+        </div>
+        <div class="report-card card-pay">
+            <div class="card-icon"><i class="fas fa-credit-card"></i></div>
+            <div class="card-info">
+                <h3>Card Received</h3>
+                <p>₹ @Model.TotalCard.ToString("N2")</p>
+            </div>
+        </div>
+        <div class="report-card pending">
+            <div class="card-icon"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="card-info">
+                <h3>Total Outstanding</h3>
+                <p>₹ @Model.TotalOutstanding.ToString("N2")</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-card full-width glass" style="margin-top: 40px;">
+        <h3><i class="fas fa-user-clock"></i> Pending Payments (Customer Wise)</h3>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Invoice No</th>
+                        <th>Customer</th>
+                        <th>Total (₹)</th>
+                        <th>Paid (₹)</th>
+                        <th>Balance (₹)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inv in Model.PendingInvoices)
+                    {
+                        <tr>
+                            <td>@inv.Date.ToString("dd MMM yyyy")</td>
+                            <td><strong>@inv.InvoiceNo</strong></td>
+                            <td>@inv.Customer?.Name</td>
+                            <td>@inv.TotalAmount.ToString("N2")</td>
+                            <td>@inv.PaidAmount.ToString("N2")</td>
+                            <td style="color: #ff4d4d; font-weight: bold;">@((inv.TotalAmount - inv.PaidAmount).ToString("N2"))</td>
+                            <td>
+                                <a asp-controller="Invoices" asp-action="Details" asp-route-id="@inv.Id" class="btn btn-secondary btn-small">
+                                    View Details
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.PendingInvoices.Any())
+                    {
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
+                                No pending payments found. Great job!
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+    .report-card {
+        background: white;
+        padding: 25px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid #E0E0E0;
+    }
+    .card-icon {
+        font-size: 2rem;
+        padding: 15px;
+        border-radius: 12px;
+    }
+    .cash .card-icon { background: rgba(76, 175, 80, 0.1); color: #4caf50; }
+    .upi .card-icon { background: rgba(33, 150, 243, 0.1); color: #2196f3; }
+    .card-pay .card-icon { background: rgba(255, 152, 0, 0.1); color: #ff9800; }
+    .pending .card-icon { background: rgba(244, 67, 54, 0.1); color: #f44336; }
+    
+    .card-info h3 { font-size: 0.9rem; color: #777; margin-bottom: 5px; }
+    .card-info p { font-size: 1.4rem; font-weight: 700; color: #333; }
+</style>

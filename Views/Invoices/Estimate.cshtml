@@ -1,0 +1,296 @@
+@model JewelleryApp.Models.Jewellery.Invoice
+@{
+    ViewData["Title"] = "Rough Estimate";
+}
+
+<div class="no-print actions-bar">
+    <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Print Estimate</button>
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Back to Details</a>
+</div>
+
+<div class="estimate-container">
+    <div class="estimate-header">
+        <div class="top-row">
+            <div class="logo-jj">
+                <div class="jj-circle">JJ</div>
+            </div>
+            <div class="title-section">
+                <div class="estimate-note">ROUGH ESTIMATE</div>
+                <h1 class="shop-name">JAIN JEWELLERS</h1>
+                <div class="tagline">Deals in : All Types of Gold & Silver Jewellery</div>
+            </div>
+            <div class="contact-section">
+                <p>M. : 9896891036</p>
+                <p>M. : 9996955557</p>
+            </div>
+        </div>
+        <div class="address-bar">
+            NEAR GURU RAVIDAS MANDIR, KHALSA COLLEGE ROAD, YAMUNA NAGAR -135001
+        </div>
+    </div>
+
+    <div class="customer-info">
+        <div class="info-row">
+            <div class="info-item"><strong>Invoice No.</strong> <span class="data-field">@Model.InvoiceNo</span></div>
+            <div class="info-item text-right"><strong>Dated</strong> <span class="data-field">@Model.Date.ToString("dd-MM-yyyy")</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-item full"><strong>Name</strong> <span class="data-field">@Model.Customer?.Name</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-item full"><strong>Address</strong> <span class="data-field">@Model.Customer?.Address</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-item"><strong>Ph.</strong> <span class="data-field">@Model.Customer?.Mobile</span></div>
+            <div class="info-item"><strong>State</strong> <span class="data-field">Haryana</span></div>
+            <div class="info-item text-right"><strong>State Code</strong> <span class="data-field">06</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-item"><strong>GSTIN</strong> <span class="data-field"></span></div>
+            <div class="info-item full"><strong>AADHAAR / PAN No.</strong> <span class="data-field"></span></div>
+        </div>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">S.No.</th>
+                <th style="width: 55%;">Description of Goods</th>
+                <th style="width: 10%;">Weight</th>
+                <th style="width: 15%;">Rate</th>
+                <th style="width: 15%; text-align: center;" colspan="2">Amount<br><span style="font-size: 0.8em;">Rs. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; P.</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < 10; i++)
+            {
+                var item = i < Model.Items.Count ? Model.Items[i] : null;
+                <tr>
+                    <td class="text-center">@(i + 1)</td>
+                    <td>@(item?.ItemName ?? "")</td>
+                    <td class="text-right">@(item != null ? item.NetWt.ToString("N3") : "")</td>
+                    <td class="text-right">@(item != null ? item.Rate.ToString("N2") : "")</td>
+                    <td class="amount-rs">@(item != null ? ((int)item.Amount).ToString() : "")</td>
+                    <td class="amount-p">@(item != null ? ((int)((item.Amount - (int)item.Amount) * 100)).ToString("00") : "")</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4" class="text-right"><strong>TOTAL</strong></td>
+                <td class="amount-rs"><strong>@((int)Model.TotalAmount)</strong></td>
+                <td class="amount-p"><strong>@(((int)((Model.TotalAmount - (int)Model.TotalAmount) * 100)).ToString("00"))</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="estimate-footer">
+        <div class="amount-words">
+            <strong>Amount in words</strong> <span class="data-field"></span>
+        </div>
+        <div class="disclaimer-section">
+            <p>Int. will be charged @@ 24% p.a. if bill is not be paid within 30 days.</p>
+            <p>All disputes Subject to Jagadhri Jurisdiction only.</p>
+            <p>E. & O. E.</p>
+        </div>
+        <div class="signatures">
+            <div class="sig-col">
+                <div class="sig-line">Customer Signature</div>
+            </div>
+            <div class="sig-col text-right">
+                <div class="for-shop">For JAIN JEWELLERS</div>
+                <div class="sig-line">Authorised Signature</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --print-border: 1px solid #000;
+        --print-text: #000;
+    }
+
+    .estimate-container {
+        width: 210mm;
+        min-height: 297mm;
+        padding: 10mm;
+        margin: auto;
+        border: 1px solid #ccc;
+        background: white;
+        color: black;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .actions-bar {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        padding: 8px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        margin: 0 5px;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary { background: #d4af37; color: white; border: none; }
+    .btn-secondary { background: #333; color: white; border: none; }
+
+    .estimate-header {
+        text-align: center;
+        border: var(--print-border);
+        border-bottom: none;
+    }
+
+    .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 15px;
+    }
+
+    .jj-circle {
+        border: 2px solid #000;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .shop-name {
+        font-size: 32px;
+        margin: 0;
+        font-weight: 900;
+        letter-spacing: 2px;
+    }
+
+    .estimate-note {
+        font-size: 14px;
+        text-decoration: underline;
+        font-weight: bold;
+    }
+
+    .tagline {
+        font-size: 12px;
+        font-style: italic;
+    }
+
+    .address-bar {
+        background: #000;
+        color: #fff;
+        padding: 4px;
+        font-weight: bold;
+        font-size: 13px;
+        margin-top: 5px;
+    }
+
+    .customer-info {
+        border-left: var(--print-border);
+        border-right: var(--print-border);
+        padding: 10px 15px;
+    }
+
+    .info-row {
+        display: flex;
+        margin-bottom: 8px;
+        border-bottom: 1px dotted #888;
+    }
+
+    .info-item {
+        flex: 1;
+        font-size: 14px;
+    }
+
+    .info-item.full {
+        flex: 100%;
+    }
+
+    .data-field {
+        padding-left: 10px;
+        font-weight: 600;
+    }
+
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: var(--print-border);
+    }
+
+    .items-table th, .items-table td {
+        border-right: var(--print-border);
+        border-bottom: var(--print-border);
+        padding: 5px;
+        font-size: 14px;
+        height: 25px;
+    }
+
+    .items-table th {
+        background: #f0f0f0;
+    }
+
+    .items-table td:last-child, .items-table th:last-child {
+        border-right: none;
+    }
+
+    .amount-rs { width: 10%; text-align: right; border-right: 1px dotted #000 !important; }
+    .amount-p { width: 5%; text-align: center; }
+
+    .estimate-footer {
+        border: var(--print-border);
+        border-top: none;
+        padding: 10px 15px;
+    }
+
+    .amount-words {
+        margin-bottom: 15px;
+        border-bottom: 1px dotted #888;
+    }
+
+    .disclaimer-section {
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .signatures {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 50px;
+    }
+
+    .sig-col {
+        width: 45%;
+    }
+
+    .sig-line {
+        border-top: 1px solid #000;
+        margin-top: 30px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .for-shop {
+        font-weight: bold;
+        padding-bottom: 30px;
+    }
+
+    @@media print {
+        .no-print { display: none !important; }
+        .estimate-container {
+            border: none;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+    }
+</style>

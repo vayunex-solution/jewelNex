@@ -1,0 +1,65 @@
+@model IEnumerable<JewelleryApp.Models.Jewellery.ItemMaster>
+@{
+    ViewData["Title"] = "Item Master";
+}
+
+<header>
+    <div class="header-title">
+        <h2>Item Master</h2>
+        <p>Manage your product catalog and default rates</p>
+    </div>
+    <div class="header-actions">
+        <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus"></i> Add New Item</a>
+    </div>
+</header>
+
+<div class="form-card full-width glass">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Category</th>
+                    <th>Purity</th>
+                    <th>Stock</th>
+                    <th>Default Rate (₹/g)</th>
+                    <th>Added On</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.Name</strong></td>
+                        <td>@item.Category</td>
+                        <td>@item.Purity</td>
+                        <td>
+                            <span class="badge @(item.StockQuantity < 5 ? "badge-danger" : "badge-success")">
+                                @item.StockQuantity
+                            </span>
+                        </td>
+                        <td>₹ @item.DefaultRate.ToString("N2")</td>
+                        <td>@item.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-remove" style="color: var(--primary-gold); margin-right: 10px;">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn-remove" onclick="return confirm('Delete this item?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                            No items in master. Add some to enable the invoice dropdown!
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

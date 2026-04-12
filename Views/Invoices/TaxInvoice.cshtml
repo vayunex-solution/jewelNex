@@ -1,0 +1,367 @@
+@model JewelleryApp.Models.Jewellery.Invoice
+@{
+    ViewData["Title"] = "Tax Invoice";
+}
+
+<div class="no-print actions-bar">
+    <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Print Tax Invoice</button>
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Back to Details</a>
+</div>
+
+<div class="estimate-container tax-invoice">
+    <div class="invoice-header-top">
+        <div class="gst-pan">
+            <p>GSTIN : 06AASPJ9552E1ZD</p>
+            <p>PAN : AASPJ9552E</p>
+        </div>
+        <div class="invoice-title">
+            <h2>TAX INVOICE</h2>
+            <p>State Code : 06</p>
+        </div>
+        <div class="contact-section-top">
+            <p>M. : 9896891036</p>
+            <p>M. : 9996955557</p>
+        </div>
+    </div>
+
+    <div class="estimate-header">
+        <div class="top-row">
+            <div class="logo-jj">
+                <div class="jj-circle">JJ</div>
+            </div>
+            <div class="title-section">
+                <h1 class="shop-name">JAIN JEWELLERS</h1>
+                <div class="tagline">Deals in : All Types of Gold & Silver Jewellery</div>
+            </div>
+        </div>
+        <div class="address-bar">
+            NEAR GURU RAVIDAS MANDIR, KHALSA COLLEGE ROAD, YAMUNA NAGAR -135001
+        </div>
+    </div>
+
+    <div class="customer-info">
+        <div class="info-row">
+            <div class="info-item"><strong>Invoice No.</strong> <span class="invoice-num">@Model.InvoiceNo</span></div>
+            <div class="info-item text-right"><strong>Dated</strong> <span class="data-field">@Model.Date.ToString("dd-MM-yyyy")</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-item full"><strong>Name</strong> <span class="data-field">@Model.Customer?.Name</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-item full"><strong>Address</strong> <span class="data-field">@Model.Customer?.Address</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-item"><strong>Ph.</strong> <span class="data-field">@Model.Customer?.Mobile</span></div>
+            <div class="info-item"><strong>State</strong> <span class="data-field">Haryana</span></div>
+            <div class="info-item text-right"><strong>State Code</strong> <span class="data-field">06</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-item"><strong>GSTIN</strong> <span class="data-field"></span></div>
+            <div class="info-item full"><strong>AADHAAR / PAN No.</strong> <span class="data-field"></span></div>
+        </div>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">S.No.</th>
+                <th style="width: 45%;">Description of Goods</th>
+                <th style="width: 10%;">HSN / SAC Code</th>
+                <th style="width: 10%;">Weight</th>
+                <th style="width: 15%;">Rate</th>
+                <th style="width: 15%; text-align: center;" colspan="2">Amount<br><span style="font-size: 0.8em;">Rs. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; P.</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < 12; i++)
+            {
+                var item = i < Model.Items.Count ? Model.Items[i] : null;
+                <tr>
+                    <td class="text-center">@(i + 1)</td>
+                    <td>@(item?.ItemName ?? "")</td>
+                    <td class="text-center">7113</td>
+                    <td class="text-right">@(item != null ? item.NetWt.ToString("N3") : "")</td>
+                    <td class="text-right">@(item != null ? item.Rate.ToString("N2") : "")</td>
+                    <td class="amount-rs">@(item != null ? ((int)item.Amount).ToString() : "")</td>
+                    <td class="amount-p">@(item != null ? ((int)((item.Amount - (int)item.Amount) * 100)).ToString("00") : "")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="tax-footer-grid">
+        <div class="bank-details-section">
+            <div class="bank-title">Bank Details :</div>
+            <p><strong>Bank of Maharashtra</strong>, Near Lal Dwara, Jagadhri Road, Ynr.</p>
+            <p><strong>A/C No. :</strong> 60550126417</p>
+            <p><strong>IFS Code :</strong> MAHB0001309</p>
+            
+            <div class="cheque-line">
+                <strong>Cheque No./Cash</strong> <span class="data-field">@Model.PaymentMode</span>
+            </div>
+            <div class="amount-words-tax">
+                <strong>Amount in words</strong> <span class="data-field"></span>
+            </div>
+        </div>
+        <div class="tax-totals-column">
+            <div class="tax-row">
+                <span class="tax-label">TOTAL</span>
+                <span class="tax-val">@Model.SubTotal.ToString("N2")</span>
+            </div>
+            <div class="tax-row">
+                <span class="tax-label">SGST @((Model.GstRate/2).ToString("F2"))%</span>
+                <span class="tax-val">@Model.SGST.ToString("N2")</span>
+            </div>
+            <div class="tax-row">
+                <span class="tax-label">CGST @((Model.GstRate/2).ToString("F2"))%</span>
+                <span class="tax-val">@Model.CGST.ToString("N2")</span>
+            </div>
+            <div class="tax-row">
+                <span class="tax-label">IGST @(0.00)%</span>
+                <span class="tax-val">0.00</span>
+            </div>
+            <div class="tax-row">
+                <span class="tax-label">Discount</span>
+                <span class="tax-val">0.00</span>
+            </div>
+            <div class="tax-row grand-total-row">
+                <span class="tax-label">GRAND TOTAL</span>
+                <span class="tax-val">@Model.TotalAmount.ToString("N2")</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="tax-footer-bottom">
+        <div class="disclaimer-mini">
+            <p>E. & O. E.</p>
+            <p>All disputes subject to Jagadhri Jurisdiction only.</p>
+        </div>
+        <div class="for-shop-footer">
+            <p class="for-jain">For JAIN JEWELLERS</p>
+            <div class="sig-section-tax">
+                <div class="sig-box-tax">Customer Signature</div>
+                <div class="sig-box-tax">Authorised Signature</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --print-border: 1px solid #000;
+        --print-text: #000;
+    }
+
+    .estimate-container {
+        width: 210mm;
+        min-height: 297mm;
+        padding: 10mm;
+        margin: auto;
+        border: 1px solid #ccc;
+        background: white;
+        color: black;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .actions-bar {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        padding: 8px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        margin: 0 5px;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary { background: #d4af37; color: white; border: none; }
+    .btn-secondary { background: #333; color: white; border: none; }
+
+    .invoice-header-top {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        font-weight: bold;
+        border: var(--print-border);
+        border-bottom: none;
+        padding: 5px 10px;
+    }
+
+    .invoice-title {
+        text-align: center;
+    }
+    .invoice-title h2 { margin: 0; font-size: 18px; text-decoration: underline; }
+
+    .estimate-header {
+        text-align: center;
+        border-left: var(--print-border);
+        border-right: var(--print-border);
+    }
+
+    .top-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 5px 15px;
+        gap: 20px;
+    }
+
+    .jj-circle {
+        border: 2px solid #000;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .shop-name {
+        font-size: 28px;
+        margin: 0;
+        font-weight: 900;
+        letter-spacing: 2px;
+    }
+
+    .tagline {
+        font-size: 11px;
+        font-style: italic;
+    }
+
+    .address-bar {
+        background: #000;
+        color: #fff;
+        padding: 4px;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    .customer-info {
+        border: var(--print-border);
+        padding: 10px 15px;
+    }
+
+    .info-row {
+        display: flex;
+        margin-bottom: 5px;
+        border-bottom: 1px dotted #888;
+    }
+
+    .info-item {
+        flex: 1;
+        font-size: 13px;
+    }
+
+    .info-item.full {
+        flex: 100%;
+    }
+
+    .data-field {
+        padding-left: 10px;
+        font-weight: 600;
+    }
+
+    .invoice-num {
+        font-size: 20px;
+        font-weight: bold;
+        padding-left: 10px;
+    }
+
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: var(--print-border);
+        border-top: none;
+    }
+
+    .items-table th, .items-table td {
+        border-right: var(--print-border);
+        border-bottom: var(--print-border);
+        padding: 4px;
+        font-size: 13px;
+        height: 22px;
+    }
+
+    .items-table th {
+        background: #f0f0f0;
+    }
+
+    .amount-rs { width: 10%; text-align: right; border-right: 1px dotted #000 !important; }
+    .amount-p { width: 5%; text-align: center; }
+
+    .tax-footer-grid {
+        display: flex;
+        border: var(--print-border);
+        border-top: none;
+    }
+
+    .bank-details-section {
+        flex: 1.5;
+        padding: 10px;
+        font-size: 12px;
+        border-right: var(--print-border);
+    }
+    
+    .bank-title { font-weight: bold; text-decoration: underline; margin-bottom: 5px; }
+    .bank-details-section p { margin: 2px 0; }
+    
+    .cheque-line { margin-top: 10px; border-bottom: 1px dotted #888; }
+    .amount-words-tax { margin-top: 10px; border-bottom: 1px dotted #888; }
+
+    .tax-totals-column {
+        flex: 1;
+    }
+
+    .tax-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 10px;
+        border-bottom: 1px solid #000;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .tax-label { flex: 1; }
+    .tax-val { width: 100px; text-align: right; }
+
+    .grand-total-row {
+        background: #eee;
+        font-size: 15px;
+        border-bottom: none;
+    }
+
+    .tax-footer-bottom {
+        border: var(--print-border);
+        border-top: none;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .disclaimer-mini { font-size: 10px; }
+    .for-shop-footer { text-align: right; flex: 1; }
+    .for-jain { font-weight: bold; font-size: 14px; margin-bottom: 40px; }
+    
+    .sig-section-tax { display: flex; justify-content: space-between; gap: 20px; }
+    .sig-box-tax { border-top: 1px solid #000; padding: 5px; font-weight: bold; font-size: 11px; width: 150px; text-align: center; }
+
+    @@media print {
+        .no-print { display: none !important; }
+        .estimate-container {
+            border: none;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+    }
+</style>
