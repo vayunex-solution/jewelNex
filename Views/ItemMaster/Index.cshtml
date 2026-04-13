@@ -35,8 +35,8 @@
                         <td>@item.Category</td>
                         <td>@item.Purity</td>
                         <td>
-                            <span class="badge @(item.StockQuantity < 5 ? "badge-danger" : "badge-success")">
-                                @item.StockQuantity
+                            <span class="badge @(item.StockQuantity == 0 ? "badge-danger" : (item.StockQuantity < 10 ? "badge-warning" : "badge-success"))">
+                                @(item.StockQuantity == 0 ? "Out of Stock" : item.StockQuantity.ToString())
                             </span>
                         </td>
                         <td>₹ @item.DefaultRate.ToString("N2")</td>

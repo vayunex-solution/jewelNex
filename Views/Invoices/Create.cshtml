@@ -145,16 +145,33 @@
             <span id="break-sub-total">₹ 0.00</span>
         </div>
         <div class="total-row" style="background: rgba(212, 175, 55, 0.05); padding: 5px 10px; border-radius: 8px;">
-            <label style="margin:0; font-size: 0.8rem;">GST Rate (%)</label>
-            <input type="number" id="gst-rate-input" step="0.01" value="3.00" style="width: 80px; padding: 5px; font-size: 0.8rem; border: 1px solid var(--primary-gold); text-align: center;">
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="margin:0; font-size: 0.8rem;">GST Type</label>
+                <select id="gst-type-select" style="width: 120px; padding: 4px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--primary-gold);">
+                    <option value="intra">Intrastate (CGST+SGST)</option>
+                    <option value="inter">Interstate (IGST)</option>
+                </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                <label style="margin:0; font-size: 0.8rem;">GST Rate (%)</label>
+                <input type="number" id="gst-rate-input" step="0.01" value="3.00" style="width: 80px; padding: 4px; font-size: 0.8rem; border: 1px solid var(--primary-gold); text-align: center; border-radius: 4px;">
+            </div>
         </div>
-        <div class="total-row">
-            <span id="label-cgst">CGST (1.5%):</span>
-            <span id="break-cgst">₹ 0.00</span>
+        <div id="cgst-sgst-rows">
+            <div class="total-row">
+                <span id="label-cgst">CGST (1.5%):</span>
+                <span id="break-cgst">₹ 0.00</span>
+            </div>
+            <div class="total-row">
+                <span id="label-sgst">SGST (1.5%):</span>
+                <span id="break-sgst">₹ 0.00</span>
+            </div>
         </div>
-        <div class="total-row">
-            <span id="label-sgst">SGST (1.5%):</span>
-            <span id="break-sgst">₹ 0.00</span>
+        <div id="igst-row" style="display:none;">
+            <div class="total-row">
+                <span id="label-igst">IGST (3.0%):</span>
+                <span id="break-igst">₹ 0.00</span>
+            </div>
         </div>
         <div class="total-row" style="background: rgba(255, 0, 0, 0.03); padding: 5px 10px; border-radius: 8px;">
             <label style="margin:0; font-size: 0.8rem; color: #d9534f;">Discount (₹)</label>

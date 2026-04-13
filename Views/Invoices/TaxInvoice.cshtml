@@ -110,18 +110,24 @@
                 <span class="tax-label">TOTAL</span>
                 <span class="tax-val">@Model.SubTotal.ToString("N2")</span>
             </div>
-            <div class="tax-row">
-                <span class="tax-label">SGST @((Model.GstRate/2).ToString("F2"))%</span>
-                <span class="tax-val">@Model.SGST.ToString("N2")</span>
-            </div>
-            <div class="tax-row">
-                <span class="tax-label">CGST @((Model.GstRate/2).ToString("F2"))%</span>
-                <span class="tax-val">@Model.CGST.ToString("N2")</span>
-            </div>
-            <div class="tax-row">
-                <span class="tax-label">IGST @(0.00)%</span>
-                <span class="tax-val">0.00</span>
-            </div>
+            @if (Model.IGST > 0)
+            {
+                <div class="tax-row">
+                    <span class="tax-label">IGST @(Model.GstRate.ToString("F2"))%</span>
+                    <span class="tax-val">@Model.IGST.ToString("N2")</span>
+                </div>
+            }
+            else
+            {
+                <div class="tax-row">
+                    <span class="tax-label">SGST @((Model.GstRate / 2).ToString("F2"))%</span>
+                    <span class="tax-val">@Model.SGST.ToString("N2")</span>
+                </div>
+                <div class="tax-row">
+                    <span class="tax-label">CGST @((Model.GstRate / 2).ToString("F2"))%</span>
+                    <span class="tax-val">@Model.CGST.ToString("N2")</span>
+                </div>
+            }
             <div class="tax-row">
                 <span class="tax-label">Discount</span>
                 <span class="tax-val">@Model.Discount.ToString("N2")</span>

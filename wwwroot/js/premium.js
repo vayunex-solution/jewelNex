@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (gstInput) gstInput.oninput = calculateInvoice;
+    if (el('gst-type-select')) el('gst-type-select').onchange = calculateInvoice;
     if (el('discount-input')) el('discount-input').oninput = calculateInvoice;
     if (paidInput) paidInput.oninput = updateOutstanding;
 
@@ -187,17 +188,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const subTotalVal = goldValTotal + makingTotal;
         const totalGstRate = parseFloat(el('gst-rate-input')?.value) || 0;
-        const halfRate = totalGstRate / 2;
-        const cgstVal = subTotalVal * (halfRate / 100);
-        const sgstVal = subTotalVal * (halfRate / 100);
+        const gstType = el('gst-type-select')?.value || 'intra';
         
-        const labelCGST = el('label-cgst');
-        const labelSGST = el('label-sgst');
-        if (labelCGST) labelCGST.textContent = `CGST (${halfRate}%):`;
-        if (labelSGST) labelSGST.textContent = `SGST (${halfRate}%):`;
+        let cgstVal = 0, sgstVal = 0, igstVal = 0;
+
+        if (gstType === 'intra') {
+            const halfRate = totalGstRate / 2;
+            cgstVal = subTotalVal * (halfRate / 100);
+            sgstVal = subTotalVal * (halfRate / 100);
+            
+            if (el('cgst-sgst-rows')) el('cgst-sgst-rows').style.display = 'block';
+            if (el('igst-row')) el('igst-row').style.display = 'none';
+            
+            const labelCGST = el('label-cgst');
+            const labelSGST = el('label-sgst');
+            if (labelCGST) labelCGST.textContent = `CGST (${halfRate}%):`;
+            if (labelSGST) labelSGST.textContent = `SGST (${halfRate}%):`;
+        } else {
+            igstVal = subTotalVal * (totalGstRate / 100);
+            
+            if (el('cgst-sgst-rows')) el('cgst-sgst-rows').style.display = 'none';
+            if (el('igst-row')) el('igst-row').style.display = 'block';
+            
+            const labelIGST = el('label-igst');
+            if (labelIGST) labelIGST.textContent = `IGST (${totalGstRate}%):`;
+        }
 
         const discountVal = parseFloat(el('discount-input')?.value) || 0;
-        const totalWithGst = (subTotalVal + cgstVal + sgstVal) - discountVal;
+        const totalWithGst = (subTotalVal + cgstVal + sgstVal + igstVal) - discountVal;
         const roundedTotal = Math.round(totalWithGst);
         const roundOffVal = roundedTotal - totalWithGst;
 
@@ -211,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTxt('break-sub-total', subTotalVal);
         setTxt('break-cgst', cgstVal);
         setTxt('break-sgst', sgstVal);
+        setTxt('break-igst', igstVal);
         setTxt('break-total-amount', roundedTotal);
         
         const rEl = el('break-rounded');
@@ -251,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     subTotal: getTxtVal('break-sub-total'),
                     cgst: getTxtVal('break-cgst'),
                     sgst: getTxtVal('break-sgst'),
+                    igst: getTxtVal('break-igst'),
                     totalAmount: getTxtVal('break-total-amount'),
                     roundedOff: parseFloat(el('break-rounded')?.innerText.replace(/[^0-9.-]+/g, "")) || 0
                 };
