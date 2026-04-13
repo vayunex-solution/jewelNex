@@ -19,10 +19,16 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.EnsureCreated();
     
-    // Manual migration for Discount column if it doesn't exist
+    // Manual migration for columns if they don't exist
     try
     {
         context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN Discount decimal(18, 2) NOT NULL DEFAULT 0;");
+    }
+    catch { /* Column probably already exists */ }
+
+    try
+    {
+        context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN IGST decimal(18, 2) NOT NULL DEFAULT 0;");
     }
     catch { /* Column probably already exists */ }
 

@@ -88,14 +88,24 @@
                 <span>Sub Total:</span>
                 <span>₹ @Model.SubTotal.ToString("N2")</span>
             </div>
-            <div class="total-row">
-                <span>CGST (@((Model.GstRate / 2).ToString("F2"))%):</span>
-                <span>₹ @Model.CGST.ToString("N2")</span>
-            </div>
-            <div class="total-row">
-                <span>SGST (@((Model.GstRate / 2).ToString("F2"))%):</span>
-                <span>₹ @Model.SGST.ToString("N2")</span>
-            </div>
+            @if (Model.IGST > 0)
+            {
+                <div class="total-row">
+                    <span>IGST (@Model.GstRate.ToString("F2")%):</span>
+                    <span>₹ @Model.IGST.ToString("N2")</span>
+                </div>
+            }
+            else
+            {
+                <div class="total-row">
+                    <span>CGST (@((Model.GstRate / 2).ToString("F2"))%):</span>
+                    <span>₹ @Model.CGST.ToString("N2")</span>
+                </div>
+                <div class="total-row">
+                    <span>SGST (@((Model.GstRate / 2).ToString("F2"))%):</span>
+                    <span>₹ @Model.SGST.ToString("N2")</span>
+                </div>
+            }
             @if (Model.Discount > 0)
             {
                 <div class="total-row" style="color: #d9534f; font-weight: 500;">
