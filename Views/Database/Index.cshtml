@@ -1,0 +1,142 @@
+@{
+    ViewData["Title"] = "Database Maintenance";
+}
+
+<header>
+    <div class="header-title">
+        <h2>Database Maintenance</h2>
+        <p>Backup or restore your jewellery database</p>
+    </div>
+</header>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success glass-alert">
+        <i class="fas fa-check-circle"></i> @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger glass-alert danger">
+        <i class="fas fa-exclamation-triangle"></i> @TempData["Error"]
+    </div>
+}
+
+<div class="invoice-form-grid">
+    <section class="form-card glass">
+        <h3><i class="fas fa-download"></i> Export Database</h3>
+        <p class="description">Download a complete backup of your database file. This file contains all your data including invoices, customers, and settings.</p>
+        
+        @if (ViewBag.DbExists)
+        {
+            <div class="db-info">
+                <div class="info-item">
+                    <span class="label">File Size:</span>
+                    <span class="value">@ViewBag.DbSize</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Last Modified:</span>
+                    <span class="value">@ViewBag.LastModified</span>
+                </div>
+            </div>
+            
+            <a asp-action="Export" class="btn btn-primary btn-full mt-20">
+                <i class="fas fa-file-export"></i> Download Backup (.db)
+            </a>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                Database file not found on server.
+            </div>
+        }
+    </section>
+
+    <section class="form-card glass">
+        <h3><i class="fas fa-upload"></i> Import Database</h3>
+        <p class="description">Restore your database from a previous backup. <strong>Warning:</strong> This will overwrite all your current data. It is recommended to download a backup of your current database first.</p>
+        
+        <form asp-action="Import" method="post" enctype="multipart/form-data" class="mt-20">
+            <div class="upload-container">
+                <div class="form-group mb-20">
+                    <label for="dbFile" class="custom-file-upload">
+                        <i class="fas fa-cloud-upload-alt"></i> Select .db Backup File
+                    </label>
+                    <input type="file" id="dbFile" name="dbFile" accept=".db" required />
+                    <div id="file-name-display" class="file-name-hint">No file selected</div>
+                </div>
+                
+                <button type="submit" class="btn btn-secondary btn-full" onclick="return confirm('Are you sure you want to overwrite the current database? This action cannot be undone.')">
+                    <i class="fas fa-file-import"></i> Restore from Backup
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<style>
+    .description { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
+    .mt-20 { margin-top: 20px; }
+    .mb-20 { margin-bottom: 20px; }
+    
+    .db-info { 
+        background: rgba(255, 255, 255, 0.05); 
+        padding: 15px; 
+        border-radius: 8px; 
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .info-item { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .info-item:last-child { margin-bottom: 0; }
+    .info-item .label { font-weight: 600; color: var(--text-secondary); }
+    .info-item .value { color: var(--primary-gold); font-family: monospace; }
+    
+    .btn-full { display: block; width: 100%; text-align: center; box-sizing: border-box; padding: 12px; margin-top: 10px; font-weight: 600; border-radius: 8px; text-decoration: none; cursor: pointer; border: none; }
+    .btn-primary.btn-full { background: var(--primary-gold); color: white; }
+    .btn-secondary.btn-full { background: var(--secondary-charcoal); color: white; }
+    
+    .custom-file-upload {
+        display: block;
+        padding: 15px;
+        border: 2px dashed rgba(212, 175, 55, 0.3);
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(212, 175, 55, 0.05);
+        color: var(--primary-gold);
+        font-weight: 600;
+    }
+    .custom-file-upload:hover {
+        background: rgba(212, 175, 55, 0.1);
+        border-color: var(--primary-gold);
+    }
+    
+    input[type="file"] { display: none; }
+    
+    .file-name-hint { text-align: center; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary); }
+    
+    .glass-alert {
+        background: rgba(40, 167, 69, 0.1);
+        border: 1px solid rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(5px);
+    }
+    .glass-alert.danger {
+        background: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.getElementById('dbFile').onchange = function() {
+            const fileName = this.files[0] ? this.files[0].name : "No file selected";
+            document.getElementById('file-name-display').textContent = fileName;
+        };
+    </script>
+}

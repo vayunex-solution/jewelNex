@@ -36,6 +36,9 @@
                     <a asp-controller="Reports" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reports" ? "active" : "")">
                         <i class="fas fa-chart-line"></i> Reports
                     </a>
+                    <a asp-controller="Database" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Database" ? "active" : "")">
+                        <i class="fas fa-database"></i> Database
+                    </a>
                     <a asp-controller="Settings" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Settings" ? "active" : "")">
                         <i class="fas fa-cog"></i> Settings
                     </a>

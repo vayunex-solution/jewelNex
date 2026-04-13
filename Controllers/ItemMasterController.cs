@@ -75,7 +75,7 @@ namespace JewelleryApp.Controllers
         public async Task<JsonResult> GetAllItems()
         {
             var items = await _context.ItemsMaster
-                .Select(x => new { id = x.Id, name = x.Name, rate = x.DefaultRate, purity = x.Purity, stock = x.StockQuantity })
+                .Select(x => new { id = x.Id, name = x.Name, defaultRate = x.DefaultRate, purity = x.Purity, stockQuantity = x.StockQuantity })
                 .ToListAsync();
             return Json(items);
         }
