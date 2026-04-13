@@ -1,8 +1,8 @@
 @model JewelleryApp.Models.Jewellery.Invoice
-@inject JewelleryApp.Data.ApplicationDbContext Context
+@inject JewelleryApp.Data.ApplicationDbContext Db
 @{
     ViewData["Title"] = "Rough Estimate";
-    var settings = Context.ShopSettings.FirstOrDefault() ?? new JewelleryApp.Models.Jewellery.ShopSetting();
+    var settings = Db.ShopSettings.FirstOrDefault() ?? new JewelleryApp.Models.Jewellery.ShopSetting();
 }
 
 <div class="no-print actions-bar">
