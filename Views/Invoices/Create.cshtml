@@ -89,14 +89,14 @@
                 <thead>
                     <tr>
                         <th style="width: 40px;">#</th>
-                        <th style="width: 280px;">Item & Category</th>
-                        <th style="width: 120px;">HUID Num</th>
+                        <th style="width: 200px;">Item & Category</th>
+                        <th style="width: 140px;">HUID Num</th>
                         <th style="width: 100px;">Purity</th>
-                        <th>Gross Wt</th>
-                        <th>Net Wt</th>
-                        <th>Rate</th>
-                        <th>Making</th>
-                        <th style="width: 150px;">Amount</th>
+                        <th style="width: 105px;">Gross Wt</th>
+                        <th style="width: 105px;">Net Wt</th>
+                        <th style="width: 105px;">Rate</th>
+                        <th style="width: 105px;">Making</th>
+                        <th style="width: 140px;">Amount</th>
                         <th style="width: 40px;"></th>
                     </tr>
                 </thead>
@@ -178,6 +178,42 @@
         </div>
     </section>
 </div>
+
+<style>
+    .table-container {
+        overflow-x: auto;
+        margin-top: 10px;
+        padding-bottom: 20px;
+    }
+    
+    #product-table {
+        min-width: 1200px; /* Ensure table doesn't collapse below usable width */
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    #product-table th, #product-table td {
+        padding: 12px 8px; 
+        vertical-align: middle;
+        overflow: hidden;
+    }
+
+    #product-table input, #product-table select {
+        width: 100%;
+        min-width: 50px;
+        padding: 10px;
+        font-size: 0.9rem;
+        border-radius: 8px;
+    }
+
+    /* Column Specific consistency */
+    .huid-num { text-transform: uppercase; }
+    .item-amount { color: var(--primary-gold-dark); white-space: nowrap; }
+    
+    @@media (max-width: 1400px) {
+        .content-full { padding: 120px 20px 40px; }
+    }
+</style>
 
 @section Scripts {
     <script src="~/js/premium.js"></script>

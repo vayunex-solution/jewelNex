@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using JewelleryApp.Data;
+using JewelleryApp.Models.Jewellery;
+using System.Collections.Generic;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,13 +47,39 @@ using (var scope = app.Services.CreateScope())
                 AccountNo TEXT,
                 IFSCCode TEXT
             );");
-            
-        // Insert default settings if empty
-        var exists = context.Database.ExecuteSqlRaw("SELECT 1 FROM ShopSettings LIMIT 1;");
-        // executeSqlRaw returns rows affected for commands, but for select it might not be what I want.
-        // Actually I'll use a better way in C#.
     }
     catch { }
+
+    // Seed default Items if Master is empty
+    if (!context.ItemsMaster.Any())
+    {
+        var defaultItems = new List<ItemMaster>
+        {
+            // Gold Items (22K)
+            new ItemMaster { Name = "Gold Ring", Category = "Gold", Purity = "22K", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Gold Chain", Category = "Gold", Purity = "22K", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Gold Bangle", Category = "Gold", Purity = "22K", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Gold Necklace", Category = "Gold", Purity = "22K", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Gold Earrings", Category = "Gold", Purity = "22K", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Gold Pendant", Category = "Gold", Purity = "22K", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Gold Mangalsutra", Category = "Gold", Purity = "22K", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Gold Nose Pin", Category = "Gold", Purity = "22K", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Gold Bracelet", Category = "Gold", Purity = "22K", DefaultRate = 0, StockQuantity = 0 },
+            
+            // Silver Items
+            new ItemMaster { Name = "Silver Payal (Anklet)", Category = "Silver", Purity = "70%", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Silver Bichiya (Toe Ring)", Category = "Silver", Purity = "70%", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Silver Coin", Category = "Silver", Purity = "99%", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Silver Glass", Category = "Silver", Purity = "80%", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Silver Spoon", Category = "Silver", Purity = "80%", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Silver Idol", Category = "Silver", Purity = "80%", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Silver Chain", Category = "Silver", Purity = "70%", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Silver Bracelet", Category = "Silver", Purity = "70%", DefaultRate = 0, StockQuantity = 0 },
+            new ItemMaster { Name = "Silver Ring", Category = "Silver", Purity = "70%", DefaultRate = 0, StockQuantity = 0 }
+        };
+        context.ItemsMaster.AddRange(defaultItems);
+        context.SaveChanges();
+    }
 }
 
 // Configure the HTTP request pipeline.
