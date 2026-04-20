@@ -1,20 +1,25 @@
 @model JewelleryApp.Models.Jewellery.Voucher
 @{
     var type = (JewelleryApp.Models.Jewellery.VoucherType)ViewBag.VoucherType;
+    var isReceipt = type == JewelleryApp.Models.Jewellery.VoucherType.CashReceipt;
+    var themeClass = isReceipt ? "receipt-theme" : "payment-theme";
     ViewData["Title"] = $"New {type.ToString()}";
 }
 
 <header>
     <div class="header-title">
-        <h2>New @type.ToString()</h2>
-        <p>Record a new accounting entry under @type.ToString() categories</p>
+        <h2 class="@(isReceipt ? "text-success" : "text-danger")">
+            <i class="fas @(isReceipt ? "fa-file-invoice-dollar" : "fa-hand-holding-usd")"></i> 
+            New @(isReceipt ? "Cash Receipt" : "Cash Payment")
+        </h2>
+        <p>Record a direct @(isReceipt ? "incoming" : "outgoing") financial transaction</p>
     </div>
     <div class="header-actions">
         <a asp-action="Index" class="btn btn-secondary">Cancel</a>
     </div>
 </header>
 
-<div class="form-card glass" style="max-width: 800px; margin: 0 auto;">
+<div class="form-card glass @themeClass" style="max-width: 800px; margin: 0 auto;">
     <form asp-action="Create" method="post">
         <input type="hidden" asp-for="Type" />
         
@@ -25,13 +30,16 @@
             </div>
             <div class="form-group col-6">
                 <label asp-for="Date"></label>
-                <input asp-for="Date" type="date" />
+                <input asp-for="Date" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
             </div>
         </div>
 
         <div class="form-group">
-            <label asp-for="AccountName">Account Name / Contact</label>
-            <input asp-for="AccountName" placeholder="Who is this transaction for?" list="account-list" autocomplete="off" />
+            <div style="display:flex; justify-content:space-between; align-items:center">
+                <label asp-for="AccountName">Account Name / Contact</label>
+                <span id="account-balance-display" class="balance-badge" style="display:none">Bal: ₹ 0.00 Dr</span>
+            </div>
+            <input asp-for="AccountName" id="account-name-input" placeholder="Who is this transaction for?" list="account-list" autocomplete="off" />
             <span asp-validation-for="AccountName" class="text-danger"></span>
             <datalist id="account-list">
                 @if (ViewBag.AccountSuggestions != null)
@@ -65,12 +73,61 @@
 
         <div style="margin-top:30px">
             <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-save"></i> Save Voucher Entry
+                <i class="fas fa-save"></i> Save @(isReceipt ? "Receipt" : "Payment") Entry
             </button>
         </div>
     </form>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.getElementById('account-name-input');
+        const balDisplay = document.getElementById('account-balance-display');
+
+        if (nameInput) {
+            nameInput.addEventListener('change', function() {
+                const name = this.value;
+                if (!name) {
+                    balDisplay.style.display = 'none';
+                    return;
+                }
+
+                fetch(`/Accounting/GetAccountBalance?name=${encodeURIComponent(name)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.balance !== undefined) {
+                            balDisplay.textContent = `Current Bal: ₹ ${data.balance.toLocaleString('en-IN', {minimumFractionDigits: 2})} ${data.type}`;
+                            balDisplay.style.display = 'inline-block';
+                            balDisplay.className = 'balance-badge ' + (data.type === 'Dr' ? 'bal-dr' : 'bal-cr');
+                        } else {
+                            balDisplay.style.display = 'none';
+                        }
+                    })
+                    .catch(() => {
+                        balDisplay.style.display = 'none';
+                    });
+            });
+        }
+    });
+</script>
+
 <style>
     .w-100 { width: 100%; justify-content: center; }
+    .text-success { color: #28a745 !important; }
+    .text-danger { color: #dc3545 !important; }
+    
+    .balance-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .bal-dr { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
+    .bal-cr { background: rgba(40, 167, 69, 0.1); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.2); }
+
+    .receipt-theme .input-with-icon i { color: #28a745; }
+    .payment-theme .input-with-icon i { color: #dc3545; }
+    
+    .receipt-theme h2 i { color: #28a745; }
+    .payment-theme h2 i { color: #dc3545; }
 </style>

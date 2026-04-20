@@ -16,6 +16,46 @@ namespace JewelleryApp.Controllers
             _context = context;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAccountBalance(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return BadRequest();
+
+            // 1. Try Customer
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Name == name);
+            if (customer != null)
+            {
+                // Use the same logic as AccountStatement
+                var items = await _context.VoucherItems
+                    .Include(vi => vi.Voucher)
+                    .Where(vi => vi.AccountName == name)
+                    .ToListAsync();
+
+                decimal bal = customer.BalanceType == BalanceType.Dr ? customer.OpeningBalance : -customer.OpeningBalance;
+                foreach (var vi in items) bal += (vi.Debit - vi.Credit);
+
+                return Ok(new { balance = Math.Abs(bal), type = bal >= 0 ? "Dr" : "Cr" });
+            }
+
+            // 2. Try Account Head
+            var head = await _context.AccountHeads.FirstOrDefaultAsync(h => h.Name == name);
+            if (head != null)
+            {
+                var items = await _context.VoucherItems
+                    .Include(vi => vi.Voucher)
+                    .Where(vi => vi.AccountName == name)
+                    .ToListAsync();
+
+                decimal bal = head.BalanceType == BalanceType.Dr ? head.OpeningBalance : -head.OpeningBalance;
+                foreach (var vi in items) bal += (vi.Debit - vi.Credit);
+
+                return Ok(new { balance = Math.Abs(bal), type = bal >= 0 ? "Dr" : "Cr" });
+            }
+
+            return NotFound();
+        }
+
+        // GET: Accounting
         public async Task<IActionResult> Index()
         {
             var vouchers = await _context.Vouchers.OrderByDescending(v => v.Date).ToListAsync();
