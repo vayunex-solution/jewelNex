@@ -127,8 +127,8 @@ namespace JewelleryApp.Controllers
                         Name = customer.Name,
                         AccountGroup = new AccountGroup { Name = "Sundry Debtors (Customers)" },
                         Description = $"Statement for Customer: {customer.Name} | Mobile: {customer.Mobile}",
-                        OpeningBalance = 0, // Customers start with 0 unless we add the field to model
-                        BalanceType = BalanceType.Dr
+                        OpeningBalance = customer.OpeningBalance,
+                        BalanceType = customer.BalanceType
                     };
                 }
             }
@@ -144,44 +144,41 @@ namespace JewelleryApp.Controllers
                 OpeningBalanceType = targetAccount.BalanceType
             };
 
-            // Get Vouchers for this account (matching AccountName)
-            var vouchers = await _context.Vouchers
-                .Where(v => v.AccountName == targetName && v.Date <= to)
+            // Get VoucherItems for this account (matching AccountName)
+            var voucherItems = await _context.VoucherItems
+                .Include(vi => vi.Voucher)
+                .Where(vi => vi.AccountName == targetName && vi.Voucher.Date <= to)
                 .ToListAsync();
 
             // Calculate Opening Balance at 'from' date
-            decimal runningBal = targetAccount.BalanceType == BalanceType.Dr ? targetAccount.OpeningBalance : -targetAccount.OpeningBalance;
+            decimal runningBal = vm.OpeningBalanceType == BalanceType.Dr ? vm.OpeningBalance : -vm.OpeningBalance;
             
-            var preTransactions = vouchers.Where(v => v.Date < from);
-            foreach (var v in preTransactions)
+            var preTransactions = voucherItems.Where(vi => vi.Voucher.Date < from);
+            foreach (var vi in preTransactions)
             {
-                // Simple logic: determine Dr/Cr based on common patterns if manual items are missing
-                // In a robust system, we would iterate over VoucherItems
-                bool isDr = (v.Type == VoucherType.CashPayment || v.Type == VoucherType.General || v.Type == VoucherType.CashVoucher);
-                decimal amt = isDr ? v.Amount : -v.Amount;
-                runningBal += amt;
+                runningBal += (vi.Debit - vi.Credit);
             }
 
             vm.OpeningBalance = Math.Abs(runningBal);
             vm.OpeningBalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr;
 
             // Current Transactions
-            var currentVouchers = vouchers.Where(v => v.Date >= from && v.Date <= to).OrderBy(v => v.Date);
-            foreach (var v in currentVouchers)
+            var currentItems = voucherItems
+                .Where(vi => vi.Voucher.Date >= from && vi.Voucher.Date <= to)
+                .OrderBy(vi => vi.Voucher.Date)
+                .ThenBy(vi => vi.Voucher.Id);
+
+            foreach (var vi in currentItems)
             {
-                bool isDr = (v.Type == VoucherType.CashPayment || v.Type == VoucherType.General || v.Type == VoucherType.CashVoucher);
-                decimal debit = isDr ? v.Amount : 0;
-                decimal credit = isDr ? 0 : v.Amount;
-                
-                runningBal += (debit - credit);
+                runningBal += (vi.Debit - vi.Credit);
 
                 vm.Entries.Add(new LedgerEntry
                 {
-                    VoucherNo = v.VoucherNo,
-                    Date = v.Date,
-                    Description = v.Particulars ?? v.Type.ToString(),
-                    Debit = debit,
-                    Credit = credit,
+                    VoucherNo = vi.Voucher.VoucherNo,
+                    Date = vi.Voucher.Date,
+                    Description = vi.Particulars ?? vi.Voucher.Particulars ?? vi.Voucher.Type.ToString(),
+                    Debit = vi.Debit,
+                    Credit = vi.Credit,
                     RunningBalance = Math.Abs(runningBal),
                     BalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr
                 });

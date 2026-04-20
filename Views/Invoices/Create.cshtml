@@ -14,84 +14,112 @@
     </div>
 </header>
 
-<div class="invoice-form-grid">
-    <!-- Shop & Customer Details -->
-    <section class="form-card glass">
-        <h3><i class="fas fa-store"></i> Shop & Customer</h3>
-        <div class="form-row">
-            <div class="form-group col-6">
-                <label>Invoice Number</label>
-                <input type="text" id="invoice-no" value="INV-@(DateTime.Now.ToString("yyyyMMdd"))-001" readonly>
+    <!-- Row 1: Invoice Details -->
+    <div class="form-row full-width">
+        <section class="form-card glass">
+            <h3><i class="fas fa-store"></i> Invoice Details</h3>
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label>Invoice Number</label>
+                    <input type="text" id="invoice-no" value="INV-@(DateTime.Now.ToString("yyyyMMdd"))-001" readonly class="highlight-input">
+                </div>
+                <div class="form-group col-6">
+                    <label>Date</label>
+                    <input type="date" id="invoice-date" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                </div>
             </div>
-            <div class="form-group col-6">
-                <label>Date</label>
-                <input type="date" id="invoice-date" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+        </section>
+
+        <section class="summary-card gold-gradient flex-1">
+            <div class="summary-header">
+                <span>Current Total</span>
+                <h2 id="summary-total">₹ 0.00</h2>
             </div>
+            <div class="summary-details">
+                <div class="summary-line">
+                    <span>Taxable Amt</span>
+                    <span id="summary-subtotal">₹ 0.00</span>
+                </div>
+                <div class="summary-line">
+                    <span>GST Total</span>
+                    <span id="summary-gst">₹ 0.00</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Row 2: Customer Selection -->
+    <section class="form-card full-width glass customer-section">
+        <div class="section-header">
+            <h3><i class="fas fa-user-circle"></i> Customer Selection</h3>
         </div>
-        <hr>
         <div class="form-group">
-            <label>Customer Name</label>
+            <label>Select Customer</label>
             <div class="input-with-icon">
-                <i class="fas fa-user"></i>
-                <select id="cust-name-select" class="form-control">
-                    <option value="">-- Select Customer --</option>
-                    <!-- Options populated via JS -->
-                    <option value="custom">New Customer (Manual Entry)</option>
+                <i class="fas fa-search"></i>
+                <select id="cust-name-select" class="form-control premium-select">
+                    <option value="">-- Select Existing Customer --</option>
+                    <option value="custom" style="font-weight:bold; color:var(--primary-gold-dark);">+ New Customer (Manual Entry)</option>
                 </select>
             </div>
-            <input type="text" id="cust-name" placeholder="Enter customer name" style="display:none; margin-top:10px;">
         </div>
-        <div class="form-row">
-            <div class="form-group col-6">
-                <label>Mobile Number</label>
-                <input type="tel" id="cust-mobile" placeholder="+91 XXXXX XXXXX">
-            </div>
-            <div class="form-group col-6">
-                <label>GSTIN (Optional)</label>
-                <input type="text" id="cust-gstin" placeholder="Ex: 22AAAAA0000A1Z5">
-            </div>
-        </div>
-        <div class="form-group">
-            <label>Address</label>
-            <textarea id="cust-address" rows="2" placeholder="Customer address..."></textarea>
-        </div>
-    </section>
 
-    <!-- Calculation Quick View -->
-    <section class="summary-card gold-gradient">
-        <div class="summary-header">
-            <span>Total Amount</span>
-            <h2 id="summary-total">₹ 0.00</h2>
-        </div>
-        <div class="summary-details">
-            <div class="summary-line">
-                <span>Sub Total</span>
-                <span id="summary-subtotal">₹ 0.00</span>
-            </div>
-            <div class="summary-line">
-                <span>GST (3%)</span>
-                <span id="summary-gst">₹ 0.00</span>
-            </div>
-        </div>
-        <div class="stamp-container">
-            <div class="premium-stamp">AUTHENTIC QUALITY</div>
-        </div>
-    </section>
-
-    <!-- Product Table -->
-    <section class="form-card full-width glass">
-        <div class="section-header">
-            <h3><i class="fas fa-gem"></i> Items & Products</h3>
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <div class="form-group mb-0" style="margin:0;">
-                    <label style="font-size: 0.8rem; margin:0;">Daily Gold Rate (₹/g)</label>
-                    <input type="number" id="daily-rate" value="7500" step="1" style="width: 100px; padding: 5px; border: 1px solid var(--primary-gold); border-radius: 4px;">
+        <!-- Row 3: New Customer Details (Dynamic) -->
+        <div id="new-cust-fields" style="display:none; transition: var(--transition); border-top: 1px dashed var(--primary-gold-light); margin-top: 20px; padding-top: 20px;">
+            <div class="form-row">
+                <div class="form-group col-4">
+                    <label>Customer Name <span class="text-danger">*</span></label>
+                    <input type="text" id="cust-name" placeholder="Enter Full Name">
                 </div>
-                <button type="button" class="btn btn-small btn-outline" id="add-row-btn"><i class="fas fa-plus"></i> Add Item</button>
+                <div class="form-group col-4">
+                    <label>Mobile Number <span class="text-danger">*</span></label>
+                    <input type="tel" id="cust-mobile" placeholder="+91 XXXXX XXXXX">
+                </div>
+                <div class="form-group col-4">
+                    <label>GSTIN (Optional)</label>
+                    <input type="text" id="cust-gstin" placeholder="Ex: 22AAAAA0000A1Z5">
+                </div>
             </div>
+            <div class="form-group">
+                <label>Billing Address</label>
+                <textarea id="cust-address" rows="2" placeholder="Full residential or business address..."></textarea>
+            </div>
+            <div class="form-row" style="margin-top:15px; border-top: 1px dotted var(--primary-gold-light); padding-top:15px;">
+                <div class="form-group col-6">
+                    <label>Opening Balance (₹)</label>
+                    <input type="number" id="cust-opening-bal" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group col-6">
+                    <label>Balance Type</label>
+                    <select id="cust-bal-type">
+                        <option value="1">Debit (Dr) - Customer Owes</option>
+                        <option value="2">Credit (Cr) - You Owe</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Row 2: Product Table -->
+    <section class="form-card full-width glass items-section">
+        <div class="section-header">
+            <div class="title-with-rate">
+                <h3><i class="fas fa-gem"></i> Items & Products</h3>
+                <div class="rate-badge">
+                   <label>Live Gold Rate:</label>
+                   <div class="input-group-small">
+                       <span>₹</span>
+                       <input type="number" id="daily-rate" value="7500" step="1">
+                       <span>/g</span>
+                   </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary btn-add-new" id="add-row-btn">
+                <i class="fas fa-plus"></i> Add New Item Line
+            </button>
         </div>
         <div class="table-container">
-            <table id="product-table">
+            <table id="product-table" class="premium-table">
                 <thead>
                     <tr>
                         <th style="width: 80px;">R/I</th>

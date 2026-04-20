@@ -1,6 +1,6 @@
 @model JewelleryApp.Models.Jewellery.StockEntry
 @{
-    var type = (JewelleryApp.Models.Jewellery.StockEntryType)ViewBag.Type;
+    var type = Model.Type;
     ViewData["Title"] = $"Stock {type}";
 }
 

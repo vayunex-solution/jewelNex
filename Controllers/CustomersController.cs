@@ -28,7 +28,7 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Mobile,Address,StateCode")] Customer customer)
+        public async Task<IActionResult> Create([Bind("Name,Mobile,Address,StateCode,OpeningBalance,BalanceType")] Customer customer)
         {
             if (ModelState.IsValid)
             {

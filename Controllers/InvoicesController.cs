@@ -34,11 +34,36 @@ namespace JewelleryApp.Controllers
 
             try
             {
-                // 1. Transactional Integrity: Add Invoice
-                _context.Add(invoice);
-                await _context.SaveChangesAsync(); // Get Invoice ID
+                // 1. Resolve Customer Identity & Name
+                string customerName = "Walk-in Customer";
+                if (invoice.CustomerId == 0 && invoice.Customer != null && !string.IsNullOrEmpty(invoice.Customer.Name))
+                {
+                    var existing = await _context.Customers.FirstOrDefaultAsync(c => c.Mobile == invoice.Customer.Mobile);
+                    if (existing == null)
+                    {
+                        _context.Customers.Add(invoice.Customer);
+                        await _context.SaveChangesAsync();
+                        invoice.CustomerId = invoice.Customer.Id;
+                        customerName = invoice.Customer.Name;
+                    }
+                    else
+                    {
+                        invoice.CustomerId = existing.Id;
+                        customerName = existing.Name;
+                    }
+                    invoice.Customer = null; 
+                }
+                else if (invoice.CustomerId > 0)
+                {
+                    var cust = await _context.Customers.FindAsync(invoice.CustomerId);
+                    customerName = cust?.Name ?? "Existing Customer";
+                }
 
-                // 2. STOCK AUTOMATION (Point 8, 9)
+                // 2. Add Invoice
+                _context.Add(invoice);
+                await _context.SaveChangesAsync();
+
+                // 3. STOCK AUTOMATION
                 foreach (var item in invoice.Items)
                 {
                     var masterItem = await _context.ItemsMaster.FirstOrDefaultAsync(x => x.Name == item.ItemName);
@@ -46,54 +71,70 @@ namespace JewelleryApp.Controllers
                     {
                         int qtyChange = item.RI == "R" ? 1 : -1;
                         decimal weightChange = item.RI == "R" ? item.GrossWt : -item.GrossWt;
-
-                        // Update Master
                         masterItem.StockQuantity += qtyChange;
                         masterItem.TotalWeight += weightChange;
 
-                        // Create Stock Ledger Entry
                         var stockEntry = new StockEntry
                         {
                             ReferenceNo = $"INV-{invoice.InvoiceNo}",
                             Date = invoice.Date,
-                            Type = item.RI == "R" ? StockEntryType.SalesReturn : StockEntryType.InvoiceIssue, // Using SalesReturn for Receipt
+                            Type = item.RI == "R" ? StockEntryType.SalesReturn : StockEntryType.InvoiceIssue,
                             ItemMasterId = masterItem.Id,
                             Quantity = qtyChange,
                             Weight = weightChange,
-                            Remarks = $"Sold to Customer ID: {invoice.CustomerId}"
+                            Remarks = $"Ref: {invoice.InvoiceNo}"
                         };
                         _context.StockEntries.Add(stockEntry);
                     }
                 }
 
-                // 3. ACCOUNTING AUTOMATION (Point 2) - Double Entry Posting
-                var voucher = new Voucher
+                // 4. ACCOUNTING: Sales Voucher (Debit Customer, Credit Sales/GST)
+                var salesVoucher = new Voucher
                 {
                     VoucherNo = $"JV-{invoice.InvoiceNo}",
                     Date = invoice.Date,
                     Type = VoucherType.General,
-                    AccountName = invoice.Customer?.Name ?? "Walk-in Customer",
+                    AccountName = customerName,
                     Amount = invoice.TotalAmount,
                     Particulars = $"Sales Invoice No: {invoice.InvoiceNo}"
                 };
 
-                // Dr. Customer A/c
-                voucher.Items.Add(new VoucherItem { AccountName = invoice.Customer?.Name ?? "Cash Account", Debit = invoice.TotalAmount, Credit = 0, Particulars = "Being Goods Sold" });
+                salesVoucher.Items.Add(new VoucherItem { AccountName = customerName, Debit = invoice.TotalAmount, Credit = 0, Particulars = "Goods Sold" });
                 
-                // Cr. Sales A/c
                 decimal netSales = invoice.TotalAmount - invoice.CGST - invoice.SGST - invoice.IGST;
-                voucher.Items.Add(new VoucherItem { AccountName = "Sales Account", Debit = 0, Credit = netSales, Particulars = "Net Sales" });
+                salesVoucher.Items.Add(new VoucherItem { AccountName = "Sales Account", Debit = 0, Credit = netSales, Particulars = "Net Sales" });
 
-                // Cr. GST A/cs
                 if (invoice.IGST > 0)
-                    voucher.Items.Add(new VoucherItem { AccountName = "IGST Account", Debit = 0, Credit = invoice.IGST, Particulars = "IGST Input" });
+                    salesVoucher.Items.Add(new VoucherItem { AccountName = "IGST Account", Debit = 0, Credit = invoice.IGST, Particulars = "IGST Output" });
                 else
                 {
-                    if (invoice.CGST > 0) voucher.Items.Add(new VoucherItem { AccountName = "CGST Account", Debit = 0, Credit = invoice.CGST, Particulars = "CGST Input" });
-                    if (invoice.SGST > 0) voucher.Items.Add(new VoucherItem { AccountName = "SGST Account", Debit = 0, Credit = invoice.SGST, Particulars = "SGST Input" });
+                    if (invoice.CGST > 0) salesVoucher.Items.Add(new VoucherItem { AccountName = "CGST Account", Debit = 0, Credit = invoice.CGST, Particulars = "CGST Output" });
+                    if (invoice.SGST > 0) salesVoucher.Items.Add(new VoucherItem { AccountName = "SGST Account", Debit = 0, Credit = invoice.SGST, Particulars = "SGST Output" });
                 }
 
-                _context.Vouchers.Add(voucher);
+                _context.Vouchers.Add(salesVoucher);
+
+                // 5. ACCOUNTING: Receipt Voucher (Debit Cash/Bank, Credit Customer)
+                if (invoice.PaidAmount > 0)
+                {
+                    var receiptVoucher = new Voucher
+                    {
+                        VoucherNo = $"REC-{invoice.InvoiceNo}",
+                        Date = invoice.Date,
+                        Type = VoucherType.CashReceipt,
+                        AccountName = customerName,
+                        Amount = invoice.PaidAmount,
+                        Particulars = $"Payment received for Inv: {invoice.InvoiceNo}"
+                    };
+
+                    string drAccount = (invoice.PaymentMode == "Bank" || invoice.PaymentMode == "Card" || invoice.PaymentMode == "UPI") ? "Bank A/c" : "Cash in Hand";
+                    
+                    receiptVoucher.Items.Add(new VoucherItem { AccountName = drAccount, Debit = invoice.PaidAmount, Credit = 0, Particulars = $"Via {invoice.PaymentMode}" });
+                    receiptVoucher.Items.Add(new VoucherItem { AccountName = customerName, Debit = 0, Credit = invoice.PaidAmount, Particulars = "Paid by Customer" });
+
+                    _context.Vouchers.Add(receiptVoucher);
+                }
+
                 await _context.SaveChangesAsync();
 
                 return Ok(new { id = invoice.Id });

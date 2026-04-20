@@ -59,6 +59,10 @@ namespace JewelleryApp.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Ledger), new { itemId = entry.ItemMasterId });
             }
+
+            // Re-populate View data if validation fails
+            ViewBag.Type = entry.Type;
+            ViewBag.Items = new SelectList(await _context.ItemsMaster.ToListAsync(), "Id", "Name", entry.ItemMasterId);
             return View(entry);
         }
     }

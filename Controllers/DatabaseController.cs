@@ -21,6 +21,32 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateCustomerSchema()
+        {
+            try
+            {
+                // Add OpeningBalance
+                try {
+                    await _context.Database.ExecuteSqlRawAsync("ALTER TABLE Customers ADD COLUMN OpeningBalance DECIMAL(18, 2) NOT NULL DEFAULT 0");
+                } catch { /* Column might already exist */ }
+
+                // Add BalanceType
+                try {
+                    await _context.Database.ExecuteSqlRawAsync("ALTER TABLE Customers ADD COLUMN BalanceType INTEGER NOT NULL DEFAULT 1");
+                } catch { /* Column might already exist */ }
+
+                TempData["Success"] = "Customer table schema updated successfully!";
+            }
+            catch (System.Exception ex)
+            {
+                TempData["Error"] = "Error updating schema: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CleanDatabase()
         {
             using var transaction = await _context.Database.BeginTransactionAsync();

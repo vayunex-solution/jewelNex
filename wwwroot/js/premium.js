@@ -64,36 +64,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Customer Selection Logic
     const custSelect = el('cust-name-select');
+    const newCustContainer = el('new-cust-fields');
     if (custSelect) {
         custSelect.onchange = () => {
             const val = custSelect.value;
             const nameInput = el('cust-name');
             const mobileInput = el('cust-mobile');
+            const gstinInput = el('cust-gstin');
             const addressInput = el('cust-address');
             const gstTypeSelect = el('gst-type-select');
 
+            // Helper to set readonly state
+            const setType = (isReadOnly) => {
+                [nameInput, mobileInput, gstinInput, addressInput].forEach(i => {
+                    if (i) i.readOnly = isReadOnly;
+                });
+            };
+
             if (val === "custom") {
-                if (nameInput) { nameInput.style.display = "block"; nameInput.value = ""; }
+                if (newCustContainer) newCustContainer.style.display = "block";
+                setType(false);
+                if (nameInput) nameInput.value = "";
                 if (mobileInput) mobileInput.value = "";
+                if (gstinInput) gstinInput.value = "";
                 if (addressInput) addressInput.value = "";
-            } else {
-                if (nameInput) nameInput.style.display = "none";
+                if (el('cust-opening-bal')) el('cust-opening-bal').value = "0";
+                if (el('cust-bal-type')) el('cust-bal-type').value = "1";
+            } else if (val) {
+                if (newCustContainer) newCustContainer.style.display = "block";
+                setType(true);
                 const selected = masterCustomers.find(c => c.id == val);
                 if (selected) {
-                    if (nameInput) nameInput.value = selected.name;
+                    if (nameInput) nameInput.value = selected.name || "";
                     if (mobileInput) mobileInput.value = selected.mobile || "";
+                    if (gstinInput) gstinInput.value = selected.gstin || "";
                     if (addressInput) addressInput.value = selected.address || "";
+                    if (el('cust-opening-bal')) el('cust-opening-bal').value = selected.openingBalance || 0;
+                    if (el('cust-bal-type')) el('cust-bal-type').value = selected.balanceType || 1;
 
-                    // AUTO GST (Point 1)
+                    // AUTO GST
                     if (gstTypeSelect && shopSettings && selected.stateCode) {
-                        if (shopSettings.stateCode === selected.stateCode) {
-                            gstTypeSelect.value = "intra";
-                        } else {
-                            gstTypeSelect.value = "inter";
-                        }
+                        gstTypeSelect.value = (shopSettings.stateCode === selected.stateCode) ? "intra" : "inter";
                         calculateInvoice();
                     }
                 }
+            } else {
+                if (newCustContainer) newCustContainer.style.display = "none";
             }
         };
     }
@@ -304,7 +320,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     Customer: isNewCust ? {
                         Name: el('cust-name')?.value || "",
                         Mobile: el('cust-mobile')?.value || "",
-                        Address: el('cust-address')?.value || ""
+                        GSTIN: el('cust-gstin')?.value || "",
+                        Address: el('cust-address')?.value || "",
+                        OpeningBalance: parseFloat(el('cust-opening-bal')?.value) || 0,
+                        BalanceType: parseInt(el('cust-bal-type')?.value) || 1
                     } : null,
                     Items: [],
                     GoldValueTotal: getTxtVal('break-gold-value'),
@@ -357,10 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Run initialization
     (async () => {
-        // Auto-mini sidebar
-        const sb = el('main-sidebar');
-        if (sb) sb.classList.add('mini');
-        
         if (dateInput) dateInput.valueAsDate = new Date();
         await loadMasterData();
         if (itemsTableBody && itemsTableBody.children.length === 0) window.addRow();

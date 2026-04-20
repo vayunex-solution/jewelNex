@@ -22,6 +22,12 @@ namespace JewelleryApp.Models.Jewellery
 
         public string? Address { get; set; }
 
+        [Display(Name = "Opening Balance")]
+        public decimal OpeningBalance { get; set; } = 0;
+
+        [Display(Name = "Balance Type")]
+        public BalanceType BalanceType { get; set; } = BalanceType.Dr;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public List<Invoice> Invoices { get; set; } = new();

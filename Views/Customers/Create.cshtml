@@ -13,6 +13,7 @@
 <div class="invoice-form-grid">
     <section class="form-card glass">
         <form asp-action="Create">
+            <div asp-validation-summary="All" class="text-danger"></div>
             <div class="form-group">
                 <label asp-for="Name">Full Name</label>
                 <input asp-for="Name" class="form-control" placeholder="Enter customer name" required>
@@ -24,6 +25,20 @@
             <div class="form-group">
                 <label asp-for="Address">Address</label>
                 <textarea asp-for="Address" class="form-control" rows="3" placeholder="Enter full address"></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label asp-for="OpeningBalance">Opening Balance</label>
+                    <input asp-for="OpeningBalance" type="number" step="0.01" class="form-control" placeholder="0.00">
+                </div>
+                <div class="form-group col-6">
+                    <label asp-for="BalanceType">Balance Type</label>
+                    <select asp-for="BalanceType" class="form-control">
+                        <option value="1">Debit (Dr) - Customer Owes You</option>
+                        <option value="2">Credit (Cr) - You Owe Customer</option>
+                    </select>
+                </div>
             </div>
             <div style="margin-top: 30px; display: flex; gap: 15px;">
                 <button type="submit" class="btn btn-primary">Save Customer</button>
