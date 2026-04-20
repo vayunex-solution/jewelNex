@@ -1,0 +1,198 @@
+@model IEnumerable<JewelleryApp.Models.Jewellery.AccountGroup>
+@{
+    ViewData["Title"] = "Account Groups";
+}
+
+<header>
+    <div class="header-title">
+        <h2>Account Groups</h2>
+        <p>Define and organize your chart of accounts hierarchy</p>
+    </div>
+</header>
+
+<div class="account-groups-layout mt-4">
+    <!-- Left Pane: Configuration Form -->
+    <section class="form-card glass">
+        <h4 class="mb-4"><i class="fas fa-edit"></i> Manage Group</h4>
+        <form id="group-form" asp-action="Create" method="post">
+            <input type="hidden" id="group-id" name="Id" value="0" />
+            
+            <div class="form-group">
+                <label>Group Name</label>
+                <input type="text" id="group-name" name="Name" required placeholder="Ex: OFFICE EXPENSES" />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label>Position in Hierarchy</label>
+                    <input type="number" id="group-pos" name="PositionInHierarchy" value="1" />
+                </div>
+                <div class="form-group col-6 pt-4">
+                    <label class="d-flex align-items-center" style="gap:10px; cursor:pointer;">
+                        <input type="checkbox" id="group-subledger" name="IsSubLedger" value="true" style="width:20px; height:20px;" /> 
+                        <span>Sub Ledger</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Under Group</label>
+                <select id="group-parent" name="ParentGroupId" asp-items="ViewBag.ParentGroups">
+                    <option value="">-- Select Parent Group --</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="category-row">
+                <label>Root Category</label>
+                <select id="group-category" name="Category">
+                    <option value="1">ASSETS</option>
+                    <option value="2">LIABILITIES</option>
+                    <option value="3">INCOME</option>
+                    <option value="4">EXPENDITURE</option>
+                </select>
+                <small class="text-muted">Only required for new root-level groups.</small>
+            </div>
+
+            <div class="action-buttons mt-4">
+                <button type="submit" class="btn btn-primary" id="save-btn"><i class="fas fa-plus"></i> Add Group</button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()" id="reset-btn" style="display:none;">Clear</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Center Pane: Hierarchy Tree -->
+    <section class="form-card glass">
+        <h4 class="mb-4"><i class="fas fa-sitemap"></i> Group Hierarchy</h4>
+        <div class="tree-container">
+            <ul class="tree-root">
+                @foreach (var root in Model.Where(g => g.ParentGroupId == null).OrderBy(g => g.Category))
+                {
+                    <li class="tree-node parent" data-id="@root.Id" data-name="@root.Name" data-pos="@root.PositionInHierarchy" data-sub="@root.IsSubLedger.ToString().ToLower()" data-cat="@((int)root.Category)">
+                        <div class="node-content">
+                            <i class="fas fa-folder text-warning"></i>
+                            <span>@root.Name</span>
+                            @if(root.Id > 4) {
+                                <div class="node-actions">
+                                    <button class="btn-icon text-primary" onclick="editNode(this)"><i class="fas fa-pencil-alt"></i></button>
+                                </div>
+                            }
+                        </div>
+                        @if (root.SubGroups.Any())
+                        {
+                            <ul>
+                               @await Html.PartialAsync("_SubGroupNodes", root.SubGroups)
+                            </ul>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </section>
+
+    <!-- Right Pane: List View -->
+    <section class="form-card glass">
+        <h4 class="mb-4"><i class="fas fa-list"></i> Detailed List</h4>
+        <div class="table-container narrow">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Under</th>
+                        <th>Category</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var g in Model.Where(x => x.Id > 4))
+                    {
+                        <tr>
+                            <td><strong>@g.Name</strong></td>
+                            <td>@(g.ParentGroup?.Name ?? "Root")</td>
+                            <td><span class="badge category-@g.Category.ToString().ToLower()">@g.Category</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<style>
+    .account-groups-layout {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr 1fr;
+        gap: 25px;
+    }
+
+    .tree-container {
+        height: 500px;
+        overflow-y: auto;
+        padding: 10px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 12px;
+    }
+
+    .tree-root ul, .tree-root li { list-style: none; padding-left: 20px; }
+    .tree-root li { margin: 8px 0; position: relative; }
+    
+    .node-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        transition: background 0.2s;
+        cursor: pointer;
+    }
+
+    .node-content:hover { background: rgba(0,0,0,0.05); }
+    .node-content span { font-weight: 500; font-size: 0.95rem; }
+
+    .node-actions { margin-left: auto; opacity: 0; transition: opacity 0.2s; }
+    .node-content:hover .node-actions { opacity: 1; }
+    .btn-icon { background:none; border:none; padding: 2px 5px; cursor:pointer; }
+
+    .category-asset { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+    .category-liability { background: #feebee; color: #c62828; border: 1px solid #ef9a9a; }
+    .category-income { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .category-expenditure { background: #fff3e0; color: #ef6c00; border: 1px solid #ffcc80; }
+
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+
+    .narrow table { font-size: 0.85rem; }
+    .narrow td, .narrow th { padding: 8px 10px; }
+</style>
+
+@section Scripts {
+    <script>
+        function editNode(btn) {
+            const node = btn.closest('.tree-node');
+            const id = node.getAttribute('data-id');
+            const name = node.getAttribute('data-name');
+            const pos = node.getAttribute('data-pos');
+            const sub = node.getAttribute('data-sub') === 'true';
+            const parentId = node.parentElement.closest('.tree-node')?.getAttribute('data-id') || "";
+            const cat = node.getAttribute('data-cat');
+
+            document.getElementById('group-id').value = id;
+            document.getElementById('group-name').value = name;
+            document.getElementById('group-pos').value = pos;
+            document.getElementById('group-subledger').checked = sub;
+            document.getElementById('group-parent').value = parentId;
+            document.getElementById('group-category').value = cat;
+
+            document.getElementById('save-btn').innerHTML = '<i class="fas fa-save"></i> Update Group';
+            document.getElementById('group-form').action = '/AccountGroups/Edit';
+            document.getElementById('reset-btn').style.display = 'inline-block';
+            document.getElementById('category-row').style.display = 'none';
+        }
+
+        function resetForm() {
+            document.getElementById('group-id').value = "0";
+            document.getElementById('group-form').reset();
+            document.getElementById('save-btn').innerHTML = '<i class="fas fa-plus"></i> Add Group';
+            document.getElementById('group-form').action = '/AccountGroups/Create';
+            document.getElementById('reset-btn').style.display = 'none';
+            document.getElementById('category-row').style.display = 'block';
+        }
+    </script>
+}

@@ -1,0 +1,21 @@
+@using JewelleryApp.Models.Jewellery
+@model IEnumerable<AccountGroup>
+
+@foreach (var sub in Model.OrderBy(s => s.PositionInHierarchy))
+{
+    <li class="tree-node child" data-id="@sub.Id" data-name="@sub.Name" data-pos="@sub.PositionInHierarchy" data-sub="@sub.IsSubLedger.ToString().ToLower()" data-cat="@((int)sub.Category)">
+        <div class="node-content">
+            <i class="fas fa-file-invoice text-muted"></i>
+            <span>@sub.Name</span>
+            <div class="node-actions">
+                <button class="btn-icon text-primary" onclick="editNode(this)"><i class="fas fa-pencil-alt"></i></button>
+            </div>
+        </div>
+        @if (sub.SubGroups.Any())
+        {
+            <ul>
+                @await Html.PartialAsync("_SubGroupNodes", sub.SubGroups)
+            </ul>
+        }
+    </li>
+}

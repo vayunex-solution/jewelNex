@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let masterItems = [];
     let masterCustomers = [];
+    let shopSettings = null;
 
     // Initialize listeners
     if (addRowBtn) {
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (gstInput) gstInput.oninput = calculateInvoice;
+    if (el('daily-rate')) el('daily-rate').oninput = calculateInvoice;
     if (el('gst-type-select')) el('gst-type-select').onchange = calculateInvoice;
     if (el('discount-input')) el('discount-input').oninput = calculateInvoice;
     if (paidInput) paidInput.oninput = updateOutstanding;
@@ -30,13 +32,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch Master Data on Load
     async function loadMasterData() {
         try {
-            const [itemRes, custRes] = await Promise.all([
+            const [itemRes, custRes, settingsRes] = await Promise.all([
                 fetch('/ItemMaster/GetAllItems'),
-                fetch('/Customers/GetAllCustomers')
+                fetch('/Customers/GetAllCustomers'),
+                fetch('/Settings/GetSettings')
             ]);
             
             if (itemRes.ok) masterItems = await itemRes.json();
             if (custRes.ok) masterCustomers = await custRes.json();
+            if (settingsRes.ok) shopSettings = await settingsRes.json();
 
             // Populate Customer Dropdown
             const custSelect = el('cust-name-select');
@@ -66,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const nameInput = el('cust-name');
             const mobileInput = el('cust-mobile');
             const addressInput = el('cust-address');
+            const gstTypeSelect = el('gst-type-select');
 
             if (val === "custom") {
                 if (nameInput) { nameInput.style.display = "block"; nameInput.value = ""; }
@@ -78,6 +83,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (nameInput) nameInput.value = selected.name;
                     if (mobileInput) mobileInput.value = selected.mobile || "";
                     if (addressInput) addressInput.value = selected.address || "";
+
+                    // AUTO GST (Point 1)
+                    if (gstTypeSelect && shopSettings && selected.stateCode) {
+                        if (shopSettings.stateCode === selected.stateCode) {
+                            gstTypeSelect.value = "intra";
+                        } else {
+                            gstTypeSelect.value = "inter";
+                        }
+                        calculateInvoice();
+                    }
                 }
             }
         };
@@ -96,7 +111,12 @@ document.addEventListener('DOMContentLoaded', () => {
             ).join('');
 
             row.innerHTML = `
-                <td><span class="row-number">${rowCount}</span></td>
+                <td>
+                    <select class="ri-select">
+                        <option value="I" selected>I</option>
+                        <option value="R">R</option>
+                    </select>
+                </td>
                 <td>
                     <div class="item-select-container">
                         <select class="item-name-select">
@@ -107,19 +127,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input type="text" class="item-name custom-name" placeholder="Enter Product Name" style="display:none; margin-top:8px;">
                     </div>
                 </td>
-                <td><input type="text" class="huid-num" placeholder="HUID Number"></td>
-                <td><input type="text" class="purity-val" placeholder="Purity"></td>
                 <td><input type="number" class="gross-wt" step="0.001" value="0.000"></td>
-                <td><input type="number" class="net-wt" step="0.001" value="0.000"></td>
-                <td><input type="number" class="rate" step="0.01" value="0.00"></td>
+                <td><input type="number" class="purity-val" step="0.01" value="0.00" placeholder="Purity"></td>
                 <td><input type="number" class="making" step="0.01" value="0.00"></td>
+                <td><input type="number" class="fine-wt" step="0.001" value="0.000" readonly tabindex="-1"></td>
                 <td style="text-align: right;"><strong class="item-amount">₹ 0.00</strong></td>
                 <td><button type="button" class="btn-remove" title="Remove"><i class="fas fa-trash"></i></button></td>
             `;
 
             const select = row.querySelector('.item-name-select');
             const nameInput = row.querySelector('.item-name');
-            const rateInput = row.querySelector('.rate');
             const purityInput = row.querySelector('.purity-val');
 
             select.onchange = () => {
@@ -132,7 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     nameInput.value = val;
                     const itemInfo = masterItems.find(i => i.name === val);
                     if (itemInfo) {
-                        rateInput.value = itemInfo.defaultRate || 0;
                         purityInput.value = itemInfo.purity || "";
                         if ((itemInfo.stockQuantity || 0) <= 0) alert("⚠️ Warning: Out of Stock!");
                         calculateInvoice();
@@ -140,13 +156,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
 
+            const riSelect = row.querySelector('.ri-select');
+            riSelect.onchange = calculateInvoice;
+
             row.querySelectorAll('input').forEach(input => {
                 input.addEventListener('input', calculateInvoice);
             });
 
             row.querySelector('.btn-remove').onclick = () => {
                 row.remove();
-                updateRowNumbers();
                 calculateInvoice();
             };
 
@@ -169,21 +187,41 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!itemsTableBody) return;
         let goldValTotal = 0;
         let makingTotal = 0;
+        const dailyRate = parseFloat(el('daily-rate')?.value) || 0;
         
         const rows = itemsTableBody.querySelectorAll('tr');
         rows.forEach(row => {
-            const nWt = parseFloat(row.querySelector('.net-wt')?.value) || 0;
-            const rt = parseFloat(row.querySelector('.rate')?.value) || 0;
+            const ri = row.querySelector('.ri-select')?.value || 'I';
+            const gWt = parseFloat(row.querySelector('.gross-wt')?.value) || 0;
+            const purity = parseFloat(row.querySelector('.purity-val')?.value) || 0;
             const mk = parseFloat(row.querySelector('.making')?.value) || 0;
             
-            const goldVal = nWt * rt;
-            const totalRow = goldVal + mk;
+            // Calculate Fine Weight: gWt * (purity / 100)
+            const fWt = gWt * (purity / 100);
+            const fineWtInput = row.querySelector('.fine-wt');
+            if (fineWtInput) fineWtInput.value = fWt.toFixed(3);
+
+            // Calculate Amount: FineWt * DailyRate + Making
+            const goldVal = fWt * dailyRate;
+            let totalRow = goldVal + mk;
             
-            goldValTotal += goldVal;
-            makingTotal += mk;
+            // If Receipt (R), amount is negative (customer giving back)
+            if (ri === 'R') {
+                totalRow = -totalRow;
+                goldValTotal += -goldVal;
+                makingTotal += -mk;
+            } else {
+                goldValTotal += goldVal;
+                makingTotal += mk;
+            }
             
             const amtEl = row.querySelector('.item-amount');
-            if (amtEl) amtEl.textContent = `₹ ${totalRow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            if (amtEl) {
+                const prefix = totalRow < 0 ? "- ₹ " : "₹ ";
+                amtEl.textContent = `${prefix}${Math.abs(totalRow).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                if (totalRow < 0) amtEl.style.color = "#d9534f"; // Red for receipt
+                else amtEl.style.color = "var(--primary-gold-dark)";
+            }
         });
 
         const subTotalVal = goldValTotal + makingTotal;
@@ -251,41 +289,48 @@ document.addEventListener('DOMContentLoaded', () => {
         saveBtn.onclick = async () => {
             try {
                 const getTxtVal = (id) => parseFloat(el(id)?.innerText.replace(/[^0-9.-]+/g, "")) || 0;
+                const custIdVal = el('cust-name-select')?.value;
+                const isNewCust = custIdVal === 'custom' || !custIdVal;
+                
                 const invoiceData = {
-                    invoiceNo: el('invoice-no')?.value || "",
-                    date: el('invoice-date')?.value || "",
-                    paymentMode: document.querySelector('input[name="payment-mode"]:checked')?.value || "Cash",
-                    paidAmount: parseFloat(el('paid-amount')?.value) || 0,
-                    gstRate: parseFloat(el('gst-rate-input')?.value) || 0,
-                    discount: parseFloat(el('discount-input')?.value) || 0,
-                    remarks: el('remarks')?.value || "",
-                    customer: {
-                        name: el('cust-name')?.value || "",
-                        mobile: el('cust-mobile')?.value || "",
-                        address: el('cust-address')?.value || ""
-                    },
-                    items: [],
-                    goldValueTotal: getTxtVal('break-gold-value'),
-                    makingChargesTotal: getTxtVal('break-making-charges'),
-                    subTotal: getTxtVal('break-sub-total'),
-                    cgst: getTxtVal('break-cgst'),
-                    sgst: getTxtVal('break-sgst'),
-                    igst: getTxtVal('break-igst'),
-                    totalAmount: getTxtVal('break-total-amount'),
-                    roundedOff: parseFloat(el('break-rounded')?.innerText.replace(/[^0-9.-]+/g, "")) || 0
+                    InvoiceNo: el('invoice-no')?.value || "",
+                    Date: el('invoice-date')?.value || "",
+                    PaymentMode: document.querySelector('input[name="payment-mode"]:checked')?.value || "Cash",
+                    PaidAmount: parseFloat(el('paid-amount')?.value) || 0,
+                    GstRate: parseFloat(el('gst-rate-input')?.value) || 0,
+                    Discount: parseFloat(el('discount-input')?.value) || 0,
+                    Remarks: el('remarks')?.value || "",
+                    CustomerId: isNewCust ? 0 : parseInt(custIdVal),
+                    Customer: isNewCust ? {
+                        Name: el('cust-name')?.value || "",
+                        Mobile: el('cust-mobile')?.value || "",
+                        Address: el('cust-address')?.value || ""
+                    } : null,
+                    Items: [],
+                    GoldValueTotal: getTxtVal('break-gold-value'),
+                    MakingChargesTotal: getTxtVal('break-making-charges'),
+                    SubTotal: getTxtVal('break-sub-total'),
+                    CGST: getTxtVal('break-cgst'),
+                    SGST: getTxtVal('break-sgst'),
+                    IGST: getTxtVal('break-igst'),
+                    TotalAmount: getTxtVal('break-total-amount'),
+                    RoundedOff: parseFloat(el('break-rounded')?.innerText.replace(/[^0-9.-]+/g, "")) || 0
                 };
 
                 const rows = itemsTableBody.querySelectorAll('tr');
                 rows.forEach(row => {
-                    invoiceData.items.push({
-                        itemName: row.querySelector('.item-name')?.value || "",
-                        huid: row.querySelector('.huid-num')?.value || "",
-                        purity: row.querySelector('.purity-val')?.value || "",
-                        grossWt: parseFloat(row.querySelector('.gross-wt')?.value) || 0,
-                        netWt: parseFloat(row.querySelector('.net-wt')?.value) || 0,
-                        rate: parseFloat(row.querySelector('.rate')?.value) || 0,
-                        makingCharges: parseFloat(row.querySelector('.making')?.value) || 0,
-                        amount: parseFloat(row.querySelector('.item-amount')?.innerText.replace(/[^0-9.-]+/g, "")) || 0
+                    const rowAmt = parseFloat(row.querySelector('.item-amount')?.innerText.replace(/[^0-9.-]+/g, "")) || 0;
+                    const gWt = parseFloat(row.querySelector('.gross-wt')?.value) || 0;
+                    invoiceData.Items.push({
+                        ItemName: row.querySelector('.item-name')?.value || "",
+                        RI: row.querySelector('.ri-select')?.value || "I",
+                        Purity: row.querySelector('.purity-val')?.value || "",
+                        GrossWt: gWt,
+                        NetWt: gWt, 
+                        FineWt: parseFloat(row.querySelector('.fine-wt')?.value) || 0,
+                        Rate: parseFloat(el('daily-rate')?.value) || 0,
+                        MakingCharges: parseFloat(row.querySelector('.making')?.value) || 0,
+                        Amount: rowAmt
                     });
                 });
 
@@ -300,9 +345,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.print();
                     window.location.href = '/Invoices';
                 } else {
-                    alert("Error saving invoice.");
+                    const errorMsg = await response.text();
+                    alert("Error saving invoice: " + errorMsg);
                 }
-            } catch (err) { console.error(err); alert("Save failed."); }
+            } catch (err) { 
+                console.error(err); 
+                alert("Save failed: " + err.message); 
+            }
         };
     }
 

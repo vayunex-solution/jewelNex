@@ -39,5 +39,12 @@ namespace JewelleryApp.Controllers
             }
             return View("Index", settings);
         }
+
+        [HttpGet]
+        public async Task<JsonResult> GetSettings()
+        {
+            var settings = await _context.ShopSettings.FirstOrDefaultAsync();
+            return Json(settings);
+        }
     }
 }
