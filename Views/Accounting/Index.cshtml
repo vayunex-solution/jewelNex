@@ -1,0 +1,103 @@
+@model IEnumerable<JewelleryApp.Models.Jewellery.Voucher>
+@{
+    ViewData["Title"] = "Accounting History";
+}
+
+<header>
+    <div class="header-title">
+        <h2>Accounting Dashboard</h2>
+        <p>Manage vouchers, cash payments, and physical receipts</p>
+    </div>
+    <div class="header-actions">
+        <div class="nav-item-dropdown" style="display:inline-block">
+            <button class="btn btn-primary"><i class="fas fa-plus"></i> New Voucher <i class="fas fa-chevron-down" style="font-size:0.7rem; margin-left:5px"></i></button>
+            <div class="dropdown-menu">
+                <a asp-action="Create" asp-route-type="General"><i class="fas fa-file-invoice"></i> General Voucher</a>
+                <a asp-action="Create" asp-route-type="CashVoucher"><i class="fas fa-money-check"></i> Cash Voucher</a>
+                <a asp-action="Create" asp-route-type="CashPayment"><i class="fas fa-hand-holding-usd"></i> Cash Payment</a>
+                <a asp-action="Create" asp-route-type="CashReceipt"><i class="fas fa-file-download"></i> Cash Receipt</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="summary-grid mb-4">
+    <div class="report-card cash">
+        <div class="card-icon"><i class="fas fa-arrow-down"></i></div>
+        <div class="card-info">
+            <h3>Total Receipts</h3>
+            <p>₹ @Model.Where(v => v.Type == JewelleryApp.Models.Jewellery.VoucherType.CashReceipt).Sum(v => v.Amount).ToString("N2")</p>
+        </div>
+    </div>
+    <div class="report-card pending">
+        <div class="card-icon"><i class="fas fa-arrow-up"></i></div>
+        <div class="card-info">
+            <h3>Total Payments</h3>
+            <p>₹ @Model.Where(v => v.Type == JewelleryApp.Models.Jewellery.VoucherType.CashPayment).Sum(v => v.Amount).ToString("N2")</p>
+        </div>
+    </div>
+</div>
+
+<div class="form-card full-width glass">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Voucher No</th>
+                    <th>Type</th>
+                    <th>Account Name</th>
+                    <th class="text-right">Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Date.ToString("dd MMM yyyy")</td>
+                        <td><strong>@item.VoucherNo</strong></td>
+                        <td>
+                            <span class="badge @GetVoucherClass(item.Type)">
+                                @item.Type.ToString()
+                            </span>
+                        </td>
+                        <td>@item.AccountName</td>
+                        <td class="text-right">₹ @item.Amount.ToString("N2")</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-small btn-secondary">
+                                <i class="fas fa-eye"></i> Details
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center p-5 text-muted">No accounting entries found.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@functions {
+    string GetVoucherClass(JewelleryApp.Models.Jewellery.VoucherType type)
+    {
+        return type switch
+        {
+            JewelleryApp.Models.Jewellery.VoucherType.CashReceipt => "badge-success",
+            JewelleryApp.Models.Jewellery.VoucherType.CashPayment => "badge-danger",
+            _ => "badge-primary"
+        };
+    }
+}
+
+<style>
+    .mb-4 { margin-bottom: 2rem; }
+    .text-right { text-align: right; }
+    .badge-primary { background: #007bff; color: white; }
+    .badge-success { background: #28a745; color: white; }
+    .badge-danger { background: #dc3545; color: white; }
+</style>

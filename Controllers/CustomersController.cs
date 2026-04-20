@@ -28,10 +28,14 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Mobile,Address")] Customer customer)
+        public async Task<IActionResult> Create([Bind("Name,Mobile,Address,StateCode")] Customer customer)
         {
             if (ModelState.IsValid)
             {
+                // Auto-generate Customer Code
+                var count = await _context.Customers.CountAsync();
+                customer.CustomerCode = $"CUST{(count + 1):D4}";
+                
                 _context.Add(customer);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -44,7 +48,7 @@ namespace JewelleryApp.Controllers
         public async Task<JsonResult> GetAllCustomers()
         {
             var customers = await _context.Customers
-                .Select(x => new { id = x.Id, name = x.Name, mobile = x.Mobile, address = x.Address })
+                .Select(x => new { id = x.Id, name = x.Name, mobile = x.Mobile, address = x.Address, stateCode = x.StateCode })
                 .ToListAsync();
             return Json(customers);
         }

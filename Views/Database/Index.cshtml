@@ -1,11 +1,11 @@
 @{
-    ViewData["Title"] = "Database Maintenance";
+    ViewData["Title"] = "Database Management";
 }
 
 <header>
     <div class="header-title">
-        <h2>Database Maintenance</h2>
-        <p>Backup or restore your jewellery database</p>
+        <h2><i class="fas fa-database"></i> Database Management</h2>
+        <p>System maintenance and data utility tools</p>
     </div>
 </header>
 
@@ -18,125 +18,89 @@
 
 @if (TempData["Error"] != null)
 {
-    <div class="alert alert-danger glass-alert danger">
+    <div class="alert alert-danger glass-alert" style="background: rgba(220, 53, 69, 0.1); border-color: rgba(220, 53, 69, 0.2); color: #dc3545;">
         <i class="fas fa-exclamation-triangle"></i> @TempData["Error"]
     </div>
 }
 
 <div class="invoice-form-grid">
     <section class="form-card glass">
-        <h3><i class="fas fa-download"></i> Export Database</h3>
-        <p class="description">Download a complete backup of your database file. This file contains all your data including invoices, customers, and settings.</p>
+        <div class="section-header">
+            <h3><i class="fas fa-broom"></i> Clean Database</h3>
+        </div>
         
-        @if (ViewBag.DbExists)
-        {
-            <div class="db-info">
-                <div class="info-item">
-                    <span class="label">File Size:</span>
-                    <span class="value">@ViewBag.DbSize</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">Last Modified:</span>
-                    <span class="value">@ViewBag.LastModified</span>
-                </div>
-            </div>
+        <div class="db-utility-info" style="margin-bottom: 25px; line-height: 1.6;">
+            <p>This utility will perform a comprehensive cleanup of the system data. It is intended for starting a new session or clearing test data.</p>
             
-            <a asp-action="Export" class="btn btn-primary btn-full mt-20">
-                <i class="fas fa-file-export"></i> Download Backup (.db)
-            </a>
-        }
-        else
-        {
-            <div class="alert alert-warning">
-                Database file not found on server.
+            <div class="data-status-list" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-top: 15px;">
+                <h4 style="margin-bottom: 10px; color: var(--primary-gold);"><i class="fas fa-info-circle"></i> What will happen:</h4>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 8px;"><i class="fas fa-trash-alt" style="color: #dc3545; width: 25px;"></i> All <strong>Invoices & Items</strong> will be deleted.</li>
+                    <li style="margin-bottom: 8px;"><i class="fas fa-trash-alt" style="color: #dc3545; width: 25px;"></i> All <strong>Vouchers & Accounting</strong> data will be deleted.</li>
+                    <li style="margin-bottom: 8px;"><i class="fas fa-trash-alt" style="color: #dc3545; width: 25px;"></i> All <strong>Stock Transaction</strong> history will be deleted.</li>
+                    <li style="margin-bottom: 8px;"><i class="fas fa-trash-alt" style="color: #dc3545; width: 25px;"></i> All <strong>Customers</strong> will be removed.</li>
+                    <li style="margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px;">
+                        <i class="fas fa-check-circle" style="color: #28a745; width: 25px;"></i> <strong>Item Master (Products)</strong> will be preserved.
+                    </li>
+                    <li style="margin-bottom: 0;"><i class="fas fa-sync-alt" style="color: var(--secondary-blue); width: 25px;"></i> All Product <strong>Stock Balances will be reset to Zero</strong>.</li>
+                </ul>
             </div>
-        }
+        </div>
+
+        <div class="danger-zone" style="border-top: 1px solid rgba(220, 53, 69, 0.2); padding-top: 25px; margin-top: 10px;">
+            <p style="color: #dc3545; font-weight: 600; margin-bottom: 15px;"><i class="fas fa-exclamation-circle"></i> This operation is permanent and cannot be undone.</p>
+            
+            <form asp-action="CleanDatabase" method="post" id="clean-db-form">
+                @Html.AntiForgeryToken()
+                <button type="button" class="btn btn-danger btn-large" onclick="confirmCleanDB()">
+                    <i class="fas fa-eraser"></i> Clean Database Now
+                </button>
+            </form>
+        </div>
     </section>
 
     <section class="form-card glass">
-        <h3><i class="fas fa-upload"></i> Import Database</h3>
-        <p class="description">Restore your database from a previous backup. <strong>Warning:</strong> This will overwrite all your current data. It is recommended to download a backup of your current database first.</p>
-        
-        <form asp-action="Import" method="post" enctype="multipart/form-data" class="mt-20">
-            <div class="upload-container">
-                <div class="form-group mb-20">
-                    <label for="dbFile" class="custom-file-upload">
-                        <i class="fas fa-cloud-upload-alt"></i> Select .db Backup File
-                    </label>
-                    <input type="file" id="dbFile" name="dbFile" accept=".db" required />
-                    <div id="file-name-display" class="file-name-hint">No file selected</div>
-                </div>
-                
-                <button type="submit" class="btn btn-secondary btn-full" onclick="return confirm('Are you sure you want to overwrite the current database? This action cannot be undone.')">
-                    <i class="fas fa-file-import"></i> Restore from Backup
-                </button>
-            </div>
-        </form>
+        <h3><i class="fas fa-shield-alt"></i> Information</h3>
+        <p>Before cleaning the database, it is recommended to take a manual backup of your database file (<code>jewellery_v5.db</code>).</p>
+        <div style="margin-top: 20px; color: var(--text-secondary); font-size: 0.9rem;">
+            <p><strong>System Version:</strong> 1.5.0 Premium Gold Edition</p>
+            <p><strong>Last Sync:</strong> @DateTime.Now.ToString("dd-MMM-yyyy HH:mm")</p>
+        </div>
     </section>
 </div>
 
-<style>
-    .description { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
-    .mt-20 { margin-top: 20px; }
-    .mb-20 { margin-bottom: 20px; }
-    
-    .db-info { 
-        background: rgba(255, 255, 255, 0.05); 
-        padding: 15px; 
-        border-radius: 8px; 
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .info-item { display: flex; justify-content: space-between; margin-bottom: 8px; }
-    .info-item:last-child { margin-bottom: 0; }
-    .info-item .label { font-weight: 600; color: var(--text-secondary); }
-    .info-item .value { color: var(--primary-gold); font-family: monospace; }
-    
-    .btn-full { display: block; width: 100%; text-align: center; box-sizing: border-box; padding: 12px; margin-top: 10px; font-weight: 600; border-radius: 8px; text-decoration: none; cursor: pointer; border: none; }
-    .btn-primary.btn-full { background: var(--primary-gold); color: white; }
-    .btn-secondary.btn-full { background: var(--secondary-charcoal); color: white; }
-    
-    .custom-file-upload {
-        display: block;
-        padding: 15px;
-        border: 2px dashed rgba(212, 175, 55, 0.3);
-        border-radius: 8px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: rgba(212, 175, 55, 0.05);
-        color: var(--primary-gold);
-        font-weight: 600;
-    }
-    .custom-file-upload:hover {
-        background: rgba(212, 175, 55, 0.1);
-        border-color: var(--primary-gold);
-    }
-    
-    input[type="file"] { display: none; }
-    
-    .file-name-hint { text-align: center; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary); }
-    
-    .glass-alert {
-        background: rgba(40, 167, 69, 0.1);
-        border: 1px solid rgba(40, 167, 69, 0.2);
-        color: #28a745;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        backdrop-filter: blur(5px);
-    }
-    .glass-alert.danger {
-        background: rgba(220, 53, 69, 0.1);
-        border: 1px solid rgba(220, 53, 69, 0.2);
-        color: #dc3545;
-    }
-</style>
-
 @section Scripts {
     <script>
-        document.getElementById('dbFile').onchange = function() {
-            const fileName = this.files[0] ? this.files[0].name : "No file selected";
-            document.getElementById('file-name-display').textContent = fileName;
-        };
+        function confirmCleanDB() {
+            if (confirm("🚨 ATTENTION: ARE YOU ABSOLUTELY SURE?\n\nThis will PERMANENTLY DELETE all invoices, vouchers, and customers. Your product stock will be reset to zero.\n\nThis action cannot be recovered.")) {
+                if (confirm("FINAL CONFIRMATION: I understand that all transaction data will be lost forever.")) {
+                    document.getElementById('clean-db-form').submit();
+                }
+            }
+        }
     </script>
 }
+
+<style>
+    .btn-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border: none;
+        padding: 15px 35px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    }
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+    }
+    .glass-alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        backdrop-filter: blur(5px);
+    }
+</style>

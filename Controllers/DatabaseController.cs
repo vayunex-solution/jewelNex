@@ -1,109 +1,58 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using System.IO;
-using System;
+using Microsoft.EntityFrameworkCore;
+using JewelleryApp.Data;
 using System.Threading.Tasks;
 
 namespace JewelleryApp.Controllers
 {
     public class DatabaseController : Controller
     {
-        private readonly IWebHostEnvironment _env;
-        private readonly IConfiguration _config;
+        private readonly ApplicationDbContext _context;
 
-        public DatabaseController(IWebHostEnvironment env, IConfiguration config)
+        public DatabaseController(ApplicationDbContext context)
         {
-            _env = env;
-            _config = config;
+            _context = context;
         }
 
         public IActionResult Index()
         {
-            var dbPath = Path.Combine(_env.ContentRootPath, "jewellery_v5.db");
-            ViewBag.DbExists = System.IO.File.Exists(dbPath);
-            if (ViewBag.DbExists)
-            {
-                var fileInfo = new FileInfo(dbPath);
-                ViewBag.DbSize = (fileInfo.Length / 1024.0).ToString("F2") + " KB";
-                ViewBag.LastModified = fileInfo.LastWriteTime.ToString("dd MMM yyyy HH:mm:ss");
-            }
             return View();
         }
 
-        [HttpGet]
-        public IActionResult Export()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CleanDatabase()
         {
-            var dbPath = Path.Combine(_env.ContentRootPath, "jewellery_v5.db");
-            if (!System.IO.File.Exists(dbPath))
-            {
-                TempData["Error"] = "Database file not found.";
-                return RedirectToAction(nameof(Index));
-            }
-
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Force sync and clear pools to ensure we get a clean copy if possible
-                SqliteConnection.ClearAllPools();
+                // 1. Delete Accounting Data
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM VoucherItems");
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM Vouchers");
                 
-                var bytes = System.IO.File.ReadAllBytes(dbPath);
-                return File(bytes, "application/x-sqlite3", $"backup_{DateTime.Now:yyyyMMddHHmmss}.db");
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error exporting database: " + ex.Message;
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Import(IFormFile dbFile)
-        {
-            if (dbFile != null && dbFile.Length > 0)
-            {
-                if (!dbFile.FileName.EndsWith(".db"))
-                {
-                    TempData["Error"] = "Invalid file type. Please upload a .db file.";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                var dbPath = Path.Combine(_env.ContentRootPath, "jewellery_v5.db");
+                // 2. Delete Transaction Data
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM InvoiceItems");
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM Invoices");
                 
-                // Close all connections to the database to avoid file locking
-                SqliteConnection.ClearAllPools();
+                // 3. Delete Inventory Data (Stock Entries)
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM StockEntries");
                 
-                var backupPath = dbPath + ".bak";
-                bool backedUp = false;
-                if (System.IO.File.Exists(dbPath))
-                {
-                    try {
-                        System.IO.File.Copy(dbPath, backupPath, true);
-                        backedUp = true;
-                    } catch { }
-                }
+                // 4. Delete Customers
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM Customers");
 
-                try
-                {
-                    using (var stream = new FileStream(dbPath, FileMode.Create))
-                    {
-                        await dbFile.CopyToAsync(stream);
-                    }
-                    TempData["Success"] = "Database imported successfully! You might need to refresh the page or restart the app if data doesn't appear immediately.";
-                }
-                catch (Exception ex)
-                {
-                    TempData["Error"] = "Error importing database: " + ex.Message;
-                    // Restore from backup if possible
-                    if (backedUp && System.IO.File.Exists(backupPath))
-                    {
-                        System.IO.File.Copy(backupPath, dbPath, true);
-                    }
-                }
+                // 5. Reset ItemMaster balances (Keep the items, but set stock to 0)
+                await _context.Database.ExecuteSqlRawAsync("UPDATE ItemsMaster SET StockQuantity = 0, TotalWeight = 0");
+
+                // Optional: Reset Identity counters for SQLite
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence WHERE name IN ('Vouchers', 'VoucherItems', 'Invoices', 'InvoiceItems', 'StockEntries', 'Customers')");
+
+                await transaction.CommitAsync();
+                TempData["Success"] = "Database cleaned successfully! All transactions removed and stock reset to zero.";
             }
-            else
+            catch (System.Exception ex)
             {
-                TempData["Error"] = "Please select a valid .db file.";
+                await transaction.RollbackAsync();
+                TempData["Error"] = "Error cleaning database: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Index));

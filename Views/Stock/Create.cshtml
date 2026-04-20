@@ -1,0 +1,62 @@
+@model JewelleryApp.Models.Jewellery.StockEntry
+@{
+    var type = (JewelleryApp.Models.Jewellery.StockEntryType)ViewBag.Type;
+    ViewData["Title"] = $"Stock {type}";
+}
+
+<header>
+    <div class="header-title">
+        <h2>@type.ToString()</h2>
+        <p>Record stock movement for inventory synchronization</p>
+    </div>
+</header>
+
+<div class="form-card glass" style="max-width: 600px; margin: 40px auto;">
+    <form asp-action="Create" method="post">
+        <input type="hidden" asp-for="Type" />
+        
+        <div class="form-group">
+            <label asp-for="ItemMasterId">Product / Item</label>
+            <select asp-for="ItemMasterId" asp-items="ViewBag.Items" class="premium-input">
+                <option value="">-- Select Product --</option>
+            </select>
+            <span asp-validation-for="ItemMasterId" class="text-danger"></span>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-6">
+                <label asp-for="ReferenceNo"></label>
+                <input asp-for="ReferenceNo" class="premium-input" placeholder="Bill No / Slip No" />
+            </div>
+            <div class="form-group col-6">
+                <label asp-for="Date"></label>
+                <input asp-for="Date" type="date" class="premium-input" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-6">
+                <label asp-for="Quantity"></label>
+                <input asp-for="Quantity" type="number" class="premium-input" placeholder="@(type == JewelleryApp.Models.Jewellery.StockEntryType.IssueSlip ? "Enter Negative Value for Out" : "Enter Positive Value for In")" />
+            </div>
+            <div class="form-group col-6">
+                <label asp-for="Weight">Weight (g)</label>
+                <input asp-for="Weight" type="number" step="0.001" class="premium-input" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Remarks"></label>
+            <textarea asp-for="Remarks" class="premium-input" rows="3"></textarea>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary w-100">Post Stock Entry</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .premium-input { border: 1px solid #ddd; background: white; border-radius: 10px; padding: 10px 15px; width: 100%; margin-top: 5px; }
+    .w-100 { width: 100%; justify-content: center; }
+</style>

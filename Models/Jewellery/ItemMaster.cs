@@ -17,8 +17,15 @@ namespace JewelleryApp.Models.Jewellery
 
         public string? Purity { get; set; } // 22K, 18K, etc.
         
-        [Display(Name = "In Stock")]
+        [Display(Name = "In Stock (Qty)")]
         public int StockQuantity { get; set; }
+
+        [Display(Name = "Opening Stock")]
+        public int OpeningStock { get; set; } = 0;
+
+        [Display(Name = "Total Weight (g)")]
+        [Column(TypeName = "decimal(18, 3)")]
+        public decimal TotalWeight { get; set; } = 0;
 
         [Display(Name = "Category")]
         public string? Category { get; set; } // Gold, Silver, Diamond, etc.

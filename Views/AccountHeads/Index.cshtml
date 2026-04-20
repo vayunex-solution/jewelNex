@@ -1,0 +1,162 @@
+@model IEnumerable<JewelleryApp.Models.Jewellery.AccountHead>
+@{
+    ViewData["Title"] = "Account Heads";
+}
+
+<header>
+    <div class="header-title">
+        <h2>General Ledger Account Heads</h2>
+        <p>Define your accounts and set their opening balances</p>
+    </div>
+</header>
+
+<div class="tab-container mt-4">
+    <div class="tab-headers glass">
+        <button class="tab-link active" onclick="openTab(event, 'create-tab')"><i class="fas fa-plus-circle"></i> Account Heads</button>
+        <button class="tab-link" onclick="openTab(event, 'list-tab')"><i class="fas fa-list-ul"></i> List of Account Heads</button>
+    </div>
+
+    <!-- Tab 1: Create/Edit Form -->
+    <div id="create-tab" class="tab-content active p-0">
+        <div class="form-card glass" style="max-width: 900px; margin: 30px auto; border:none; box-shadow:none;">
+            <form id="account-form" asp-action="Create" method="post" class="p-4">
+                <input type="hidden" id="account-id" name="Id" value="0" />
+                
+                <div class="form-group mb-4">
+                    <label class="text-gold uppercase small fw-bold">A/c Head Name</label>
+                    <input type="text" id="account-name" name="Name" required class="premium-input" placeholder="Enter Account Name (e.g. Electricity Expense)" />
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="text-gold uppercase small fw-bold">Under Group</label>
+                    <select id="account-group" name="AccountGroupId" required asp-items="ViewBag.Groups" class="premium-input">
+                        <option value="">-- Select Group (Under Group) --</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label class="text-gold uppercase small fw-bold">Opening Balance</label>
+                        <input type="number" step="0.01" id="account-bal" name="OpeningBalance" value="0.00" class="premium-input" />
+                    </div>
+                    <div class="form-group col-6 pt-4 d-flex align-items-center gap-4">
+                        <label class="d-flex align-items-center gap-2 cursor-pointer">
+                            <input type="radio" name="BalanceType" value="1" id="type-dr" checked /> <span>Dr</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2 cursor-pointer">
+                            <input type="radio" name="BalanceType" value="2" id="type-cr" /> <span>Cr</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="text-gold uppercase small fw-bold">Description (Optional)</label>
+                    <textarea id="account-desc" name="Description" rows="2" class="premium-input"></textarea>
+                </div>
+
+                <div class="mt-5 d-flex gap-3">
+                    <button type="submit" class="btn btn-primary px-5" id="save-btn"><i class="fas fa-save"></i> Save Account</button>
+                    <button type="button" class="btn btn-secondary px-5" onclick="resetForm()" id="reset-btn" style="display:none;">Clear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tab 2: List of Accounts -->
+    <div id="list-tab" class="tab-content">
+        <div class="form-card glass">
+            <div class="table-container">
+                <table id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>Account Head</th>
+                            <th>Under Group</th>
+                            <th class="text-right">Opening Balance</th>
+                            <th>Type</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var acc in Model)
+                        {
+                            <tr>
+                                <td><strong>@acc.Name</strong></td>
+                                <td><span class="text-muted">@acc.AccountGroup?.Name</span></td>
+                                <td class="text-right">₹ @acc.OpeningBalance.ToString("N2")</td>
+                                <td><span class="badge @(acc.BalanceType == JewelleryApp.Models.Jewellery.BalanceType.Dr ? "badge-dr" : "badge-cr")">@acc.BalanceType</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-small btn-outline-primary" onclick="editAccount(this)" 
+                                            data-id="@acc.Id" data-name="@acc.Name" data-group="@acc.AccountGroupId" 
+                                            data-bal="@acc.OpeningBalance" data-type="@((int)acc.BalanceType)" data-desc="@acc.Description">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tab-headers { display: flex; gap: 2px; border-radius: 12px 12px 0 0; overflow: hidden; padding: 5px; margin-bottom: -1px; }
+    .tab-link { flex: 1; padding: 15px; border: none; background: transparent; color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: all 0.3s; border-radius: 8px; }
+    .tab-link:hover { background: rgba(0,0,0,0.05); }
+    .tab-link.active { background: var(--primary-gold); color: white; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); }
+
+    .tab-content { display: none; padding: 20px; border-radius: 0 0 12px 12px; }
+    .tab-content.active { display: block; }
+
+    .premium-input { border: 1px solid #ddd; background: white; border-radius: 10px; padding: 12px 15px; width: 100%; transition: border-color 0.3s; }
+    .premium-input:focus { border-color: var(--primary-gold); outline: none; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1); }
+    
+    .text-gold { color: var(--primary-gold-dark); }
+    .uppercase { text-transform: uppercase; }
+    .badge-dr { background: #e3f2fd; color: #1e88e5; }
+    .badge-cr { background: #fff3e0; color: #fb8c00; }
+    .text-right { text-align: right; }
+    .gap-4 { gap: 1.5rem; }
+    .px-5 { padding-left: 2rem; padding-right: 2rem; }
+</style>
+
+@section Scripts {
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
+            tablinks = document.getElementsByClassName("tab-link");
+            for (i = 0; i < tablinks.length; i++) tablinks[i].classList.remove("active");
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.classList.add("active");
+        }
+
+        function editAccount(btn) {
+            const data = btn.dataset;
+            document.getElementById('account-id').value = data.id;
+            document.getElementById('account-name').value = data.name;
+            document.getElementById('account-group').value = data.group;
+            document.getElementById('account-bal').value = data.bal;
+            document.getElementById('account-desc').value = data.desc;
+            
+            if (data.type == "1") document.getElementById('type-dr').checked = true;
+            else document.getElementById('type-cr').checked = true;
+
+            document.getElementById('save-btn').innerHTML = '<i class="fas fa-save"></i> Update Account';
+            document.getElementById('account-form').action = '/AccountHeads/Edit';
+            document.getElementById('reset-btn').style.display = 'inline-block';
+            
+            openTab({currentTarget: document.getElementsByClassName('tab-link')[0]}, 'create-tab');
+        }
+
+        function resetForm() {
+            document.getElementById('account-id').value = "0";
+            document.getElementById('account-form').reset();
+            document.getElementById('save-btn').innerHTML = '<i class="fas fa-save"></i> Save Account';
+            document.getElementById('account-form').action = '/AccountHeads/Create';
+            document.getElementById('reset-btn').style.display = 'none';
+        }
+    </script>
+}

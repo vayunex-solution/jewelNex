@@ -32,6 +32,16 @@ namespace JewelleryApp.Controllers
 
             return View(summary);
         }
+
+        public async Task<IActionResult> AllInvoices()
+        {
+            var invoices = await _context.Invoices
+                .Include(i => i.Customer)
+                .OrderByDescending(i => i.Date)
+                .ToListAsync();
+
+            return View(invoices);
+        }
     }
 
     public class ReportSummary

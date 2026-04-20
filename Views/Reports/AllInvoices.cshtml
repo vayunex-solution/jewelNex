@@ -1,0 +1,142 @@
+@model IEnumerable<JewelleryApp.Models.Jewellery.Invoice>
+@{
+    ViewData["Title"] = "All Invoice Report";
+}
+
+<header>
+    <div class="header-title">
+        <h2>All Invoice Report</h2>
+        <p>A comprehensive list of all jewelry sales and transactions</p>
+    </div>
+    <div class="header-actions">
+        <button class="btn btn-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print Report</button>
+        <a asp-controller="Reports" asp-action="Index" class="btn btn-outline">Back to Summary</a>
+    </div>
+</header>
+
+<div class="report-stats-grid mb-4">
+    <div class="stat-card glass p-4">
+        <span class="stat-label">Total Invoices</span>
+        <h3 class="stat-value">@Model.Count()</h3>
+    </div>
+    <div class="stat-card glass p-4">
+        <span class="stat-label">Gross Amount</span>
+        <h3 class="stat-value text-gold">₹ @Model.Sum(i => i.TotalAmount).ToString("N2")</h3>
+    </div>
+    <div class="stat-card glass p-4">
+        <span class="stat-label">Paid Amount</span>
+        <h3 class="stat-value text-success">₹ @Model.Sum(i => i.PaidAmount).ToString("N2")</h3>
+    </div>
+    <div class="stat-card glass p-4">
+        <span class="stat-label">Balance Outstanding</span>
+        <h3 class="stat-value text-danger">₹ @Model.Sum(i => i.TotalAmount - i.PaidAmount).ToString("N2")</h3>
+    </div>
+</div>
+
+<div class="form-card full-width glass">
+    <div class="table-container">
+        <table id="all-invoices-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Invoice No</th>
+                    <th>Customer Name</th>
+                    <th class="text-right">Total Amount</th>
+                    <th class="text-right">Paid</th>
+                    <th class="text-right">Balance</th>
+                    <th>Mode</th>
+                    <th class="no-print">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var balance = item.TotalAmount - item.PaidAmount;
+                    <tr>
+                        <td>@item.Date.ToString("dd-MM-yyyy")</td>
+                        <td><strong>@item.InvoiceNo</strong></td>
+                        <td>@item.Customer?.Name</td>
+                        <td class="text-right">₹ @item.TotalAmount.ToString("N2")</td>
+                        <td class="text-right text-success">₹ @item.PaidAmount.ToString("N2")</td>
+                        <td class="text-right @(balance > 0 ? "text-danger" : "")">₹ @balance.ToString("N2")</td>
+                        <td>
+                            <span class="badge-mode @item.PaymentMode.ToLower()">@item.PaymentMode</span>
+                        </td>
+                        <td class="no-print">
+                            <a asp-controller="Invoices" asp-action="Details" asp-route-id="@item.Id" class="view-link">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .report-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .text-gold { color: var(--primary-gold-dark); }
+    .text-success { color: #28a745; }
+    .text-danger { color: #dc3545; }
+    .text-right { text-align: right; }
+    
+    .badge-mode {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    
+    .badge-mode.cash { background: #e8f5e9; color: #2e7d32; }
+    .badge-mode.upi { background: #e3f2fd; color: #1565c0; }
+    .badge-mode.card { background: #f3e5f5; color: #7b1fa2; }
+    
+    .view-link {
+        color: var(--primary-gold);
+        transition: transform 0.2s;
+        display: inline-block;
+    }
+    
+    .view-link:hover {
+        transform: scale(1.2);
+    }
+    
+    .mb-4 { margin-bottom: 1.5rem; }
+
+    @@media print {
+        .no-print { display: none !important; }
+        .app-container { display: block; }
+        .content-full { padding: 0 !important; }
+        .glass { background: white !important; border: 1px solid #eee !important; box-shadow: none !important; }
+        body { background: white; }
+    }
+</style>

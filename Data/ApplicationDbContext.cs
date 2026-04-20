@@ -15,10 +15,30 @@ namespace JewelleryApp.Data
         public DbSet<InvoiceItem> InvoiceItems { get; set; } = default!;
         public DbSet<ItemMaster> ItemsMaster { get; set; } = default!;
         public DbSet<ShopSetting> ShopSettings { get; set; } = default!;
+        public DbSet<Voucher> Vouchers { get; set; } = default!;
+        public DbSet<VoucherItem> VoucherItems { get; set; } = default!;
+        public DbSet<AccountGroup> AccountGroups { get; set; } = default!;
+        public DbSet<AccountHead> AccountHeads { get; set; } = default!;
+        public DbSet<StockEntry> StockEntries { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Configure AccountGroup hierarchy
+            modelBuilder.Entity<AccountGroup>()
+                .HasOne(g => g.ParentGroup)
+                .WithMany(g => g.SubGroups)
+                .HasForeignKey(g => g.ParentGroupId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Seed Root Account Groups
+            modelBuilder.Entity<AccountGroup>().HasData(
+                new AccountGroup { Id = 1, Name = "ASSETS", Category = AccountGroupType.Asset, PositionInHierarchy = 1 },
+                new AccountGroup { Id = 2, Name = "LIABILITIES", Category = AccountGroupType.Liability, PositionInHierarchy = 1 },
+                new AccountGroup { Id = 3, Name = "INCOME", Category = AccountGroupType.Income, PositionInHierarchy = 1 },
+                new AccountGroup { Id = 4, Name = "EXPENDITURE", Category = AccountGroupType.Expenditure, PositionInHierarchy = 1 }
+            );
 
             // Configure decimal precision
             modelBuilder.Entity<InvoiceItem>()
@@ -26,6 +46,9 @@ namespace JewelleryApp.Data
             
             modelBuilder.Entity<InvoiceItem>()
                 .Property(i => i.NetWt).HasColumnType("decimal(10, 3)");
+
+            modelBuilder.Entity<InvoiceItem>()
+                .Property(i => i.FineWt).HasColumnType("decimal(10, 3)");
 
             // Seed default Items
             modelBuilder.Entity<ItemMaster>().HasData(

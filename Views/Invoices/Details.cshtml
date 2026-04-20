@@ -49,12 +49,11 @@
         <thead>
             <tr>
                 <th style="width: 50px;">SR</th>
-                <th style="width: 200px;">ITEM NAME</th>
-                <th style="width: 100px;">HUID</th>
-                <th style="width: 80px;">PURITY</th>
+                <th style="width: 80px;">R/I</th>
+                <th style="width: 250px;">ITEM NAME</th>
+                <th style="width: 100px;">PURITY</th>
                 <th class="ar">GROSS WT</th>
-                <th class="ar">NET WT</th>
-                <th class="ar">RATE (₹/G)</th>
+                <th class="ar">FINE WT</th>
                 <th class="ar">MAKING</th>
                 <th class="ar">AMOUNT</th>
             </tr>
@@ -65,14 +64,13 @@
             {
                 <tr>
                     <td>@(i++)</td>
+                    <td><span class="badge @(item.RI == "R" ? "badge-danger" : "badge-success")">@item.RI</span></td>
                     <td><strong>@item.ItemName</strong></td>
-                    <td>@item.HUID</td>
                     <td>@item.Purity</td>
                     <td class="ar">@item.GrossWt.ToString("N3")g</td>
-                    <td class="ar">@item.NetWt.ToString("N3")g</td>
-                    <td class="ar">@item.Rate.ToString("N2")</td>
+                    <td class="ar">@item.FineWt.ToString("N3")g</td>
                     <td class="ar">@item.MakingCharges.ToString("N2")</td>
-                    <td class="ar"><strong>₹ @item.Amount.ToString("N2")</strong></td>
+                    <td class="ar"><strong style="color: @(item.Amount < 0 ? "#d9534f" : "inherit")">₹ @Math.Abs(item.Amount).ToString("N2")</strong> @(item.Amount < 0 ? "(Cr)" : "")</td>
                 </tr>
             }
         </tbody>

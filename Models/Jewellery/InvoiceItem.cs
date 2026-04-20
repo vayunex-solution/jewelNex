@@ -25,6 +25,12 @@ namespace JewelleryApp.Models.Jewellery
         [Column(TypeName = "decimal(10, 3)")]
         public decimal NetWt { get; set; }
 
+        public string? RI { get; set; } = "I"; // Receipt/Issue
+
+        [Display(Name = "Fine Weight (g)")]
+        [Column(TypeName = "decimal(10, 3)")]
+        public decimal FineWt { get; set; }
+
         [Display(Name = "Rate (₹/g)")]
         [Column(TypeName = "decimal(18, 2)")]
         public decimal Rate { get; set; }

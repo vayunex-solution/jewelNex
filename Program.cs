@@ -32,6 +32,40 @@ using (var scope = app.Services.CreateScope())
     }
     catch { /* Column probably already exists */ }
 
+    // Ensure Vouchers table exists
+    try
+    {
+        context.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS Vouchers (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                VoucherNo TEXT NOT NULL,
+                Date TEXT NOT NULL,
+                Type INTEGER NOT NULL,
+                AccountName TEXT NOT NULL,
+                Amount DECIMAL(18, 2) NOT NULL,
+                Particulars TEXT,
+                Remarks TEXT
+            );");
+    }
+    catch { }
+
+    // Ensure VoucherItems table exists
+    try
+    {
+        context.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS VoucherItems (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                VoucherId INTEGER NOT NULL,
+                AccountName TEXT NOT NULL,
+                AccountHeadId INTEGER,
+                Debit DECIMAL(18, 2) NOT NULL DEFAULT 0,
+                Credit DECIMAL(18, 2) NOT NULL DEFAULT 0,
+                Particulars TEXT,
+                FOREIGN KEY (VoucherId) REFERENCES Vouchers(Id)
+            );");
+    }
+    catch { }
+
     // Ensure ShopSettings table exists
     try
     {
@@ -56,7 +90,80 @@ using (var scope = app.Services.CreateScope())
     }
     catch { }
 
-    // Seed default Items if Master is empty
+    // Ensure AccountGroups table exists
+    try
+    {
+        context.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS AccountGroups (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT NOT NULL,
+                ParentGroupId INTEGER,
+                PositionInHierarchy INTEGER NOT NULL DEFAULT 0,
+                IsSubLedger INTEGER NOT NULL DEFAULT 0,
+                Category INTEGER NOT NULL,
+                FOREIGN KEY (ParentGroupId) REFERENCES AccountGroups(Id)
+            );");
+
+        // Seed Root Groups manually in SQL if empty
+        var count = context.AccountGroups.Count();
+        if (count == 0)
+        {
+            context.Database.ExecuteSqlRaw("INSERT INTO AccountGroups (Id, Name, Category, PositionInHierarchy, IsSubLedger) VALUES (1, 'ASSETS', 1, 1, 0);");
+            context.Database.ExecuteSqlRaw("INSERT INTO AccountGroups (Id, Name, Category, PositionInHierarchy, IsSubLedger) VALUES (2, 'LIABILITIES', 2, 1, 0);");
+            context.Database.ExecuteSqlRaw("INSERT INTO AccountGroups (Id, Name, Category, PositionInHierarchy, IsSubLedger) VALUES (3, 'INCOME', 3, 1, 0);");
+            context.Database.ExecuteSqlRaw("INSERT INTO AccountGroups (Id, Name, Category, PositionInHierarchy, IsSubLedger) VALUES (4, 'EXPENDITURE', 4, 1, 0);");
+        }
+    }
+    catch { }
+
+    // Ensure AccountHeads table exists
+    try
+    {
+        context.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS AccountHeads (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT NOT NULL,
+                AccountGroupId INTEGER NOT NULL,
+                OpeningBalance DECIMAL(18, 2) NOT NULL DEFAULT 0,
+                BalanceType INTEGER NOT NULL DEFAULT 1,
+                Description TEXT,
+                FOREIGN KEY (AccountGroupId) REFERENCES AccountGroups(Id)
+            );");
+    }
+    catch { }
+
+    // Customer schema updates
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN CustomerCode TEXT NOT NULL DEFAULT '';"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN StateCode TEXT;"); } catch { }
+
+    // InvoiceItem schema updates
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE InvoiceItems ADD COLUMN RI TEXT DEFAULT 'I';"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE InvoiceItems ADD COLUMN FineWt DECIMAL(10, 3) DEFAULT 0;"); } catch { }
+
+    // AccountHead schema updates
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE AccountHeads ADD COLUMN AccountCode TEXT NOT NULL DEFAULT '';"); } catch { }
+
+    // ItemMaster schema updates
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ItemsMaster ADD COLUMN OpeningStock INTEGER NOT NULL DEFAULT 0;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ItemsMaster ADD COLUMN TotalWeight DECIMAL(18, 3) NOT NULL DEFAULT 0;"); } catch { }
+
+    // StockEntries table
+    try
+    {
+        context.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS StockEntries (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ReferenceNo TEXT NOT NULL,
+                Date TEXT NOT NULL,
+                Type INTEGER NOT NULL,
+                ItemMasterId INTEGER NOT NULL,
+                Quantity INTEGER NOT NULL,
+                Weight DECIMAL(18, 3) NOT NULL,
+                Remarks TEXT,
+                FOREIGN KEY (ItemMasterId) REFERENCES ItemsMaster(Id)
+            );");
+    }
+    catch { }
     if (!context.ItemsMaster.Any())
     {
         var defaultItems = new List<ItemMaster>
