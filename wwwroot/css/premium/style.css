@@ -860,7 +860,13 @@ marquee {
 }
 
 @media print {
-    .app-footer { display: none !important; }
+    .side-nav, .sidebar-restore-btn, .no-print, .app-footer { 
+        display: none !important; 
+    }
+    .content-full {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
 }
 /* Auto-calculated Info Badge */
 .input-with-info {

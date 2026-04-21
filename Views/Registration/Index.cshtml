@@ -218,17 +218,23 @@
     </div>
 
     <script>
-        const DEFAULT_KEY = "JKS-7777-8888-9999-0000-15";
+        const DEFAULT_KEY = "jks1988@1122";
 
         document.getElementById('btn-default-key').onclick = function() {
-            const input = document.getElementsByName('licenseKey')[0];
-            input.value = DEFAULT_KEY;
-            input.style.borderColor = "#BF953F";
-            input.style.boxShadow = "0 0 20px rgba(212, 175, 55, 0.4)";
+            const pass = prompt("🔐 Enter Master Password to login with Default Key:");
             
-            setTimeout(() => {
-                input.closest('form').submit();
-            }, 500);
+            if (pass === DEFAULT_KEY) {
+                const input = document.getElementsByName('licenseKey')[0];
+                input.value = DEFAULT_KEY;
+                input.style.borderColor = "#BF953F";
+                input.style.boxShadow = "0 0 20px rgba(212, 175, 55, 0.4)";
+                
+                setTimeout(() => {
+                    input.closest('form').submit();
+                }, 500);
+            } else if (pass !== null) {
+                alert("❌ Invalid Master Password!");
+            }
         };
 
         document.getElementById('copy-box').onclick = function() {

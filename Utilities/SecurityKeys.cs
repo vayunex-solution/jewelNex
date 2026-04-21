@@ -80,7 +80,10 @@ namespace JewelleryApp.Utilities
 
             // Universal Master Key Check (15-Day Trial)
             const string MASTER_KEY = "JKS-7777-8888-9999-0000-15";
-            if (string.Equals(cleanKey, MASTER_KEY, StringComparison.OrdinalIgnoreCase))
+            const string STATIC_PASS = "jks1988@1122";
+
+            if (string.Equals(cleanKey, MASTER_KEY, StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(cleanKey, STATIC_PASS, StringComparison.OrdinalIgnoreCase))
             {
                 return (true, 15);
             }
