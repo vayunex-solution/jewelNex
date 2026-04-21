@@ -41,6 +41,10 @@ namespace JewelleryApp.Controllers
                     var existing = await _context.Customers.FirstOrDefaultAsync(c => c.Mobile == invoice.Customer.Mobile);
                     if (existing == null)
                     {
+                        // Auto-generate Customer Code for Quick-Add
+                        int maxId = await _context.Customers.AnyAsync() ? await _context.Customers.MaxAsync(c => c.Id) : 0;
+                        invoice.Customer.CustomerCode = $"CUST{(maxId + 1):D4}";
+
                         _context.Customers.Add(invoice.Customer);
                         await _context.SaveChangesAsync();
                         invoice.CustomerId = invoice.Customer.Id;

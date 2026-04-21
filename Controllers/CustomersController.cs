@@ -32,9 +32,9 @@ namespace JewelleryApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Auto-generate Customer Code
-                var count = await _context.Customers.CountAsync();
-                customer.CustomerCode = $"CUST{(count + 1):D4}";
+                // Auto-generate Customer Code based on Max ID
+                int maxId = await _context.Customers.AnyAsync() ? await _context.Customers.MaxAsync(c => c.Id) : 0;
+                customer.CustomerCode = $"CUST{(maxId + 1):D4}";
                 
                 _context.Add(customer);
                 await _context.SaveChangesAsync();
