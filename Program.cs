@@ -149,6 +149,15 @@ using (var scope = app.Services.CreateScope())
     // ItemMaster schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ItemsMaster ADD COLUMN OpeningStock INTEGER NOT NULL DEFAULT 0;"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ItemsMaster ADD COLUMN TotalWeight DECIMAL(18, 3) NOT NULL DEFAULT 0;"); } catch { }
+    
+    // Sync StockQuantity for existing items if it was 0
+    var itemsToSync = context.ItemsMaster.Where(i => i.StockQuantity == 0 && i.OpeningStock > 0).ToList();
+    if (itemsToSync.Any()) {
+        foreach(var item in itemsToSync) {
+            item.StockQuantity = item.OpeningStock;
+        }
+        context.SaveChanges();
+    }
 
     // StockEntries table
     try

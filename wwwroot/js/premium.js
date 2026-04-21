@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (gstInput) gstInput.oninput = calculateInvoice;
     if (el('daily-rate')) el('daily-rate').oninput = calculateInvoice;
+    if (el('silver-rate')) el('silver-rate').oninput = calculateInvoice;
     if (el('gst-type-select')) el('gst-type-select').onchange = calculateInvoice;
     if (el('discount-input')) el('discount-input').oninput = calculateInvoice;
     if (paidInput) paidInput.oninput = updateOutstanding;
@@ -151,12 +152,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td>
                     <div class="item-select-container">
-                        <select class="item-name-select">
+                        <select class="item-name-select" style="margin-bottom: 5px;">
                             <option value="">-- Select Item --</option>
                             ${optionsHtml}
                             <option value="custom">Other (Manual Entry)</option>
                         </select>
-                        <input type="text" class="item-name custom-name" placeholder="Enter Product Name" style="display:none; margin-top:8px;">
+                        <div class="custom-item-details" style="display:none; border: 1px solid var(--primary-gold-light); padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.5);">
+                            <input type="text" class="item-name custom-name" placeholder="Enter Product Name" style="margin-bottom: 5px;">
+                            <select class="custom-category" style="font-size: 0.8rem; padding: 4px;">
+                                <option value="Gold">Gold Item</option>
+                                <option value="Silver">Silver Item</option>
+                            </select>
+                        </div>
                     </div>
                 </td>
                 <td><input type="number" class="gross-wt" step="0.001" value="0.000"></td>
@@ -168,24 +175,33 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             const select = row.querySelector('.item-name-select');
+            const customContainer = row.querySelector('.custom-item-details');
             const nameInput = row.querySelector('.item-name');
             const purityInput = row.querySelector('.purity-val');
+            const customCat = row.querySelector('.custom-category');
 
             select.onchange = () => {
                 const val = select.value;
                 if (val === "custom") {
-                    nameInput.style.display = "block";
+                    customContainer.style.display = "block";
                     nameInput.value = "";
+                    row.dataset.category = customCat.value;
                 } else {
-                    nameInput.style.display = "none";
+                    customContainer.style.display = "none";
                     nameInput.value = val;
                     const itemInfo = masterItems.find(i => i.name === val);
                     if (itemInfo) {
                         purityInput.value = itemInfo.purity || "";
+                        row.dataset.category = itemInfo.category || "Gold";
                         if ((itemInfo.stockQuantity || 0) <= 0) alert("⚠️ Warning: Out of Stock!");
                         calculateInvoice();
                     }
                 }
+            };
+
+            customCat.onchange = () => {
+                row.dataset.category = customCat.value;
+                calculateInvoice();
             };
 
             const riSelect = row.querySelector('.ri-select');
@@ -219,7 +235,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!itemsTableBody) return;
         let goldValTotal = 0;
         let makingTotal = 0;
-        const dailyRate = parseFloat(el('daily-rate')?.value) || 0;
+        const goldRate = parseFloat(el('daily-rate')?.value) || 0;
+        const silverRate = parseFloat(el('silver-rate')?.value) || 0;
         
         const rows = itemsTableBody.querySelectorAll('tr');
         rows.forEach(row => {
@@ -227,23 +244,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const gWt = parseFloat(row.querySelector('.gross-wt')?.value) || 0;
             const purity = parseFloat(row.querySelector('.purity-val')?.value) || 0;
             const mk = parseFloat(row.querySelector('.making')?.value) || 0;
+            const category = row.dataset.category || "Gold";
+            
+            // Use correct rate based on category
+            const currentRate = (category === "Silver") ? silverRate : goldRate;
             
             // Calculate Fine Weight: gWt * (purity / 100)
             const fWt = gWt * (purity / 100);
             const fineWtInput = row.querySelector('.fine-wt');
             if (fineWtInput) fineWtInput.value = fWt.toFixed(3);
 
-            // Calculate Amount: FineWt * DailyRate + Making
-            const goldVal = fWt * dailyRate;
-            let totalRow = goldVal + mk;
+            // Calculate Amount: FineWt * Rate + Making
+            const metalVal = fWt * currentRate;
+            let totalRow = metalVal + mk;
             
+            row.dataset.appliedRate = currentRate; // Store for saving
+
             // If Receipt (R), amount is negative (customer giving back)
             if (ri === 'R') {
                 totalRow = -totalRow;
-                goldValTotal += -goldVal;
+                goldValTotal += -metalVal;
                 makingTotal += -mk;
             } else {
-                goldValTotal += goldVal;
+                goldValTotal += metalVal;
                 makingTotal += mk;
             }
             
@@ -364,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         GrossWt: gWt,
                         NetWt: gWt, 
                         FineWt: parseFloat(row.querySelector('.fine-wt')?.value) || 0,
-                        Rate: parseFloat(el('daily-rate')?.value) || 0,
+                        Rate: parseFloat(row.dataset.appliedRate) || 0, // Individual rate
                         MakingCharges: parseFloat(row.querySelector('.making')?.value) || 0,
                         Amount: rowAmt
                     });

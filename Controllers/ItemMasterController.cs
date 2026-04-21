@@ -84,7 +84,8 @@ namespace JewelleryApp.Controllers
                     purity = x.Purity, 
                     stockQuantity = x.StockQuantity,
                     openingStock = x.OpeningStock,
-                    totalWeight = x.TotalWeight
+                    totalWeight = x.TotalWeight,
+                    category = x.Category
                 })
                 .ToListAsync();
             return Json(items);

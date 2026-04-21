@@ -1,3 +1,7 @@
+@inject JewelleryApp.Data.ApplicationDbContext Db
+@{
+    var settings = Db.ShopSettings.FirstOrDefault() ?? new JewelleryApp.Models.Jewellery.ShopSetting();
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,6 +106,20 @@
                 <i class="fas fa-bars"></i>
             </button>
             @RenderBody()
+            
+            <!-- Global Shop Info Marquee -->
+            <footer class="app-footer no-print">
+                <div class="marquee-wrapper">
+                    <marquee behavior="scroll" direction="left" scrollamount="6">
+                        <span class="marquee-item"><i class="fas fa-store"></i> @settings.ShopName</span>
+                        <span class="marquee-item"><i class="fas fa-map-marker-alt"></i> @settings.Address1, @settings.Address2, @settings.CityState</span>
+                        <span class="marquee-item"><i class="fas fa-phone-alt"></i> Contact: @settings.Phone1, @settings.Phone2</span>
+                        <span class="marquee-item"><i class="fas fa-fingerprint"></i> GSTIN: @settings.GSTIN</span>
+                        <span class="marquee-item"><i class="fas fa-award"></i> @settings.Tagline</span>
+                        <span class="marquee-item"><i class="fas fa-university"></i> Bank: @settings.BankName (@settings.IFSCCode)</span>
+                    </marquee>
+                </div>
+            </footer>
         </main>
     </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

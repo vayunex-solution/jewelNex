@@ -787,3 +787,45 @@ td input {
         font-size: 1.3rem;
     }
 }
+
+/* App Footer & Marquee */
+.app-footer {
+    margin-top: 40px;
+    background: var(--secondary-charcoal);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--primary-gold-dark);
+    box-shadow: var(--shadow);
+}
+
+.marquee-wrapper {
+    padding: 12px 0;
+}
+
+marquee {
+    display: flex;
+    align-items: center;
+}
+
+.marquee-item {
+    color: #fff;
+    margin-right: 50px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.marquee-item i {
+    color: var(--primary-gold);
+    font-size: 1.1rem;
+}
+
+.marquee-item:hover {
+    color: var(--primary-gold-light);
+}
+
+@media print {
+    .app-footer { display: none !important; }
+}
