@@ -61,6 +61,15 @@ namespace JewelleryApp.Controllers
             {
                 try
                 {
+                    // Fetch existing item to calculate stock difference
+                    var existingItem = await _context.ItemsMaster.AsNoTracking().FirstOrDefaultAsync(i => i.Id == itemMaster.Id);
+                    if (existingItem != null)
+                    {
+                        // If Opening Stock was changed, adjust Current Stock by the difference
+                        int diff = itemMaster.OpeningStock - existingItem.OpeningStock;
+                        itemMaster.StockQuantity = existingItem.StockQuantity + diff;
+                    }
+                    
                     _context.Update(itemMaster);
                     await _context.SaveChangesAsync();
                 }

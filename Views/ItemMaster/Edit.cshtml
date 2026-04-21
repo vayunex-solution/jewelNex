@@ -31,18 +31,23 @@
                 </select>
             </div>
 
-            <div class="form-row">
-                <div class="form-group col-4">
-                    <label asp-for="Purity">Purity (e.g. 22K)</label>
-                    <input asp-for="Purity" class="form-control">
+            <div class="form-row" style="margin-top: 10px;">
+                <div class="form-group flex-1">
+                    <label asp-for="Purity"><i class="fas fa-certificate"></i> Purity (e.g. 22K)</label>
+                    <input asp-for="Purity" class="form-control" placeholder="Ex: 22K or 18K">
                 </div>
-                <div class="form-group col-4">
-                    <label asp-for="OpeningStock">Opening Stock</label>
-                    <input asp-for="OpeningStock" type="number" class="form-control">
+                <div class="form-group flex-1">
+                    <label asp-for="OpeningStock"><i class="fas fa-boxes"></i> Opening Stock</label>
+                    <input asp-for="OpeningStock" type="number" class="form-control highlight-input" style="background: rgba(212, 175, 55, 0.05);">
                 </div>
-                <div class="form-group col-4">
-                    <label asp-for="StockQuantity">Current Live Stock</label>
-                    <input asp-for="StockQuantity" type="number" class="form-control" readonly>
+                <div class="form-group flex-1">
+                    <label asp-for="StockQuantity"><i class="fas fa-layer-group"></i> Current Live Stock</label>
+                    <div class="input-with-info">
+                        <input asp-for="StockQuantity" type="number" class="form-control" readonly style="background-color: #f1f3f5; border-color: #dee2e6; color: #666; font-weight: 700;">
+                        <div class="info-badge-small">
+                            <i class="fas fa-magic"></i> Auto-calculated
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -63,3 +68,29 @@
         </form>
     </section>
 </div>
+
+@section Scripts {
+    <script>
+        const openingStockInput = document.querySelector('input[name="OpeningStock"]');
+        const currentStockInput = document.querySelector('input[name="StockQuantity"]');
+        
+        // Store initial values to calculate delta
+        const initialOpening = parseFloat(openingStockInput.value) || 0;
+        const initialCurrent = parseFloat(currentStockInput.value) || 0;
+
+        if (openingStockInput && currentStockInput) {
+            openingStockInput.addEventListener('input', () => {
+                const newOpening = parseFloat(openingStockInput.value) || 0;
+                
+                if (initialCurrent === 0) {
+                    // Initial Setup Case: If live stock is 0, just sync 1:1 with opening stock
+                    currentStockInput.value = newOpening;
+                } else {
+                    // Maintenance Case: Calculate delta for items that already have sales/stock history
+                    const delta = newOpening - initialOpening;
+                    currentStockInput.value = initialCurrent + delta;
+                }
+            });
+        }
+    </script>
+}

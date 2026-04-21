@@ -829,3 +829,34 @@ marquee {
 @media print {
     .app-footer { display: none !important; }
 }
+/* Auto-calculated Info Badge */
+.input-with-info {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-badge-small {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--primary-gold-dark);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(212, 175, 55, 0.08);
+    padding: 4px 10px;
+    border-radius: 6px;
+    align-self: flex-start;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.info-badge-small i {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+}

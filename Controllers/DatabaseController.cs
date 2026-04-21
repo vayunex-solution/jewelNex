@@ -67,7 +67,7 @@ namespace JewelleryApp.Controllers
                 await _context.Database.ExecuteSqlRawAsync("DELETE FROM Customers");
 
                 // 5. Reset ItemMaster balances (Keep the items, but set stock to 0)
-                await _context.Database.ExecuteSqlRawAsync("UPDATE ItemsMaster SET StockQuantity = 0, TotalWeight = 0");
+                await _context.Database.ExecuteSqlRawAsync("UPDATE ItemsMaster SET StockQuantity = 0, TotalWeight = 0, OpeningStock = 0");
 
                 // Optional: Reset Identity counters for SQLite
                 await _context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence WHERE name IN ('Vouchers', 'VoucherItems', 'Invoices', 'InvoiceItems', 'StockEntries', 'Customers')");
