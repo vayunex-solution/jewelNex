@@ -59,7 +59,7 @@ namespace JewelleryApp.Models.Jewellery
         public decimal BalanceAmount => TotalAmount - PaidAmount;
 
         public string? Remarks { get; set; }
-
+        public string InvoiceType { get; set; } = "Tax Invoice"; // "Tax Invoice" or "Rough Estimate"
         public List<InvoiceItem> Items { get; set; } = new();
     }
 }

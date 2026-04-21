@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateInput = el('invoice-date');
     const gstInput = el('gst-rate-input');
     const paidInput = el('paid-amount');
+    const typeSelect = el('invoice-type');
     
     console.log("Invoice System Loading...");
 
@@ -28,6 +29,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el('gst-type-select')) el('gst-type-select').onchange = calculateInvoice;
     if (el('discount-input')) el('discount-input').oninput = calculateInvoice;
     if (paidInput) paidInput.oninput = updateOutstanding;
+    if (typeSelect) typeSelect.onchange = fetchNextNumber;
+
+    async function fetchNextNumber() {
+        if (!typeSelect) return;
+        try {
+            const type = typeSelect.value;
+            const res = await fetch(`/Invoices/GetNextInvoiceNumber?type=${encodeURIComponent(type)}`);
+            if (res.ok) {
+                const num = await res.text();
+                if (el('invoice-no')) el('invoice-no').value = num;
+            }
+        } catch (err) {
+            console.error("Next number fetch failed:", err);
+        }
+    }
 
     // Fetch Master Data on Load
     async function loadMasterData() {
@@ -309,6 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isNewCust = custIdVal === 'custom' || !custIdVal;
                 
                 const invoiceData = {
+                    InvoiceType: el('invoice-type')?.value || "Tax Invoice",
                     InvoiceNo: el('invoice-no')?.value || "",
                     Date: el('invoice-date')?.value || "",
                     PaymentMode: document.querySelector('input[name="payment-mode"]:checked')?.value || "Cash",
@@ -378,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
         if (dateInput) dateInput.valueAsDate = new Date();
         await loadMasterData();
+        await fetchNextNumber();
         if (itemsTableBody && itemsTableBody.children.length === 0) window.addRow();
     })();
 });

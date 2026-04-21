@@ -34,7 +34,10 @@
                         <td>@item.Address</td>
                         <td>@item.CreatedAt.ToString("dd MMM yyyy")</td>
                         <td>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn-remove" onclick="return confirm('Delete this customer?')">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-remove" style="color: var(--primary-gold); margin-right: 15px;" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn-remove" onclick="return confirm('Delete this customer?')" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </td>

@@ -13,7 +13,6 @@ namespace JewelleryApp.Models.Jewellery
         [Display(Name = "Mobile Number")]
         public string? Mobile { get; set; }
 
-        [Required]
         [Display(Name = "Customer Code")]
         public string CustomerCode { get; set; } = string.Empty;
 

@@ -21,7 +21,9 @@
                     <th>Item Name</th>
                     <th>Category</th>
                     <th>Purity</th>
-                    <th>Stock</th>
+                    <th style="text-align: right;">Opening Stock</th>
+                    <th style="text-align: right;">Total Wt. (g)</th>
+                    <th>Current Stock</th>
                     <th>Default Rate (₹/g)</th>
                     <th>Added On</th>
                     <th>Actions</th>
@@ -34,6 +36,8 @@
                         <td><strong>@item.Name</strong></td>
                         <td>@item.Category</td>
                         <td>@item.Purity</td>
+                        <td style="text-align: right;">@item.OpeningStock</td>
+                        <td style="text-align: right;">@item.TotalWeight.ToString("N3")</td>
                         <td>
                             <span class="badge @(item.StockQuantity == 0 ? "badge-danger" : (item.StockQuantity < 10 ? "badge-warning" : "badge-success"))">
                                 @(item.StockQuantity == 0 ? "Out of Stock" : item.StockQuantity.ToString())

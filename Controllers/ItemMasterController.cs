@@ -28,10 +28,13 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,DefaultRate,Category,Purity,StockQuantity")] ItemMaster itemMaster)
+        public async Task<IActionResult> Create([Bind("Name,DefaultRate,Category,Purity,OpeningStock,TotalWeight")] ItemMaster itemMaster)
         {
             if (ModelState.IsValid)
             {
+                // Initialize current stock with opening stock
+                itemMaster.StockQuantity = itemMaster.OpeningStock;
+                
                 _context.Add(itemMaster);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -50,7 +53,7 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,DefaultRate,Category,Purity,StockQuantity,CreatedAt")] ItemMaster itemMaster)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,DefaultRate,Category,Purity,StockQuantity,OpeningStock,TotalWeight,CreatedAt")] ItemMaster itemMaster)
         {
             if (id != itemMaster.Id) return NotFound();
 
@@ -71,11 +74,18 @@ namespace JewelleryApp.Controllers
             return View(itemMaster);
         }
 
-        [HttpGet]
         public async Task<JsonResult> GetAllItems()
         {
             var items = await _context.ItemsMaster
-                .Select(x => new { id = x.Id, name = x.Name, defaultRate = x.DefaultRate, purity = x.Purity, stockQuantity = x.StockQuantity })
+                .Select(x => new { 
+                    id = x.Id, 
+                    name = x.Name, 
+                    defaultRate = x.DefaultRate, 
+                    purity = x.Purity, 
+                    stockQuantity = x.StockQuantity,
+                    openingStock = x.OpeningStock,
+                    totalWeight = x.TotalWeight
+                })
                 .ToListAsync();
             return Json(items);
         }

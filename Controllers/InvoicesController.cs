@@ -14,11 +14,39 @@ namespace JewelleryApp.Controllers
             _context = context;
         }
 
-        // GET: Invoices
         public async Task<IActionResult> Index()
         {
-            var invoices = await _context.Invoices.Include(i => i.Customer).ToListAsync();
+            var invoices = await _context.Invoices
+                .Include(i => i.Customer)
+                .OrderByDescending(i => i.Date)
+                .ThenByDescending(i => i.Id)
+                .ToListAsync();
             return View(invoices);
+        }
+
+        [HttpGet]
+        public async Task<string> GetNextInvoiceNumber(string type)
+        {
+            string prefix = type == "Rough Estimate" ? "EST" : "INV";
+            string datePart = DateTime.Now.ToString("yyyyMMdd");
+            
+            // Find the highest number for this prefix and date
+            var lastInvoice = await _context.Invoices
+                .Where(i => i.InvoiceNo.StartsWith($"{prefix}-{datePart}"))
+                .OrderByDescending(i => i.InvoiceNo)
+                .FirstOrDefaultAsync();
+
+            int nextNum = 1;
+            if (lastInvoice != null)
+            {
+                var parts = lastInvoice.InvoiceNo.Split('-');
+                if (parts.Length == 3 && int.TryParse(parts[2], out int lastNum))
+                {
+                    nextNum = lastNum + 1;
+                }
+            }
+
+            return $"{prefix}-{datePart}-{nextNum:D3}";
         }
 
         // GET: Invoices/Create

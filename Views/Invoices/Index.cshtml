@@ -20,6 +20,7 @@
                 <tr>
                     <th>Date</th>
                     <th>Invoice No</th>
+                    <th>Type</th>
                     <th>Customer</th>
                     <th>Amount</th>
                     <th>Payment</th>
@@ -32,6 +33,11 @@
                     <tr>
                         <td>@item.Date.ToString("dd MMM yyyy")</td>
                         <td><strong>@item.InvoiceNo</strong></td>
+                        <td>
+                            <span class="badge @(item.InvoiceType == "Rough Estimate" ? "bg-warning" : "bg-info")">
+                                @item.InvoiceType
+                            </span>
+                        </td>
                         <td>@item.Customer?.Name</td>
                         <td>₹ @item.TotalAmount.ToString("N2")</td>
                         <td>

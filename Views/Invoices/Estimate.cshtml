@@ -68,7 +68,7 @@
             {
                 var item = i < Model.Items.Count ? Model.Items[i] : null;
                 <tr>
-                    <td class="text-center">@(i + 1)</td>
+                    <td class="text-center">@(item != null ? (i + 1).ToString() : "")</td>
                     <td>@(item?.ItemName ?? "")</td>
                     <td class="text-right">@(item != null ? item.NetWt.ToString("N3") : "")</td>
                     <td class="text-right">@(item != null ? item.Rate.ToString("N2") : "")</td>
