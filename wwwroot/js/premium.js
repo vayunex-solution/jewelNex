@@ -347,6 +347,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 const custIdVal = el('cust-name-select')?.value;
                 const isNewCust = custIdVal === 'custom' || !custIdVal;
                 
+                // --- CUSTOMER VALIDATION ---
+                if (isNewCust) {
+                    const name = el('cust-name')?.value.trim();
+                    const mobile = el('cust-mobile')?.value.trim();
+                    const address = el('cust-address')?.value.trim();
+
+                    if (!name) {
+                        alert("⚠️ Required: Please enter the Customer Full Name.");
+                        el('cust-name').focus();
+                        return;
+                    }
+                    if (!mobile) {
+                        alert("⚠️ Required: Please enter the Mobile Number.");
+                        el('cust-mobile').focus();
+                        return;
+                    }
+                    if (!address) {
+                        alert("⚠️ Required: Please enter the Billing Address.");
+                        el('cust-address').focus();
+                        return;
+                    }
+                } else if (!custIdVal) {
+                    alert("⚠️ Please select a customer or fill new details.");
+                    el('cust-name-select').focus();
+                    return;
+                }
+                
                 const invoiceData = {
                     InvoiceType: el('invoice-type')?.value || "Tax Invoice",
                     InvoiceNo: el('invoice-no')?.value || "",
