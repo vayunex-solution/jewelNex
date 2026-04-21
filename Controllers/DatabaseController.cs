@@ -47,8 +47,14 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CleanDatabase()
+        public async Task<IActionResult> CleanDatabase(string password)
         {
+            if (password != "jks1988@1122")
+            {
+                TempData["Error"] = "Invalid Security Password! Database cleanup aborted.";
+                return RedirectToAction(nameof(Index));
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {

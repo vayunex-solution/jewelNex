@@ -434,10 +434,43 @@ input:focus, textarea:focus {
 }
 
 .summary-header h2 {
-    font-size: 3.5rem;
+    font-size: 3.2rem; /* Slightly smaller to fit better */
     font-weight: 700;
     margin-top: 5px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    white-space: nowrap;
+}
+
+/* Premium Date Picker Styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    bottom: 0;
+    color: transparent;
+    cursor: pointer;
+    height: auto;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
+}
+
+input[type="date"]::after {
+    content: "\f133";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: var(--primary-gold);
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+input[type="date"] {
+    position: relative;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
 .summary-details {
