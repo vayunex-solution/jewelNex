@@ -1,0 +1,17 @@
+-- Migration: Add Bill Settings columns to ShopSettings table
+ALTER TABLE ShopSettings ADD COLUMN ShowMetalColumn INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE ShopSettings ADD COLUMN ShowPurityColumn INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE ShopSettings ADD COLUMN ShowFineWtColumn INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE ShopSettings ADD COLUMN ShowRateColumn INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE ShopSettings ADD COLUMN ShowMetalAmountColumn INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE ShopSettings ADD COLUMN ShowMakingPercentColumn INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE ShopSettings ADD COLUMN ShowMakingAmountColumn INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE ShopSettings ADD COLUMN MakingChargeType TEXT NOT NULL DEFAULT 'Percentage';
+ALTER TABLE ShopSettings ADD COLUMN DefaultGoldRate REAL NOT NULL DEFAULT 6200;
+ALTER TABLE ShopSettings ADD COLUMN DefaultSilverRate REAL NOT NULL DEFAULT 80;
+ALTER TABLE ShopSettings ADD COLUMN DefaultMakingPercent REAL NOT NULL DEFAULT 10;
+
+-- Migration: Add new columns to InvoiceItems table
+ALTER TABLE InvoiceItems ADD COLUMN Metal TEXT DEFAULT 'Gold';
+ALTER TABLE InvoiceItems ADD COLUMN MakingPercent REAL NOT NULL DEFAULT 0;
+ALTER TABLE InvoiceItems ADD COLUMN MetalAmount REAL NOT NULL DEFAULT 0;

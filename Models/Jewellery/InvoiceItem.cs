@@ -17,6 +17,17 @@ namespace JewelleryApp.Models.Jewellery
         public string? HUID { get; set; }
         public string? Purity { get; set; }
 
+        [Display(Name = "Metal")]
+        public string? Metal { get; set; } = "Gold"; // Gold, Silver
+
+        [Display(Name = "Making %")]
+        [Column(TypeName = "decimal(5, 2)")]
+        public decimal MakingPercent { get; set; }
+
+        [Display(Name = "Metal Amount (₹)")]
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal MetalAmount { get; set; }
+
         [Display(Name = "Gross Weight (g)")]
         [Column(TypeName = "decimal(10, 3)")]
         public decimal GrossWt { get; set; }

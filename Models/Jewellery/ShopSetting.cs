@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JewelleryApp.Models.Jewellery
 {
@@ -55,5 +56,45 @@ namespace JewelleryApp.Models.Jewellery
 
         [Display(Name = "IFSC Code")]
         public string? IFSCCode { get; set; } = "MAHB0001309";
+
+        // ─── Bill Setting Properties ───
+        [Display(Name = "Use Purity (Advanced Billing)")]
+        public bool UsePurity { get; set; } = true; // false = Simple Billing (Gross Wt × Rate)
+
+        [Display(Name = "Show Metal Column")]
+        public bool ShowMetalColumn { get; set; } = true;
+
+        [Display(Name = "Show Purity Column")]
+        public bool ShowPurityColumn { get; set; } = true;
+
+        [Display(Name = "Show Fine Weight Column")]
+        public bool ShowFineWtColumn { get; set; } = true;
+
+        [Display(Name = "Show Rate Column")]
+        public bool ShowRateColumn { get; set; } = true;
+
+        [Display(Name = "Show Metal Amount Column")]
+        public bool ShowMetalAmountColumn { get; set; } = true;
+
+        [Display(Name = "Show Making % Column")]
+        public bool ShowMakingPercentColumn { get; set; } = true;
+
+        [Display(Name = "Show Making Amount Column")]
+        public bool ShowMakingAmountColumn { get; set; } = true;
+
+        [Display(Name = "Making Charge Type")]
+        public string MakingChargeType { get; set; } = "Percentage"; // "Percentage" or "Flat"
+
+        [Display(Name = "Default Gold Rate (₹/g)")]
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal DefaultGoldRate { get; set; } = 6200;
+
+        [Display(Name = "Default Silver Rate (₹/g)")]
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal DefaultSilverRate { get; set; } = 80;
+
+        [Display(Name = "Default Making %")]
+        [Column(TypeName = "decimal(5, 2)")]
+        public decimal DefaultMakingPercent { get; set; } = 10;
     }
 }

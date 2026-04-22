@@ -148,6 +148,23 @@ using (var scope = app.Services.CreateScope())
     // InvoiceItem schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE InvoiceItems ADD COLUMN RI TEXT DEFAULT 'I';"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE InvoiceItems ADD COLUMN FineWt DECIMAL(10, 3) DEFAULT 0;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE InvoiceItems ADD COLUMN Metal TEXT DEFAULT 'Gold';"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE InvoiceItems ADD COLUMN MakingPercent DECIMAL(5, 2) NOT NULL DEFAULT 0;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE InvoiceItems ADD COLUMN MetalAmount DECIMAL(18, 2) NOT NULL DEFAULT 0;"); } catch { }
+
+    // Bill Settings columns on ShopSettings
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN UsePurity INTEGER NOT NULL DEFAULT 1;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN ShowMetalColumn INTEGER NOT NULL DEFAULT 1;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN ShowPurityColumn INTEGER NOT NULL DEFAULT 1;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN ShowFineWtColumn INTEGER NOT NULL DEFAULT 1;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN ShowRateColumn INTEGER NOT NULL DEFAULT 1;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN ShowMetalAmountColumn INTEGER NOT NULL DEFAULT 1;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN ShowMakingPercentColumn INTEGER NOT NULL DEFAULT 1;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN ShowMakingAmountColumn INTEGER NOT NULL DEFAULT 1;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN MakingChargeType TEXT NOT NULL DEFAULT 'Percentage';"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN DefaultGoldRate REAL NOT NULL DEFAULT 6200;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN DefaultSilverRate REAL NOT NULL DEFAULT 80;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN DefaultMakingPercent REAL NOT NULL DEFAULT 10;"); } catch { }
 
     // AccountHead schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE AccountHeads ADD COLUMN AccountCode TEXT NOT NULL DEFAULT '';"); } catch { }

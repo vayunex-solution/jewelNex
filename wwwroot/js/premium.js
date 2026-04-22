@@ -10,11 +10,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const paidInput = el('paid-amount');
     const typeSelect = el('invoice-type');
     
-    console.log("Invoice System Loading...");
+    // Bill Settings from server
+    const BS = window.BILL_SETTINGS || {};
+
+    console.log("Invoice System Loading...", BS);
 
     let masterItems = [];
     let masterCustomers = [];
     let shopSettings = null;
+
+    // Apply column visibility from Bill Settings
+    function applyColumnVisibility() {
+        const colMap = {
+            'bill-col-metal': BS.showMetal !== false,
+            'bill-col-purity': BS.showPurity !== false,
+            'bill-col-finewt': BS.showFineWt !== false,
+            'bill-col-rate': BS.showRate !== false,
+            'bill-col-metalamt': BS.showMetalAmt !== false,
+            'bill-col-makingpct': BS.showMakingPct !== false,
+            'bill-col-makingamt': BS.showMakingAmt !== false
+        };
+
+        Object.entries(colMap).forEach(([cls, show]) => {
+            document.querySelectorAll(`.${cls}`).forEach(cell => {
+                cell.style.display = show ? '' : 'none';
+            });
+        });
+    }
 
     // Initialize listeners
     if (addRowBtn) {
@@ -28,9 +50,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el('daily-rate')) el('daily-rate').oninput = calculateInvoice;
     if (el('silver-rate')) el('silver-rate').oninput = calculateInvoice;
     if (el('gst-type-select')) el('gst-type-select').onchange = calculateInvoice;
-    if (el('discount-input')) el('discount-input').oninput = calculateInvoice;
-    if (paidInput) paidInput.oninput = updateOutstanding;
-    if (typeSelect) typeSelect.onchange = fetchNextNumber;
+    const dInput = el('discount-input');
+    if (dInput) dInput.addEventListener('input', calculateInvoice);
+    if (paidInput) paidInput.addEventListener('input', updateOutstanding);
+    if (typeSelect) {
+        typeSelect.addEventListener('change', () => {
+            fetchNextNumber();
+            calculateInvoice();
+        });
+    }
 
     async function fetchNextNumber() {
         if (!typeSelect) return;
@@ -131,19 +159,35 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Add Row Logic
+    // Get purity value from the purity string (e.g., "22K" -> 91.6, "91.6" -> 91.6)
+    function parsePurityValue(purityStr) {
+        if (!purityStr) return 0;
+        const str = purityStr.toString().trim().toUpperCase();
+        // Known karats
+        const karatMap = { '24K': 99.9, '23K': 95.8, '22K': 91.6, '21K': 87.5, '20K': 83.3, '18K': 75.0, '14K': 58.3 };
+        if (karatMap[str]) return karatMap[str];
+        // Try parse as number (e.g., "91.6%" or "91.6")
+        const num = parseFloat(str.replace('%', ''));
+        return isNaN(num) ? 0 : num;
+    }
+
+    // Add Row Logic — matching the new bill settings layout
+    let rowCounter = 0;
     window.addRow = function() {
         if (!itemsTableBody) return;
         
         try {
-            const rowCount = itemsTableBody.children.length + 1;
+            rowCounter++;
             const row = document.createElement('tr');
             
             let optionsHtml = masterItems.map(item => 
-                `<option value="${item.name}">${item.name} (${item.purity || ''} - Stock: ${item.stockQuantity || 0})</option>`
+                `<option value="${item.name}" data-category="${item.category || 'Gold'}" data-purity="${item.purity || ''}">${item.name} (${item.purity || ''} - Stock: ${item.stockQuantity || 0})</option>`
             ).join('');
 
+            const defaultMakingPct = BS.defaultMakingPercent || 10;
+
             row.innerHTML = `
+                <td class="row-sno">${rowCounter}</td>
                 <td>
                     <select class="ri-select">
                         <option value="I" selected>I</option>
@@ -166,11 +210,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </td>
+                <td class="bill-col-metal">
+                    <select class="metal-select">
+                        <option value="Gold" selected>Gold</option>
+                        <option value="Silver">Silver</option>
+                    </select>
+                </td>
                 <td><input type="number" class="gross-wt" step="0.001" value="0.000"></td>
-                <td><input type="number" class="purity-val" step="0.01" value="0.00" placeholder="Purity"></td>
-                <td><input type="number" class="making" step="0.01" value="0.00"></td>
-                <td><input type="number" class="fine-wt" step="0.001" value="0.000" readonly tabindex="-1"></td>
-                <td style="text-align: right;"><strong class="item-amount">₹ 0.00</strong></td>
+                <td class="bill-col-purity"><input type="number" class="purity-val" step="0.01" value="91.60" placeholder="Purity %"></td>
+                <td class="bill-col-finewt"><input type="number" class="fine-wt" step="0.001" value="0.000" readonly tabindex="-1"></td>
+                <td class="bill-col-rate"><input type="number" class="rate-val" step="0.01" value="0" readonly tabindex="-1"></td>
+                <td class="bill-col-metalamt" style="text-align: right;"><strong class="metal-amount">0</strong></td>
+                <td class="bill-col-makingpct"><input type="number" class="making-pct" step="0.01" value="${defaultMakingPct}"></td>
+                <td class="bill-col-makingamt" style="text-align: right;"><strong class="making-amount">0</strong></td>
+                <td style="text-align: right;"><strong class="item-amount" style="color: var(--primary-gold-dark); white-space: nowrap;">₹ 0</strong></td>
                 <td><button type="button" class="btn-remove" title="Remove"><i class="fas fa-trash"></i></button></td>
             `;
 
@@ -179,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const nameInput = row.querySelector('.item-name');
             const purityInput = row.querySelector('.purity-val');
             const customCat = row.querySelector('.custom-category');
+            const metalSelect = row.querySelector('.metal-select');
 
             select.onchange = () => {
                 const val = select.value;
@@ -186,13 +240,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     customContainer.style.display = "block";
                     nameInput.value = "";
                     row.dataset.category = customCat.value;
+                    metalSelect.value = customCat.value;
                 } else {
                     customContainer.style.display = "none";
                     nameInput.value = val;
                     const itemInfo = masterItems.find(i => i.name === val);
                     if (itemInfo) {
-                        purityInput.value = itemInfo.purity || "";
+                        const pVal = parsePurityValue(itemInfo.purity);
+                        purityInput.value = pVal.toFixed(2);
                         row.dataset.category = itemInfo.category || "Gold";
+                        metalSelect.value = itemInfo.category || "Gold";
                         if ((itemInfo.stockQuantity || 0) <= 0) alert("⚠️ Warning: Out of Stock!");
                         calculateInvoice();
                     }
@@ -201,6 +258,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             customCat.onchange = () => {
                 row.dataset.category = customCat.value;
+                metalSelect.value = customCat.value;
+                calculateInvoice();
+            };
+
+            metalSelect.onchange = () => {
+                row.dataset.category = metalSelect.value;
                 calculateInvoice();
             };
 
@@ -213,10 +276,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             row.querySelector('.btn-remove').onclick = () => {
                 row.remove();
+                updateRowNumbers();
                 calculateInvoice();
             };
 
             itemsTableBody.appendChild(row);
+            applyColumnVisibility();
             calculateInvoice();
         } catch (err) {
             console.error("Error adding row:", err);
@@ -226,14 +291,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateRowNumbers() {
         const rows = itemsTableBody.querySelectorAll('tr');
         rows.forEach((row, index) => {
-            const numEl = row.querySelector('.row-number');
+            const numEl = row.querySelector('.row-sno');
             if (numEl) numEl.textContent = index + 1;
         });
+        rowCounter = rows.length;
     }
 
     function calculateInvoice() {
         if (!itemsTableBody) return;
-        let goldValTotal = 0;
+        let metalValTotal = 0;
         let makingTotal = 0;
         const goldRate = parseFloat(el('daily-rate')?.value) || 0;
         const silverRate = parseFloat(el('silver-rate')?.value) || 0;
@@ -243,68 +309,108 @@ document.addEventListener('DOMContentLoaded', () => {
             const ri = row.querySelector('.ri-select')?.value || 'I';
             const gWt = parseFloat(row.querySelector('.gross-wt')?.value) || 0;
             const purity = parseFloat(row.querySelector('.purity-val')?.value) || 0;
-            const mk = parseFloat(row.querySelector('.making')?.value) || 0;
-            const category = row.dataset.category || "Gold";
+            const makingPct = parseFloat(row.querySelector('.making-pct')?.value) || 0;
+            const metalSelect = row.querySelector('.metal-select');
+            const category = metalSelect ? metalSelect.value : (row.dataset.category || "Gold");
             
-            // Use correct rate based on category
+            // Use correct rate based on metal type
             const currentRate = (category === "Silver") ? silverRate : goldRate;
             
-            // Calculate Fine Weight: gWt * (purity / 100)
-            const fWt = gWt * (purity / 100);
+            // Show rate in the Rate column
+            const rateInput = row.querySelector('.rate-val');
+            if (rateInput) rateInput.value = currentRate.toFixed(2);
+            
+            // Calculate Fine Weight and Metal Amount based on Billing Mode
+            let fWt = 0;
+            let metalAmt = 0;
+
+            if (purity && purity > 0) {
+                // Advanced Billing (Purity based)
+                fWt = gWt * (purity / 100);
+                metalAmt = fWt * currentRate;
+            } else {
+                // Simple Billing (Gross Wt based) when Purity is not defined or 0
+                fWt = gWt; // Or 0, but conceptually it uses Gross Wt
+                metalAmt = gWt * currentRate;
+            }
+
             const fineWtInput = row.querySelector('.fine-wt');
             if (fineWtInput) fineWtInput.value = fWt.toFixed(3);
 
-            // Calculate Amount: FineWt * Rate + Making
-            const metalVal = fWt * currentRate;
-            let totalRow = metalVal + mk;
+            const metalAmtEl = row.querySelector('.metal-amount');
+            if (metalAmtEl) metalAmtEl.textContent = Math.round(metalAmt).toLocaleString('en-IN');
+            
+            // Calculate Making Amount
+            let makingAmt = 0;
+            if (BS.makingChargeType === 'Flat') {
+                makingAmt = makingPct; // In flat mode, the input is the direct amount
+            } else {
+                makingAmt = metalAmt * (makingPct / 100); // Percentage mode
+            }
+            const makingAmtEl = row.querySelector('.making-amount');
+            if (makingAmtEl) makingAmtEl.textContent = Math.round(makingAmt).toLocaleString('en-IN');
+            
+            // Total for this row
+            let totalRow = metalAmt + makingAmt;
             
             row.dataset.appliedRate = currentRate; // Store for saving
+            row.dataset.metalAmount = metalAmt;
+            row.dataset.makingAmount = makingAmt;
 
             // If Receipt (R), amount is negative (customer giving back)
             if (ri === 'R') {
                 totalRow = -totalRow;
-                goldValTotal += -metalVal;
-                makingTotal += -mk;
+                metalValTotal += -metalAmt;
+                makingTotal += -makingAmt;
             } else {
-                goldValTotal += metalVal;
-                makingTotal += mk;
+                metalValTotal += metalAmt;
+                makingTotal += makingAmt;
             }
             
             const amtEl = row.querySelector('.item-amount');
             if (amtEl) {
                 const prefix = totalRow < 0 ? "- ₹ " : "₹ ";
-                amtEl.textContent = `${prefix}${Math.abs(totalRow).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                amtEl.textContent = `${prefix}${Math.abs(Math.round(totalRow)).toLocaleString('en-IN')}`;
                 if (totalRow < 0) amtEl.style.color = "#d9534f"; // Red for receipt
                 else amtEl.style.color = "var(--primary-gold-dark)";
             }
         });
 
-        const subTotalVal = goldValTotal + makingTotal;
+        const subTotalVal = metalValTotal + makingTotal;
         const totalGstRate = parseFloat(el('gst-rate-input')?.value) || 0;
         const gstType = el('gst-type-select')?.value || 'intra';
+        const docType = typeSelect ? typeSelect.value : 'Tax Invoice';
+        const isEstimate = docType === 'Rough Estimate';
         
         let cgstVal = 0, sgstVal = 0, igstVal = 0;
+        
+        const gstContainer = el('gst-container');
+        if (gstContainer) {
+            gstContainer.style.display = isEstimate ? 'none' : 'block';
+        }
 
-        if (gstType === 'intra') {
-            const halfRate = totalGstRate / 2;
-            cgstVal = subTotalVal * (halfRate / 100);
-            sgstVal = subTotalVal * (halfRate / 100);
-            
-            if (el('cgst-sgst-rows')) el('cgst-sgst-rows').style.display = 'block';
-            if (el('igst-row')) el('igst-row').style.display = 'none';
-            
-            const labelCGST = el('label-cgst');
-            const labelSGST = el('label-sgst');
-            if (labelCGST) labelCGST.textContent = `CGST (${halfRate}%):`;
-            if (labelSGST) labelSGST.textContent = `SGST (${halfRate}%):`;
-        } else {
-            igstVal = subTotalVal * (totalGstRate / 100);
-            
-            if (el('cgst-sgst-rows')) el('cgst-sgst-rows').style.display = 'none';
-            if (el('igst-row')) el('igst-row').style.display = 'block';
-            
-            const labelIGST = el('label-igst');
-            if (labelIGST) labelIGST.textContent = `IGST (${totalGstRate}%):`;
+        if (!isEstimate) {
+            if (gstType === 'intra') {
+                const halfRate = totalGstRate / 2;
+                cgstVal = subTotalVal * (halfRate / 100);
+                sgstVal = subTotalVal * (halfRate / 100);
+                
+                if (el('cgst-sgst-rows')) el('cgst-sgst-rows').style.display = 'block';
+                if (el('igst-row')) el('igst-row').style.display = 'none';
+                
+                const labelCGST = el('label-cgst');
+                const labelSGST = el('label-sgst');
+                if (labelCGST) labelCGST.textContent = `CGST (${halfRate}%):`;
+                if (labelSGST) labelSGST.textContent = `SGST (${halfRate}%):`;
+            } else {
+                igstVal = subTotalVal * (totalGstRate / 100);
+                
+                if (el('cgst-sgst-rows')) el('cgst-sgst-rows').style.display = 'none';
+                if (el('igst-row')) el('igst-row').style.display = 'block';
+                
+                const labelIGST = el('label-igst');
+                if (labelIGST) labelIGST.textContent = `IGST (${totalGstRate}%):`;
+            }
         }
 
         const discountVal = parseFloat(el('discount-input')?.value) || 0;
@@ -317,13 +423,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target) target.textContent = `₹ ${val.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
         };
 
-        setTxt('break-gold-value', goldValTotal);
+        setTxt('break-gold-value', metalValTotal);
         setTxt('break-making-charges', makingTotal);
         setTxt('break-sub-total', subTotalVal);
         setTxt('break-cgst', cgstVal);
         setTxt('break-sgst', sgstVal);
         setTxt('break-igst', igstVal);
         setTxt('break-total-amount', roundedTotal);
+        setTxt('summary-subtotal', subTotalVal);
+        setTxt('summary-gst', cgstVal + sgstVal + igstVal);
+        setTxt('summary-total', roundedTotal);
         
         const rEl = el('break-rounded');
         if (rEl) rEl.textContent = `₹ ${roundOffVal.toFixed(2)}`;
@@ -407,15 +516,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 rows.forEach(row => {
                     const rowAmt = parseFloat(row.querySelector('.item-amount')?.innerText.replace(/[^0-9.-]+/g, "")) || 0;
                     const gWt = parseFloat(row.querySelector('.gross-wt')?.value) || 0;
+                    const metalSelect = row.querySelector('.metal-select');
                     invoiceData.Items.push({
-                        ItemName: row.querySelector('.item-name')?.value || "",
+                        ItemName: row.querySelector('.item-name')?.value || row.querySelector('.item-name-select')?.value || "",
                         RI: row.querySelector('.ri-select')?.value || "I",
+                        Metal: metalSelect ? metalSelect.value : (row.dataset.category || "Gold"),
                         Purity: row.querySelector('.purity-val')?.value || "",
                         GrossWt: gWt,
                         NetWt: gWt, 
                         FineWt: parseFloat(row.querySelector('.fine-wt')?.value) || 0,
-                        Rate: parseFloat(row.dataset.appliedRate) || 0, // Individual rate
-                        MakingCharges: parseFloat(row.querySelector('.making')?.value) || 0,
+                        Rate: parseFloat(row.dataset.appliedRate) || 0,
+                        MetalAmount: parseFloat(row.dataset.metalAmount) || 0,
+                        MakingPercent: parseFloat(row.querySelector('.making-pct')?.value) || 0,
+                        MakingCharges: parseFloat(row.dataset.makingAmount) || 0,
                         Amount: rowAmt
                     });
                 });
@@ -446,6 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dateInput) dateInput.valueAsDate = new Date();
         await loadMasterData();
         await fetchNextNumber();
+        applyColumnVisibility();
         if (itemsTableBody && itemsTableBody.children.length === 0) window.addRow();
     })();
 });

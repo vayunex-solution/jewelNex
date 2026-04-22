@@ -48,14 +48,38 @@
     <table class="print-table">
         <thead>
             <tr>
-                <th style="width: 50px;">SR</th>
-                <th style="width: 80px;">R/I</th>
-                <th style="width: 250px;">ITEM NAME</th>
-                <th style="width: 100px;">PURITY</th>
-                <th class="ar">GROSS WT</th>
-                <th class="ar">FINE WT</th>
-                <th class="ar">MAKING</th>
-                <th class="ar">AMOUNT</th>
+                <th style="width: 40px;">S.No</th>
+                <th>Item Name</th>
+                @if (settings.ShowMetalColumn)
+                {
+                    <th>Metal</th>
+                }
+                <th class="ar">Gross Wt (g)</th>
+                @if (settings.ShowPurityColumn)
+                {
+                    <th class="ar">Purity (%)</th>
+                }
+                @if (settings.ShowFineWtColumn)
+                {
+                    <th class="ar">Fine Wt (g)</th>
+                }
+                @if (settings.ShowRateColumn)
+                {
+                    <th class="ar">Rate (₹/g)</th>
+                }
+                @if (settings.ShowMetalAmountColumn)
+                {
+                    <th class="ar">Metal Amt (₹)</th>
+                }
+                @if (settings.ShowMakingPercentColumn)
+                {
+                    <th class="ar">Making %</th>
+                }
+                @if (settings.ShowMakingAmountColumn)
+                {
+                    <th class="ar">Making Amt (₹)</th>
+                }
+                <th class="ar">Total (₹)</th>
             </tr>
         </thead>
         <tbody>
@@ -64,13 +88,37 @@
             {
                 <tr>
                     <td>@(i++)</td>
-                    <td><span class="badge @(item.RI == "R" ? "badge-danger" : "badge-success")">@item.RI</span></td>
                     <td><strong>@item.ItemName</strong></td>
-                    <td>@item.Purity</td>
-                    <td class="ar">@item.GrossWt.ToString("N3")g</td>
-                    <td class="ar">@item.FineWt.ToString("N3")g</td>
-                    <td class="ar">@item.MakingCharges.ToString("N2")</td>
-                    <td class="ar"><strong style="color: @(item.Amount < 0 ? "#d9534f" : "inherit")">₹ @Math.Abs(item.Amount).ToString("N2")</strong> @(item.Amount < 0 ? "(Cr)" : "")</td>
+                    @if (settings.ShowMetalColumn)
+                    {
+                        <td>@(item.Metal ?? "Gold")</td>
+                    }
+                    <td class="ar">@item.GrossWt.ToString("N3") g</td>
+                    @if (settings.ShowPurityColumn)
+                    {
+                        <td class="ar">@item.Purity</td>
+                    }
+                    @if (settings.ShowFineWtColumn)
+                    {
+                        <td class="ar">@item.FineWt.ToString("N3") g</td>
+                    }
+                    @if (settings.ShowRateColumn)
+                    {
+                        <td class="ar">₹ @item.Rate.ToString("N0")</td>
+                    }
+                    @if (settings.ShowMetalAmountColumn)
+                    {
+                        <td class="ar">₹ @item.MetalAmount.ToString("N0")</td>
+                    }
+                    @if (settings.ShowMakingPercentColumn)
+                    {
+                        <td class="ar">@item.MakingPercent.ToString("N1")%</td>
+                    }
+                    @if (settings.ShowMakingAmountColumn)
+                    {
+                        <td class="ar">₹ @item.MakingCharges.ToString("N0")</td>
+                    }
+                    <td class="ar"><strong style="color: @(item.Amount < 0 ? "#d9534f" : "inherit")">₹ @Math.Abs(item.Amount).ToString("N0")</strong> @(item.Amount < 0 ? "(Cr)" : "")</td>
                 </tr>
             }
         </tbody>
