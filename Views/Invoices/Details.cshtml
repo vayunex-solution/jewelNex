@@ -141,7 +141,7 @@
                     <span>₹ @Model.IGST.ToString("N2")</span>
                 </div>
             }
-            else
+            else if (Model.CGST > 0 || Model.SGST > 0)
             {
                 <div class="total-row">
                     <span>CGST (@((Model.GstRate / 2).ToString("F2"))%):</span>

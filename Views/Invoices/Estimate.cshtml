@@ -57,9 +57,11 @@
         <thead>
             <tr>
                 <th style="width: 5%;">S.No.</th>
-                <th style="width: 55%;">Description of Goods</th>
+                <th style="width: 40%;">Description of Goods</th>
                 <th style="width: 10%;">Weight</th>
-                <th style="width: 15%;">Rate</th>
+                <th style="width: 10%;">Rate</th>
+                <th style="width: 10%;">Mk %</th>
+                <th style="width: 10%;">Making</th>
                 <th style="width: 15%; text-align: center;" colspan="2">Amount<br><span style="font-size: 0.8em;">Rs. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; P.</span></th>
             </tr>
         </thead>
@@ -67,11 +69,14 @@
             @for (int i = 0; i < 10; i++)
             {
                 var item = i < Model.Items.Count ? Model.Items[i] : null;
+                
                 <tr>
                     <td class="text-center">@(item != null ? (i + 1).ToString() : "")</td>
                     <td>@(item?.ItemName ?? "")</td>
                     <td class="text-right">@(item != null ? item.NetWt.ToString("N3") : "")</td>
                     <td class="text-right">@(item != null ? item.Rate.ToString("N2") : "")</td>
+                    <td class="text-right">@(item != null && item.MakingPercent > 0 ? item.MakingPercent.ToString("N1") + (settings.MakingChargeType == "Percentage" ? "%" : "") : (item != null ? "-" : ""))</td>
+                    <td class="text-right">@(item != null && item.MakingCharges > 0 ? item.MakingCharges.ToString("N2") : (item != null ? "-" : ""))</td>
                     <td class="amount-rs">@(item != null ? ((int)item.Amount).ToString() : "")</td>
                     <td class="amount-p">@(item != null ? ((int)((item.Amount - (int)item.Amount) * 100)).ToString("00") : "")</td>
                 </tr>
@@ -81,13 +86,13 @@
             @if (Model.Discount > 0)
             {
                 <tr>
-                    <td colspan="4" class="text-right"><strong>Discount</strong></td>
+                    <td colspan="5" class="text-right"><strong>Discount</strong></td>
                     <td class="amount-rs"><strong>@((int)Model.Discount)</strong></td>
                     <td class="amount-p"><strong>@(((int)((Model.Discount - (int)Model.Discount) * 100)).ToString("00"))</strong></td>
                 </tr>
             }
             <tr>
-                <td colspan="4" class="text-right"><strong>TOTAL</strong></td>
+                <td colspan="5" class="text-right"><strong>TOTAL</strong></td>
                 <td class="amount-rs"><strong>@((int)Model.TotalAmount)</strong></td>
                 <td class="amount-p"><strong>@(((int)((Model.TotalAmount - (int)Model.TotalAmount) * 100)).ToString("00"))</strong></td>
             </tr>

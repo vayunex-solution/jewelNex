@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="bill-col-rate"><input type="number" class="rate-val" step="0.01" value="0" readonly tabindex="-1"></td>
                 <td class="bill-col-metalamt" style="text-align: right;"><strong class="metal-amount">0</strong></td>
                 <td class="bill-col-makingpct"><input type="number" class="making-pct" step="0.01" value="${defaultMakingPct}"></td>
-                <td class="bill-col-makingamt" style="text-align: right;"><strong class="making-amount">0</strong></td>
+                <td class="bill-col-makingamt"><input type="number" class="making-amount" step="0.01" value="0"></td>
                 <td style="text-align: right;"><strong class="item-amount" style="color: var(--primary-gold-dark); white-space: nowrap;">₹ 0</strong></td>
                 <td><button type="button" class="btn-remove" title="Remove"><i class="fas fa-trash"></i></button></td>
             `;
@@ -269,6 +269,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const riSelect = row.querySelector('.ri-select');
             riSelect.onchange = calculateInvoice;
+
+            const makingPctInput = row.querySelector('.making-pct');
+            const makingAmtInput = row.querySelector('.making-amount');
+
+            // If user types directly into making amount, clear out the percentage to prevent auto-override
+            if (makingAmtInput && makingPctInput) {
+                makingAmtInput.addEventListener('input', () => {
+                    makingPctInput.value = ''; 
+                });
+            }
 
             row.querySelectorAll('input').forEach(input => {
                 input.addEventListener('input', calculateInvoice);
@@ -342,13 +352,20 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Calculate Making Amount
             let makingAmt = 0;
-            if (BS.makingChargeType === 'Flat') {
-                makingAmt = makingPct; // In flat mode, the input is the direct amount
+            const makingAmtInput = row.querySelector('.making-amount');
+            
+            if (makingPct > 0) {
+                // Calculate from percentage
+                if (BS.makingChargeType === 'Flat') {
+                    makingAmt = makingPct; // In flat mode, the input is the direct amount
+                } else {
+                    makingAmt = metalAmt * (makingPct / 100); // Percentage mode
+                }
+                if (makingAmtInput) makingAmtInput.value = Math.round(makingAmt);
             } else {
-                makingAmt = metalAmt * (makingPct / 100); // Percentage mode
+                // If percentage is 0 or empty, trust the direct amount input
+                makingAmt = parseFloat(makingAmtInput?.value) || 0;
             }
-            const makingAmtEl = row.querySelector('.making-amount');
-            if (makingAmtEl) makingAmtEl.textContent = Math.round(makingAmt).toLocaleString('en-IN');
             
             // Total for this row
             let totalRow = metalAmt + makingAmt;
