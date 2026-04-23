@@ -59,6 +59,17 @@ document.addEventListener('DOMContentLoaded', () => {
             calculateInvoice();
         });
     }
+    if (el('print-option')) {
+        el('print-option').addEventListener('change', () => {
+            calculateInvoice();
+            // Visual feedback effect
+            const breakdown = document.querySelector('.total-breakdown');
+            if (breakdown) {
+                breakdown.style.transform = 'scale(1.02)';
+                setTimeout(() => breakdown.style.transform = 'scale(1)', 200);
+            }
+        });
+    }
 
     async function fetchNextNumber() {
         if (!typeSelect) return;
@@ -454,6 +465,42 @@ document.addEventListener('DOMContentLoaded', () => {
         const rEl = el('break-rounded');
         if (rEl) rEl.textContent = `₹ ${roundOffVal.toFixed(2)}`;
         
+        // --- PREVIEW PRINT OPTIONS ---
+        const printOpt = el('print-option')?.value || "None";
+        const weightRow = el('preview-weight-row');
+        const balanceRow = el('preview-balance-row');
+        
+        if (weightRow) weightRow.style.display = (printOpt === "Weight" || printOpt === "Both") ? "flex" : "none";
+        if (balanceRow) balanceRow.style.display = (printOpt === "Balance" || printOpt === "Both") ? "flex" : "none";
+
+        // Calculate Total Weight
+        let totalWt = 0;
+        itemsTableBody.querySelectorAll('tr').forEach(row => {
+            totalWt += parseFloat(row.querySelector('.gross-wt')?.value) || 0;
+        });
+        if (el('preview-total-weight')) el('preview-total-weight').textContent = `${totalWt.toFixed(3)} g`;
+
+        // Calculate Net Balance
+        const custId = el('cust-name-select')?.value;
+        let currentBalance = 0;
+        if (custId && custId !== 'custom') {
+            const cust = masterCustomers.find(c => c.id == custId);
+            if (cust) {
+                // Simplified calculation: Opening + Net of all current sessions
+                // For a real-time "Net Balance", we ideally need the server's current balance for the customer.
+                // But we can approximate with OpeningBalance + Outstanding of this invoice for now.
+                currentBalance = parseFloat(cust.openingBalance) || 0;
+                if (cust.balanceType == 2) currentBalance = -currentBalance; // Cr
+            }
+        } else if (custId === 'custom') {
+            currentBalance = parseFloat(el('cust-opening-bal')?.value) || 0;
+            if (el('cust-bal-type')?.value == "2") currentBalance = -currentBalance;
+        }
+
+        const outstanding = roundedTotal - (parseFloat(el('paid-amount')?.value) || 0);
+        const netPending = currentBalance + outstanding;
+        if (el('preview-net-balance')) el('preview-net-balance').textContent = `₹ ${netPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
         updateOutstanding();
     }
 
@@ -509,6 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     GstRate: parseFloat(el('gst-rate-input')?.value) || 0,
                     Discount: parseFloat(el('discount-input')?.value) || 0,
                     Remarks: el('remarks')?.value || "",
+                    PrintOption: el('print-option')?.value || "None",
                     CustomerId: isNewCust ? 0 : parseInt(custIdVal),
                     Customer: isNewCust ? {
                         Name: el('cust-name')?.value || "",

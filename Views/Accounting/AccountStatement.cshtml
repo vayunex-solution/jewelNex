@@ -28,6 +28,15 @@
                 <label>To Date</label>
                 <input type="date" name="toDate" class="premium-input" value="@(Model?.ToDate.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd"))" />
             </div>
+            <div class="form-group mb-0" style="flex:1">
+                <label>Display on Print</label>
+                <select name="printOption" class="premium-input">
+                    <option value="None" selected="@(Model?.PrintOption == "None")">None</option>
+                    <option value="Balance" selected="@(Model?.PrintOption == "Balance")">Display Pending Balance</option>
+                    <option value="Weight" selected="@(Model?.PrintOption == "Weight")">Display Total Metal Weight</option>
+                    <option value="Both" selected="@(Model?.PrintOption == "Both")">Display Both</option>
+                </select>
+            </div>
             <div class="form-group mb-0">
                 <button type="submit" class="btn btn-primary" style="height:45px; padding: 0 30px;">
                     <i class="fas fa-search"></i> View Statement
@@ -65,6 +74,12 @@
             <div class="balances text-right">
                 <p class="mb-1">Printed on: @DateTime.Now.ToString("dd-MM-yyyy HH:mm")</p>
                 <p class="closing-balance-summary">Closing Bal. : <strong>₹ @Model.ClosingBalance.ToString("N2") @Model.ClosingBalanceType</strong></p>
+                @if (Model.PrintOption == "Weight" || Model.PrintOption == "Both")
+                {
+                    <p class="closing-balance-summary" style="color: var(--primary-gold-dark); margin-top: 5px;">
+                        Total Metal Weight : <strong>@Model.TotalWeight.ToString("N3") g</strong>
+                    </p>
+                }
             </div>
         </div>
 

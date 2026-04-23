@@ -125,7 +125,7 @@ namespace JewelleryApp.Controllers
             return View(voucher);
         }
 
-        public async Task<IActionResult> AccountStatement(string? accountId, DateTime? fromDate, DateTime? toDate)
+        public async Task<IActionResult> AccountStatement(string? accountId, DateTime? fromDate, DateTime? toDate, string? printOption)
         {
             var accountsList = await _context.AccountHeads.OrderBy(a => a.Name).ToListAsync();
             var customersList = await _context.Customers.OrderBy(c => c.Name).ToListAsync();
@@ -226,6 +226,25 @@ namespace JewelleryApp.Controllers
 
             vm.ClosingBalance = Math.Abs(runningBal);
             vm.ClosingBalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr;
+            vm.PrintOption = printOption ?? "None";
+
+            // Calculate Total Weight for the statement period if requested
+            if (vm.PrintOption == "Weight" || vm.PrintOption == "Both")
+            {
+                var invoiceNos = vm.Entries
+                    .Where(e => e.VoucherNo.Contains("INV-"))
+                    .Select(e => e.VoucherNo.Substring(e.VoucherNo.IndexOf("INV-")))
+                    .Distinct()
+                    .ToList();
+
+                if (invoiceNos.Any())
+                {
+                    vm.TotalWeight = await _context.InvoiceItems
+                        .Include(ii => ii.Invoice)
+                        .Where(ii => invoiceNos.Contains(ii.Invoice.InvoiceNo))
+                        .SumAsync(ii => ii.NetWt);
+                }
+            }
 
             return View(vm);
         }

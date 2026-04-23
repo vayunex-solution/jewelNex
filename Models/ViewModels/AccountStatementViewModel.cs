@@ -25,5 +25,7 @@ namespace JewelleryApp.Models.ViewModels
         public decimal TotalCredit => Entries.Sum(e => e.Credit);
         public decimal ClosingBalance { get; set; }
         public BalanceType ClosingBalanceType { get; set; }
+        public string PrintOption { get; set; } = "None";
+        public decimal TotalWeight { get; set; }
     }
 }

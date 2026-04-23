@@ -60,6 +60,7 @@ namespace JewelleryApp.Models.Jewellery
 
         public string? Remarks { get; set; }
         public string InvoiceType { get; set; } = "Tax Invoice"; // "Tax Invoice" or "Rough Estimate"
+        public string PrintOption { get; set; } = "None"; // "None", "Balance", "Weight", "Both"
         public List<InvoiceItem> Items { get; set; } = new();
     }
 }

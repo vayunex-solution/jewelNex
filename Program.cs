@@ -134,6 +134,7 @@ using (var scope = app.Services.CreateScope())
 
     // Invoice schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN InvoiceType TEXT NOT NULL DEFAULT 'Tax Invoice';"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN PrintOption TEXT NOT NULL DEFAULT 'None';"); } catch { }
 
     // Customer schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN CustomerCode TEXT NOT NULL DEFAULT '';"); } catch { }

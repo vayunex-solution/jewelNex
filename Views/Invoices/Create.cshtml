@@ -93,19 +93,6 @@
                 <label>Billing Address <span class="text-danger">*</span></label>
                 <textarea id="cust-address" rows="2" placeholder="Full residential or business address..."></textarea>
             </div>
-            <div class="form-row" style="margin-top:15px; border-top: 1px dotted var(--primary-gold-light); padding-top:15px;">
-                <div class="form-group col-6">
-                    <label>Opening Balance (₹)</label>
-                    <input type="number" id="cust-opening-bal" step="0.01" placeholder="0.00">
-                </div>
-                <div class="form-group col-6">
-                    <label>Balance Type</label>
-                    <select id="cust-bal-type">
-                        <option value="1">Debit (Dr) - Customer Owes</option>
-                        <option value="2">Credit (Cr) - You Owe</option>
-                    </select>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -178,9 +165,20 @@
                 <span class="radio-card"><i class="fas fa-credit-card"></i> Card</span>
             </label>
         </div>
-        <div class="form-group" style="margin-top: 20px;">
-            <label>Remarks</label>
-            <input type="text" id="remarks" placeholder="Add any notes here...">
+        <div class="form-row" style="margin-top: 20px;">
+            <div class="form-group flex-1">
+                <label>Remarks</label>
+                <input type="text" id="remarks" placeholder="Add any notes here...">
+            </div>
+            <div class="form-group flex-1">
+                <label>Display on Print</label>
+                <select id="print-option" class="form-control premium-select">
+                    <option value="None">None (Standard)</option>
+                    <option value="Balance">Display Pending Balance</option>
+                    <option value="Weight">Display Total Metal Weight</option>
+                    <option value="Both">Display Both</option>
+                </select>
+            </div>
         </div>
     </section>
 
@@ -249,6 +247,14 @@
             <span>Rounded Off</span>
             <span id="break-rounded">₹ 0.00</span>
         </div>
+        <div id="preview-weight-row" class="total-row" style="display:none; border-top: 1px dashed var(--primary-gold); margin-top: 10px; color: var(--primary-gold-dark);">
+            <span><i class="fas fa-weight-hanging"></i> Total Metal Weight (To Print)</span>
+            <span id="preview-total-weight">0.000 g</span>
+        </div>
+        <div id="preview-balance-row" class="total-row" style="display:none; border-top: 1px dashed #d9534f; margin-top: 5px; color: #d9534f;">
+            <span><i class="fas fa-history"></i> Net Customer Balance (To Print)</span>
+            <span id="preview-net-balance">₹ 0.00</span>
+        </div>
     </section>
 </div>
 
@@ -298,6 +304,10 @@
     /* Column Specific consistency */
     .huid-num { text-transform: uppercase; }
     .item-amount { color: var(--primary-gold-dark); white-space: nowrap; }
+    
+    .total-breakdown {
+        transition: transform 0.2s ease-out;
+    }
     
     @@media (max-width: 1400px) {
         .content-full { padding: 120px 20px 40px; }

@@ -101,6 +101,29 @@
             <div class="cheque-line">
                 <strong>Cheque No./Cash</strong> <span class="data-field">@Model.PaymentMode</span>
             </div>
+
+            @if (Model.PrintOption == "Weight" || Model.PrintOption == "Both")
+            {
+                <div class="cheque-line" style="margin-top: 5px; color: #333;">
+                    <strong>Total Metal Weight</strong> <span class="data-field">@Model.Items.Sum(i => i.NetWt).ToString("N3") g</span>
+                </div>
+            }
+
+            @if (Model.PrintOption == "Balance" || Model.PrintOption == "Both")
+            {
+                var allInvoices = Db.Invoices.Where(i => i.CustomerId == Model.CustomerId && i.Date <= Model.Date).ToList();
+                var totalBilled = allInvoices.Sum(i => i.TotalAmount);
+                var totalPaid = allInvoices.Sum(i => i.PaidAmount);
+                var openingBal = Model.Customer?.OpeningBalance ?? 0;
+                if (Model.Customer?.BalanceType == JewelleryApp.Models.Jewellery.BalanceType.Cr) openingBal = -openingBal;
+                
+                var netPending = (openingBal + totalBilled) - totalPaid;
+
+                <div class="cheque-line" style="margin-top: 5px; font-weight: bold; color: #d9534f;">
+                    <strong>Net Pending Balance</strong> <span class="data-field">₹ @netPending.ToString("N2")</span>
+                </div>
+            }
+
             <div class="amount-words-tax">
                 <strong>Amount in words</strong> <span class="data-field"></span>
             </div>
