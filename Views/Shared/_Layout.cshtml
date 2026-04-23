@@ -25,79 +25,100 @@
                 </div>
                 <button id="sidebar-pin" class="pin-btn"><i class="fas fa-thumbtack"></i></button>
             </div>
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="user-profile-sidebar" style="padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="background: rgba(255,255,255,0.1); width: 35px; height: 35px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary-gold);">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div style="flex: 1; overflow: hidden;">
+                            <div style="font-size: 0.85rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@User.Identity.Name</div>
+                            <div style="font-size: 0.7rem; color: var(--primary-gold); text-transform: uppercase; letter-spacing: 1px;">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</div>
+                        </div>
+                        <a asp-controller="Account" asp-action="Logout" style="color: #ff6b6b; font-size: 0.9rem; opacity: 0.7; transition: opacity 0.3s;" title="Logout">
+                            <i class="fas fa-power-off"></i>
+                        </a>
+                    </div>
+                </div>
+            }
             
-            <nav class="main-menu vertical">
-                <a asp-controller="Home" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")">
-                    <i class="fas fa-th-large"></i> <span>Dashboard</span>
-                </a>
-                
-                <div class="nav-item-dropdown">
-                    <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Invoices" ? "active" : "")">
-                        <i class="fas fa-exchange-alt"></i> <span>Transaction</span> <i class="fas fa-chevron-right arrow"></i>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <nav class="main-menu vertical">
+                    <a asp-controller="Home" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")">
+                        <i class="fas fa-th-large"></i> <span>Dashboard</span>
                     </a>
-                    <div class="dropdown-menu">
-                        <a asp-controller="Invoices" asp-action="Create"><i class="fas fa-plus"></i> New Sales Invoice</a>
-                        <a asp-controller="Invoices" asp-action="Index"><i class="fas fa-history"></i> Invoice History</a>
-                        <a asp-controller="Accounting" asp-action="Create" asp-route-type="CashPayment"><i class="fas fa-hand-holding-usd"></i> Cash Payment</a>
-                        <a asp-controller="Accounting" asp-action="Create" asp-route-type="CashReceipt"><i class="fas fa-file-invoice-dollar"></i> Cash Receipt</a>
+                    
+                    <div class="nav-item-dropdown">
+                        <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Invoices" ? "active" : "")">
+                            <i class="fas fa-exchange-alt"></i> <span>Transaction</span> <i class="fas fa-chevron-right arrow"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a asp-controller="Invoices" asp-action="Create"><i class="fas fa-plus"></i> New Sales Invoice</a>
+                            <a asp-controller="Invoices" asp-action="Index"><i class="fas fa-history"></i> Invoice History</a>
+                            <a asp-controller="Accounting" asp-action="Create" asp-route-type="CashPayment"><i class="fas fa-hand-holding-usd"></i> Cash Payment</a>
+                            <a asp-controller="Accounting" asp-action="Create" asp-route-type="CashReceipt"><i class="fas fa-file-invoice-dollar"></i> Cash Receipt</a>
+                        </div>
                     </div>
-                </div>
 
-                <div class="nav-item-dropdown">
-                    <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Stock" ? "active" : "")">
-                        <i class="fas fa-boxes"></i> <span>Inventory</span> <i class="fas fa-chevron-right arrow"></i>
+                    <div class="nav-item-dropdown">
+                        <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Stock" ? "active" : "")">
+                            <i class="fas fa-boxes"></i> <span>Inventory</span> <i class="fas fa-chevron-right arrow"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a asp-controller="Stock" asp-action="Ledger"><i class="fas fa-list-ul"></i> Stock Ledger</a>
+                            <a asp-controller="Stock" asp-action="Create" asp-route-type="Purchase"><i class="fas fa-plus-circle"></i> Add Stock</a>
+                            <a asp-controller="Stock" asp-action="Create" asp-route-type="IssueSlip"><i class="fas fa-minus-circle"></i> Issue Stock</a>
+                        </div>
+                    </div>
+
+                    <div class="nav-item-dropdown">
+                        <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "ItemMaster" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Customers" ? "active" : "")">
+                            <i class="fas fa-layer-group"></i> <span>Master</span> <i class="fas fa-chevron-right arrow"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a asp-controller="ItemMaster" asp-action="Index"><i class="fas fa-gem"></i> Item Master</a>
+                            <a asp-controller="Customers" asp-action="Index"><i class="fas fa-users"></i> Customers</a>
+                        </div>
+                    </div>
+
+                    <div class="nav-item-dropdown">
+                        <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reports" ? "active" : "")">
+                            <i class="fas fa-chart-line"></i> <span>Reports</span> <i class="fas fa-chevron-right arrow"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a asp-controller="Reports" asp-action="Index"><i class="fas fa-tachometer-alt"></i> Report Summary</a>
+                            <a asp-controller="Reports" asp-action="AllInvoices"><i class="fas fa-list-ul"></i> Invoice List</a>
+                        </div>
+                    </div>
+
+                    <div class="nav-item-dropdown">
+                        <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Accounting" ? "active" : "")">
+                            <i class="fas fa-calculator"></i> <span>Accounting</span> <i class="fas fa-chevron-right arrow"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a asp-controller="Accounting" asp-action="Index"><i class="fas fa-history"></i> Account History</a>
+                            <a asp-controller="AccountGroups" asp-action="Index"><i class="fas fa-sitemap"></i> Account Groups</a>
+                            <a asp-controller="AccountHeads" asp-action="Index"><i class="fas fa-list-alt"></i> Account Heads</a>
+                            <a asp-controller="Accounting" asp-action="AccountStatement"><i class="fas fa-file-invoice-dollar"></i> Account Statement</a>
+                        </div>
+                    </div>
+
+                    <a asp-controller="Database" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Database" ? "active" : "")">
+                        <i class="fas fa-database"></i> <span>Database</span>
                     </a>
-                    <div class="dropdown-menu">
-                        <a asp-controller="Stock" asp-action="Ledger"><i class="fas fa-list-ul"></i> Stock Ledger</a>
-                        <a asp-controller="Stock" asp-action="Create" asp-route-type="Purchase"><i class="fas fa-plus-circle"></i> Add Stock</a>
-                        <a asp-controller="Stock" asp-action="Create" asp-route-type="IssueSlip"><i class="fas fa-minus-circle"></i> Issue Stock</a>
-                    </div>
-                </div>
-
-                <div class="nav-item-dropdown">
-                    <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "ItemMaster" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Customers" ? "active" : "")">
-                        <i class="fas fa-layer-group"></i> <span>Master</span> <i class="fas fa-chevron-right arrow"></i>
+                    
+                    <a asp-controller="Settings" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Settings" ? "active" : "")">
+                        <i class="fas fa-cog"></i> <span>Settings</span>
                     </a>
-                    <div class="dropdown-menu">
-                        <a asp-controller="ItemMaster" asp-action="Index"><i class="fas fa-gem"></i> Item Master</a>
-                        <a asp-controller="Customers" asp-action="Index"><i class="fas fa-users"></i> Customers</a>
-                    </div>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <button id="theme-toggle" class="theme-btn"><i class="fas fa-moon"></i> Theme</button>
                 </div>
-
-                <div class="nav-item-dropdown">
-                    <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reports" ? "active" : "")">
-                        <i class="fas fa-chart-line"></i> <span>Reports</span> <i class="fas fa-chevron-right arrow"></i>
-                    </a>
-                    <div class="dropdown-menu">
-                        <a asp-controller="Reports" asp-action="Index"><i class="fas fa-tachometer-alt"></i> Report Summary</a>
-                        <a asp-controller="Reports" asp-action="AllInvoices"><i class="fas fa-list-ul"></i> Invoice List</a>
-                    </div>
-                </div>
-
-                <div class="nav-item-dropdown">
-                    <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Accounting" ? "active" : "")">
-                        <i class="fas fa-calculator"></i> <span>Accounting</span> <i class="fas fa-chevron-right arrow"></i>
-                    </a>
-                    <div class="dropdown-menu">
-                        <a asp-controller="Accounting" asp-action="Index"><i class="fas fa-history"></i> Account History</a>
-                        <a asp-controller="AccountGroups" asp-action="Index"><i class="fas fa-sitemap"></i> Account Groups</a>
-                        <a asp-controller="AccountHeads" asp-action="Index"><i class="fas fa-list-alt"></i> Account Heads</a>
-                        <a asp-controller="Accounting" asp-action="AccountStatement"><i class="fas fa-file-invoice-dollar"></i> Account Statement</a>
-                    </div>
-                </div>
-
-                <a asp-controller="Database" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Database" ? "active" : "")">
-                    <i class="fas fa-database"></i> <span>Database</span>
-                </a>
-                
-                <a asp-controller="Settings" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Settings" ? "active" : "")">
-                    <i class="fas fa-cog"></i> <span>Settings</span>
-                </a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <button id="theme-toggle" class="theme-btn"><i class="fas fa-moon"></i> Theme</button>
-            </div>
+            }
         </aside>
 
         <!-- Main Content Area -->

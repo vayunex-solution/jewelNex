@@ -20,6 +20,7 @@ namespace JewelleryApp.Data
         public DbSet<AccountGroup> AccountGroups { get; set; } = default!;
         public DbSet<AccountHead> AccountHeads { get; set; } = default!;
         public DbSet<StockEntry> StockEntries { get; set; } = default!;
+        public DbSet<User> Users { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

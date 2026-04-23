@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using JewelleryApp.Models;
 
 namespace JewelleryApp.Controllers;
 
+[Authorize]
 public class HomeController : Controller
 {
     public IActionResult Index()

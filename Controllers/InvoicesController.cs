@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using JewelleryApp.Data;
 using JewelleryApp.Models.Jewellery;
 
 namespace JewelleryApp.Controllers
 {
+    [Authorize]
     public class InvoicesController : Controller
     {
         private readonly ApplicationDbContext _context;

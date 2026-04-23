@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using JewelleryApp.Data;
 using JewelleryApp.Models.Jewellery;
 using System.Collections.Generic;
@@ -11,6 +12,17 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/Login";
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    });
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -174,6 +186,26 @@ using (var scope = app.Services.CreateScope())
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ItemsMaster ADD COLUMN OpeningStock INTEGER NOT NULL DEFAULT 0;"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ItemsMaster ADD COLUMN TotalWeight DECIMAL(18, 3) NOT NULL DEFAULT 0;"); } catch { }
     
+    // Users table
+    try
+    {
+        context.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS Users (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Username TEXT NOT NULL,
+                Password TEXT NOT NULL,
+                FullName TEXT,
+                Role TEXT NOT NULL DEFAULT 'Admin',
+                CreatedAt TEXT NOT NULL
+            );");
+        
+        if (!context.Users.Any())
+        {
+            context.Database.ExecuteSqlRaw("INSERT INTO Users (Username, Password, FullName, Role, CreatedAt) VALUES ('admin', 'jks1988@1122', 'Administrator', 'Admin', '" + DateTime.Now.ToString("O") + "');");
+        }
+    }
+    catch { }
+
     // Sync StockQuantity for existing items if it was 0
     var itemsToSync = context.ItemsMaster.Where(i => i.StockQuantity == 0 && i.OpeningStock > 0).ToList();
     if (itemsToSync.Any()) {
@@ -241,6 +273,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseAuthentication();
 app.UseMiddleware<JewelleryApp.Utilities.LicenseMiddleware>();
 app.UseAuthorization();
 
