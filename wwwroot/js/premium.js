@@ -232,7 +232,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="bill-col-finewt"><input type="number" class="fine-wt" step="0.001" value="0.000" readonly tabindex="-1"></td>
                 <td class="bill-col-rate"><input type="number" class="rate-val" step="0.01" value="0" readonly tabindex="-1"></td>
                 <td class="bill-col-metalamt" style="text-align: right;"><strong class="metal-amount">0</strong></td>
-                <td class="bill-col-makingpct"><input type="number" class="making-pct" step="0.01" value="${defaultMakingPct}"></td>
+                <td class="bill-col-makingpct">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <input type="number" class="making-pct" step="0.01" value="${defaultMakingPct}">
+                        <select class="making-type-select" style="font-size: 0.65rem; padding: 2px; height: 20px; border-radius: 4px; border: 1px solid #ddd; background: rgba(255,255,255,0.8);">
+                            <option value="Percentage" ${BS.makingChargeType === 'Percentage' ? 'selected' : ''}>%</option>
+                            <option value="Flat" ${BS.makingChargeType === 'Flat' ? 'selected' : ''}>₹ Flat</option>
+                            <option value="PerKG" ${BS.makingChargeType === 'PerKG' ? 'selected' : ''}>/ kg</option>
+                        </select>
+                    </div>
+                </td>
                 <td class="bill-col-makingamt"><input type="number" class="making-amount" step="0.01" value="0"></td>
                 <td style="text-align: right;"><strong class="item-amount" style="color: var(--primary-gold-dark); white-space: nowrap;">₹ 0</strong></td>
                 <td><button type="button" class="btn-remove" title="Remove"><i class="fas fa-trash"></i></button></td>
@@ -259,8 +268,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (itemInfo) {
                         const pVal = parsePurityValue(itemInfo.purity);
                         purityInput.value = pVal.toFixed(2);
-                        row.dataset.category = itemInfo.category || "Gold";
-                        metalSelect.value = itemInfo.category || "Gold";
+                        const category = itemInfo.category || "Gold";
+                        row.dataset.category = category;
+                        metalSelect.value = category;
+
+                        // NEW: Auto-apply Silver Labor Rate
+                        if (category === "Silver" && BS.silverMakingRate) {
+                            const mTypeSelect = row.querySelector('.making-type-select');
+                            const mPctInput = row.querySelector('.making-pct');
+                            if (mTypeSelect) mTypeSelect.value = "PerKG";
+                            if (mPctInput) mPctInput.value = BS.silverMakingRate;
+                        }
+
                         if ((itemInfo.stockQuantity || 0) <= 0) alert("⚠️ Warning: Out of Stock!");
                         calculateInvoice();
                     }
@@ -280,6 +299,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const riSelect = row.querySelector('.ri-select');
             riSelect.onchange = calculateInvoice;
+
+            const mTypeSelect = row.querySelector('.making-type-select');
+            if (mTypeSelect) mTypeSelect.onchange = calculateInvoice;
 
             const makingPctInput = row.querySelector('.making-pct');
             const makingAmtInput = row.querySelector('.making-amount');
@@ -364,11 +386,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Calculate Making Amount
             let makingAmt = 0;
             const makingAmtInput = row.querySelector('.making-amount');
+            const makingType = row.querySelector('.making-type-select')?.value || BS.makingChargeType;
             
             if (makingPct > 0) {
-                // Calculate from percentage
-                if (BS.makingChargeType === 'Flat') {
+                // Calculate from percentage or rate
+                if (makingType === 'Flat') {
                     makingAmt = makingPct; // In flat mode, the input is the direct amount
+                } else if (makingType === 'PerKG') {
+                    makingAmt = (gWt / 1000) * makingPct; // Rate per KG (gWt is in grams)
                 } else {
                     makingAmt = metalAmt * (makingPct / 100); // Percentage mode
                 }

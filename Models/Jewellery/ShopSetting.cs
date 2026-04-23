@@ -96,5 +96,9 @@ namespace JewelleryApp.Models.Jewellery
         [Display(Name = "Default Making %")]
         [Column(TypeName = "decimal(5, 2)")]
         public decimal DefaultMakingPercent { get; set; } = 10;
+
+        [Display(Name = "Default Silver Making (₹/kg)")]
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal DefaultSilverMakingRatePerKg { get; set; } = 15000;
     }
 }

@@ -178,6 +178,7 @@ using (var scope = app.Services.CreateScope())
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN DefaultGoldRate REAL NOT NULL DEFAULT 6200;"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN DefaultSilverRate REAL NOT NULL DEFAULT 80;"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN DefaultMakingPercent REAL NOT NULL DEFAULT 10;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN DefaultSilverMakingRatePerKg REAL NOT NULL DEFAULT 15000;"); } catch { }
 
     // AccountHead schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE AccountHeads ADD COLUMN AccountCode TEXT NOT NULL DEFAULT '';"); } catch { }
