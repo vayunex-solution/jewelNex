@@ -75,12 +75,13 @@
                     </div>
 
                     <div class="nav-item-dropdown">
-                        <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "ItemMaster" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Customers" ? "active" : "")">
+                        <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "ItemMaster" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Customers" || ViewContext.RouteData.Values["Controller"]?.ToString() == "UserMaster" ? "active" : "")">
                             <i class="fas fa-layer-group"></i> <span>Master</span> <i class="fas fa-chevron-right arrow"></i>
                         </a>
                         <div class="dropdown-menu">
                             <a asp-controller="ItemMaster" asp-action="Index"><i class="fas fa-gem"></i> Item Master</a>
                             <a asp-controller="Customers" asp-action="Index"><i class="fas fa-users"></i> Customers</a>
+                            <a asp-controller="UserMaster" asp-action="Index"><i class="fas fa-user-shield"></i> User Master</a>
                         </div>
                     </div>
 

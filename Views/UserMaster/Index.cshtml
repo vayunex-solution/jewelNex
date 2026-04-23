@@ -1,0 +1,73 @@
+@model IEnumerable<JewelleryApp.Models.Jewellery.User>
+@{
+    ViewData["Title"] = "User Master";
+}
+
+<header>
+    <div class="header-title">
+        <h2>User Master</h2>
+        <p>Manage system users and their access levels</p>
+    </div>
+    <div class="header-actions">
+        <a asp-action="Create" class="btn btn-primary"><i class="fas fa-user-plus"></i> Add New User</a>
+    </div>
+</header>
+
+<div class="form-card full-width glass">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Role</th>
+                    <th>Created On</th>
+                    <th style="width: 100px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="background: rgba(212, 175, 55, 0.1); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--primary-gold);">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <strong>@user.Username</strong>
+                            </div>
+                        </td>
+                        <td>@user.FullName</td>
+                        <td>
+                            <span class="badge @(user.Role == "Admin" ? "badge-success" : "badge-info")">
+                                @user.Role
+                            </span>
+                        </td>
+                        <td>@user.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <div style="display: flex; gap: 10px;">
+                                <a asp-action="Edit" asp-route-id="@user.Id" class="btn-remove" style="color: var(--primary-gold);" title="Edit User">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                @if (User.Identity?.Name != user.Username)
+                                {
+                                    <a asp-action="Delete" asp-route-id="@user.Id" class="btn-remove" style="color: #ff6b6b;" onclick="return confirm('Delete this user? This action cannot be undone.')" title="Delete User">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                            No users found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
