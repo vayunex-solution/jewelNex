@@ -2,6 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using JewelleryApp.Data;
 using System.Threading.Tasks;
+using System.IO;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Linq;
 
 namespace JewelleryApp.Controllers
 {
@@ -135,6 +139,122 @@ namespace JewelleryApp.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+        
+        public IActionResult Backup()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Export()
+        {
+            try
+            {
+                string dbPath = "jewellery_v5.db";
+                if (!System.IO.File.Exists(dbPath))
+                {
+                    TempData["Error"] = "Database file not found!";
+                    return RedirectToAction(nameof(Backup));
+                }
+
+                // Create a temporary copy to avoid "file in use" errors
+                string tempPath = Path.Combine(Path.GetTempPath(), $"temp_{Guid.NewGuid()}.db");
+                System.IO.File.Copy(dbPath, tempPath, true);
+
+                var bytes = await System.IO.File.ReadAllBytesAsync(tempPath);
+                
+                // Clean up temp file
+                if (System.IO.File.Exists(tempPath)) System.IO.File.Delete(tempPath);
+
+                string fileName = $"dbjewellery_{DateTime.Now:dd-MM-yyyy}.db";
+                return File(bytes, "application/octet-stream", fileName);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Export failed: " + ex.Message;
+                return RedirectToAction(nameof(Backup));
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Import(IFormFile backupFile)
+        {
+            if (backupFile == null || backupFile.Length == 0)
+            {
+                TempData["Error"] = "Please select a valid .db file.";
+                return RedirectToAction(nameof(Backup));
+            }
+
+            string tempPath = Path.Combine(Path.GetTempPath(), $"restore_{Guid.NewGuid()}.db");
+            try
+            {
+                // 1. Save to temporary location
+                using (var stream = new FileStream(tempPath, FileMode.Create))
+                {
+                    await backupFile.CopyToAsync(stream);
+                }
+
+                // 2. Validate SQLite Structure
+                bool isValid = false;
+                try
+                {
+                    using (var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={tempPath};Pooling=False"))
+                    {
+                        conn.Open();
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            // Check for essential tables to ensure it's our DB format
+                            cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('ShopSettings', 'Invoices', 'Customers', 'ItemsMaster')";
+                            var result = cmd.ExecuteScalar();
+                            if (result != null) isValid = true;
+                        }
+                        conn.Close();
+                    }
+                }
+                catch
+                {
+                    isValid = false;
+                }
+
+                if (!isValid)
+                {
+                    if (System.IO.File.Exists(tempPath)) System.IO.File.Delete(tempPath);
+                    TempData["Error"] = "Invalid backup file. The file is either corrupted or not a valid Jewellery ERP backup.";
+                    return RedirectToAction(nameof(Backup));
+                }
+
+                // 3. Perform the Restore (Safe Swap)
+                string dbPath = "jewellery_v5.db";
+                
+                _context.Database.CloseConnection();
+                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                
+                // Give OS a moment to release handles
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+                // Overwrite current DB
+                System.IO.File.Copy(tempPath, dbPath, true);
+                
+                // Also delete SQLite sidecar files if they exist (WAL/SHM)
+                string walPath = dbPath + "-wal";
+                string shmPath = dbPath + "-shm";
+                if (System.IO.File.Exists(walPath)) System.IO.File.Delete(walPath);
+                if (System.IO.File.Exists(shmPath)) System.IO.File.Delete(shmPath);
+
+                // Cleanup temp
+                if (System.IO.File.Exists(tempPath)) System.IO.File.Delete(tempPath);
+
+                TempData["Success"] = "Database restored successfully!";
+            }
+            catch (Exception ex)
+            {
+                if (System.IO.File.Exists(tempPath)) System.IO.File.Delete(tempPath);
+                TempData["Error"] = "Restore failed: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Backup));
         }
     }
 }

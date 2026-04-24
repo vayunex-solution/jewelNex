@@ -105,7 +105,7 @@
             @if (Model.PrintOption == "Weight" || Model.PrintOption == "Both")
             {
                 <div class="cheque-line" style="margin-top: 5px; color: #333;">
-                    <strong>Total Metal Weight</strong> <span class="data-field">@Model.Items.Sum(i => i.NetWt).ToString("N3") g</span>
+                    <strong>Total Metal Weight</strong> <span class="data-field">@Model.Items.Sum(i => i.FineWt).ToString("N3") g</span>
                 </div>
             }
 

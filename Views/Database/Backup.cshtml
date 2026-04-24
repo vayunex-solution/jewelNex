@@ -1,0 +1,80 @@
+@{
+    ViewData["Title"] = "Database Backup";
+}
+
+<div class="content-header no-print">
+    <div class="header-title">
+        <h2>Database Backup & Restore</h2>
+        <p>Export your data for safekeeping or restore from a previous backup.</p>
+    </div>
+</div>
+
+<div class="form-row full-width">
+    <!-- Export Card -->
+    <div class="form-card glass flex-1">
+        <div class="section-header">
+            <h3><i class="fas fa-file-export text-success"></i> Export Data</h3>
+        </div>
+        <div class="p-3">
+            <p class="text-muted small">Download a full copy of your database (.db file). It is recommended to backup your data daily.</p>
+            <form asp-action="Export" method="post" class="mt-4">
+                <button type="submit" class="btn btn-success btn-lg w-100">
+                    <i class="fas fa-download"></i> Download Backup Now
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Import Card -->
+    <div class="form-card glass flex-1">
+        <div class="section-header">
+            <h3><i class="fas fa-file-import text-danger"></i> Restore Data</h3>
+        </div>
+        <div class="p-3">
+            <p class="text-muted small">Upload a previously exported .db file to restore your database. <br /><strong>Warning: This will overwrite all current data!</strong></p>
+            
+            <form asp-action="Import" method="post" enctype="multipart/form-data" class="mt-4" onsubmit="return confirmRestore()">
+                <div class="form-group mb-3">
+                    <label class="premium-label">Select Backup File (.db)</label>
+                    <input type="file" name="backupFile" class="form-control premium-input" accept=".db" required />
+                </div>
+                <button type="submit" class="btn btn-danger btn-lg w-100">
+                    <i class="fas fa-upload"></i> Restore Database
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success mt-4 glass">
+        <i class="fas fa-check-circle"></i> @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger mt-4 glass">
+        <i class="fas fa-exclamation-triangle"></i> @TempData["Error"]
+    </div>
+}
+
+<style>
+    .text-success { color: #28a745 !important; }
+    .text-danger { color: #dc3545 !important; }
+    .btn-success { background: #28a745; color: white; border: none; padding: 15px; font-weight: 600; border-radius: 12px; transition: 0.3s; }
+    .btn-success:hover { background: #218838; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3); }
+    .btn-danger { background: #dc3545; color: white; border: none; padding: 15px; font-weight: 600; border-radius: 12px; transition: 0.3s; }
+    .btn-danger:hover { background: #c82333; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3); }
+    .premium-input { border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: inherit; padding: 12px; }
+    .alert { padding: 20px; border-radius: 12px; font-weight: 500; }
+    .alert-success { background: rgba(40, 167, 69, 0.1); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.2); }
+    .alert-danger { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
+</style>
+
+<script>
+    function confirmRestore() {
+        return confirm("DANGER: This will permanently overwrite your current database with the selected backup file. Are you absolutely sure you want to proceed?");
+    }
+</script>

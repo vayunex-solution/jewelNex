@@ -1,6 +1,11 @@
 @inject JewelleryApp.Data.ApplicationDbContext Db
 @{
-    var settings = Db.ShopSettings.FirstOrDefault() ?? new JewelleryApp.Models.Jewellery.ShopSetting();
+    JewelleryApp.Models.Jewellery.ShopSetting settings;
+    try {
+        settings = Db.ShopSettings.FirstOrDefault() ?? new JewelleryApp.Models.Jewellery.ShopSetting();
+    } catch {
+        settings = new JewelleryApp.Models.Jewellery.ShopSetting();
+    }
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -107,9 +112,15 @@
                         </div>
                     </div>
 
-                    <a asp-controller="Database" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Database" ? "active" : "")">
-                        <i class="fas fa-database"></i> <span>Database</span>
-                    </a>
+                    <div class="nav-item-dropdown">
+                        <a href="#" class="dropdown-trigger @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Database" ? "active" : "")">
+                            <i class="fas fa-database"></i> <span>Database</span> <i class="fas fa-chevron-right arrow"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a asp-controller="Database" asp-action="Index"><i class="fas fa-tools"></i> Maintenance</a>
+                            <a asp-controller="Database" asp-action="Backup"><i class="fas fa-file-export"></i> Database Backup</a>
+                        </div>
+                    </div>
                     
                     <a asp-controller="Settings" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Settings" ? "active" : "")">
                         <i class="fas fa-cog"></i> <span>Settings</span>

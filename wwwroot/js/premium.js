@@ -498,12 +498,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (weightRow) weightRow.style.display = (printOpt === "Weight" || printOpt === "Both") ? "flex" : "none";
         if (balanceRow) balanceRow.style.display = (printOpt === "Balance" || printOpt === "Both") ? "flex" : "none";
 
-        // Calculate Total Weight
-        let totalWt = 0;
+        // Calculate Total Fine Weight
+        let totalFineWt = 0;
         itemsTableBody.querySelectorAll('tr').forEach(row => {
-            totalWt += parseFloat(row.querySelector('.gross-wt')?.value) || 0;
+            totalFineWt += parseFloat(row.querySelector('.fine-wt')?.value) || 0;
         });
-        if (el('preview-total-weight')) el('preview-total-weight').textContent = `${totalWt.toFixed(3)} g`;
+        if (el('preview-total-weight')) el('preview-total-weight').textContent = `${totalFineWt.toFixed(3)} g`;
 
         // Calculate Net Balance
         const custId = el('cust-name-select')?.value;
