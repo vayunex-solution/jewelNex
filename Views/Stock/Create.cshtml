@@ -37,11 +37,15 @@
         <div class="form-row">
             <div class="form-group col-6">
                 <label asp-for="Quantity"></label>
-                <input asp-for="Quantity" type="number" class="premium-input" placeholder="@(type == JewelleryApp.Models.Jewellery.StockEntryType.IssueSlip ? "Enter Negative Value for Out" : "Enter Positive Value for In")" />
+                <input asp-for="Quantity" type="number" class="premium-input" placeholder="@(type == JewelleryApp.Models.Jewellery.StockEntryType.IssueSlip ? "Quantity to OUT" : "Quantity to IN")" />
+                @if (type == JewelleryApp.Models.Jewellery.StockEntryType.IssueSlip)
+                {
+                    <small class="text-danger"><i class="fas fa-info-circle"></i> This will be deducted from stock.</small>
+                }
             </div>
             <div class="form-group col-6">
                 <label asp-for="Weight">Weight (g)</label>
-                <input asp-for="Weight" type="number" step="0.001" class="premium-input" />
+                <input asp-for="Weight" type="number" step="0.001" class="premium-input" placeholder="@(type == JewelleryApp.Models.Jewellery.StockEntryType.IssueSlip ? "Weight to OUT" : "Weight to IN")" />
             </div>
         </div>
 

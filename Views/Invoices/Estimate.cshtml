@@ -323,10 +323,15 @@
     }
 
     @@media print {
+        @@page {
+            size: A4;
+            margin: 5mm;
+        }
         .no-print { display: none !important; }
         .estimate-container {
             border: none;
             width: 100%;
+            min-height: auto;
             padding: 0;
             margin: 0;
         }
