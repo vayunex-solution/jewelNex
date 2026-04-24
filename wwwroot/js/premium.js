@@ -630,8 +630,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (response.ok) {
-                    alert("✨ Invoice Saved!");
-                    window.print();
                     window.location.href = '/Invoices';
                 } else {
                     const errorMsg = await response.text();
