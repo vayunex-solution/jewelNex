@@ -101,7 +101,7 @@ namespace JewelleryApp.Controllers
                     });
 
                     // Side 2: Cash/Bank Account (Auto-Post)
-                    string cashBankAcc = voucher.Type.ToString().Contains("Cash") ? "Cash in Hand" : "Bank A/c";
+                    string cashBankAcc = voucher.Type.ToString().Contains("Cash") ? "Cash A/c" : "Bank A/c";
                     voucher.Items.Add(new VoucherItem { 
                         AccountName = cashBankAcc, 
                         Debit = isReceipt ? voucher.Amount : 0, 

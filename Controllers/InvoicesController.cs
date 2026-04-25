@@ -161,7 +161,13 @@ namespace JewelleryApp.Controllers
                         Particulars = $"Payment received for Inv: {invoice.InvoiceNo}"
                     };
 
-                    string drAccount = (invoice.PaymentMode == "Bank" || invoice.PaymentMode == "Card" || invoice.PaymentMode == "UPI") ? "Bank A/c" : "Cash in Hand";
+                    string drAccount = invoice.PaymentMode switch
+                    {
+                        "Cash" => "Cash A/c",
+                        "UPI" => "UPI A/c",
+                        "Card" => "Card A/c",
+                        _ => "Bank A/c"
+                    };
                     
                     receiptVoucher.Items.Add(new VoucherItem { AccountName = drAccount, Debit = invoice.PaidAmount, Credit = 0, Particulars = $"Via {invoice.PaymentMode}" });
                     receiptVoucher.Items.Add(new VoucherItem { AccountName = customerName, Debit = 0, Credit = invoice.PaidAmount, Particulars = "Paid by Customer" });
@@ -177,6 +183,23 @@ namespace JewelleryApp.Controllers
             {
                 return BadRequest(ex.InnerException?.Message ?? ex.Message);
             }
+        }
+
+        [HttpPost]
+        public IActionResult Preview([FromBody] Invoice invoice)
+        {
+            if (invoice == null) return BadRequest();
+            
+            // Populate customer if it's an existing one
+            if (invoice.CustomerId > 0 && invoice.Customer == null)
+            {
+                invoice.Customer = _context.Customers.Find(invoice.CustomerId);
+            }
+
+            if (invoice.PrintOption == "Estimate")
+                return View("Estimate", invoice);
+            
+            return View("TaxInvoice", invoice);
         }
 
         // GET: Invoices/Details/5

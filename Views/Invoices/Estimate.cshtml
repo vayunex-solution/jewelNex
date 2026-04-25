@@ -7,7 +7,14 @@
 
 <div class="no-print actions-bar">
     <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Print Estimate</button>
-    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Back to Details</a>
+    @if (Model.Id > 0)
+    {
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Back to Details</a>
+    }
+    else
+    {
+        <button onclick="window.close()" class="btn btn-secondary">Close Preview</button>
+    }
 </div>
 
 <div class="estimate-container">

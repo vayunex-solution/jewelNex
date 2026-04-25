@@ -565,10 +565,95 @@ document.addEventListener('DOMContentLoaded', () => {
         if (bEl) bEl.textContent = `₹ ${balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     }
 
+    const getInvoiceData = () => {
+        const getTxtVal = (id) => parseFloat(el(id)?.innerText.replace(/[^0-9.-]+/g, "")) || 0;
+        const custIdVal = el('cust-name-select')?.value;
+        const isNewCust = custIdVal === 'custom' || !custIdVal;
+        
+        const invoiceData = {
+            InvoiceType: el('invoice-type')?.value || "Tax Invoice",
+            InvoiceNo: el('invoice-no')?.value || "",
+            Date: el('invoice-date')?.value || "",
+            PaymentMode: document.querySelector('input[name="payment-mode"]:checked')?.value || "Cash",
+            PaidAmount: parseFloat(el('paid-amount')?.value) || 0,
+            GstRate: parseFloat(el('gst-rate-input')?.value) || 0,
+            Discount: parseFloat(el('discount-input')?.value) || 0,
+            Remarks: el('remarks')?.value || "",
+            PrintOption: el('print-option')?.value || "None",
+            CustomerId: isNewCust ? 0 : parseInt(custIdVal),
+            Customer: isNewCust ? {
+                Name: el('cust-name')?.value || "",
+                Mobile: el('cust-mobile')?.value || "",
+                GSTIN: el('cust-gstin')?.value || "",
+                Address: el('cust-address')?.value || "",
+                OpeningBalance: parseFloat(el('cust-opening-bal')?.value) || 0,
+                OpeningGold: parseFloat(el('cust-opening-gold')?.value) || 0,
+                OpeningSilver: parseFloat(el('cust-opening-silver')?.value) || 0,
+                BalanceType: parseInt(el('cust-bal-type')?.value) || 1
+            } : null,
+            Items: [],
+            GoldValueTotal: getTxtVal('break-gold-value'),
+            MakingChargesTotal: getTxtVal('break-making-charges'),
+            SubTotal: getTxtVal('break-sub-total'),
+            CGST: getTxtVal('break-cgst'),
+            SGST: getTxtVal('break-sgst'),
+            IGST: getTxtVal('break-igst'),
+            TotalAmount: getTxtVal('break-total-amount'),
+            RoundedOff: parseFloat(el('break-rounded')?.innerText.replace(/[^0-9.-]+/g, "")) || 0
+        };
+
+        const rows = itemsTableBody.querySelectorAll('tr');
+        rows.forEach(row => {
+            const rowAmt = parseFloat(row.querySelector('.item-amount')?.innerText.replace(/[^0-9.-]+/g, "")) || 0;
+            const gWt = parseFloat(row.querySelector('.gross-wt')?.value) || 0;
+            const metalSelect = row.querySelector('.metal-select');
+            invoiceData.Items.push({
+                ItemName: row.querySelector('.item-name')?.value || row.querySelector('.item-name-select')?.value || "",
+                RI: row.querySelector('.ri-select')?.value || "I",
+                Metal: metalSelect ? metalSelect.value : (row.dataset.category || "Gold"),
+                Purity: row.querySelector('.purity-val')?.value || "",
+                GrossWt: gWt,
+                NetWt: gWt, 
+                FineWt: parseFloat(row.querySelector('.fine-wt')?.value) || 0,
+                Rate: parseFloat(row.dataset.appliedRate) || 0,
+                MetalAmount: parseFloat(row.dataset.metalAmount) || 0,
+                MakingPercent: parseFloat(row.querySelector('.making-pct')?.value) || 0,
+                MakingCharges: parseFloat(row.dataset.makingAmount) || 0,
+                Amount: rowAmt
+            });
+        });
+        return invoiceData;
+    };
+
+    const previewBtn = el('preview-invoice-btn');
+    if (previewBtn) {
+        previewBtn.onclick = async () => {
+            try {
+                const invoiceData = getInvoiceData();
+                const response = await fetch('/Invoices/Preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(invoiceData)
+                });
+
+                if (response.ok) {
+                    const html = await response.text();
+                    const win = window.open('', '_blank');
+                    win.document.write(html);
+                    win.document.close();
+                } else {
+                    alert("Preview failed. Please ensure all items are filled.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Preview error: " + err.message);
+            }
+        };
+    }
+
     if (saveBtn) {
         saveBtn.onclick = async () => {
             try {
-                const getTxtVal = (id) => parseFloat(el(id)?.innerText.replace(/[^0-9.-]+/g, "")) || 0;
                 const custIdVal = el('cust-name-select')?.value;
                 const isNewCust = custIdVal === 'custom' || !custIdVal;
                 
@@ -578,79 +663,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const mobile = el('cust-mobile')?.value.trim();
                     const address = el('cust-address')?.value.trim();
 
-                    if (!name) {
-                        alert("⚠️ Required: Please enter the Customer Full Name.");
-                        el('cust-name').focus();
-                        return;
-                    }
-                    if (!mobile) {
-                        alert("⚠️ Required: Please enter the Mobile Number.");
-                        el('cust-mobile').focus();
-                        return;
-                    }
-                    if (!address) {
-                        alert("⚠️ Required: Please enter the Billing Address.");
-                        el('cust-address').focus();
-                        return;
-                    }
+                    if (!name) { alert("⚠️ Required: Please enter the Customer Full Name."); el('cust-name').focus(); return; }
+                    if (!mobile) { alert("⚠️ Required: Please enter the Mobile Number."); el('cust-mobile').focus(); return; }
+                    if (!address) { alert("⚠️ Required: Please enter the Billing Address."); el('cust-address').focus(); return; }
                 } else if (!custIdVal) {
                     alert("⚠️ Please select a customer or fill new details.");
                     el('cust-name-select').focus();
                     return;
                 }
                 
-                const invoiceData = {
-                    InvoiceType: el('invoice-type')?.value || "Tax Invoice",
-                    InvoiceNo: el('invoice-no')?.value || "",
-                    Date: el('invoice-date')?.value || "",
-                    PaymentMode: document.querySelector('input[name="payment-mode"]:checked')?.value || "Cash",
-                    PaidAmount: parseFloat(el('paid-amount')?.value) || 0,
-                    GstRate: parseFloat(el('gst-rate-input')?.value) || 0,
-                    Discount: parseFloat(el('discount-input')?.value) || 0,
-                    Remarks: el('remarks')?.value || "",
-                    PrintOption: el('print-option')?.value || "None",
-                    CustomerId: isNewCust ? 0 : parseInt(custIdVal),
-                    Customer: isNewCust ? {
-                        Name: el('cust-name')?.value || "",
-                        Mobile: el('cust-mobile')?.value || "",
-                        GSTIN: el('cust-gstin')?.value || "",
-                        Address: el('cust-address')?.value || "",
-                        OpeningBalance: parseFloat(el('cust-opening-bal')?.value) || 0,
-                        OpeningGold: parseFloat(el('cust-opening-gold')?.value) || 0,
-                        OpeningSilver: parseFloat(el('cust-opening-silver')?.value) || 0,
-                        BalanceType: parseInt(el('cust-bal-type')?.value) || 1
-                    } : null,
-                    Items: [],
-                    GoldValueTotal: getTxtVal('break-gold-value'),
-                    MakingChargesTotal: getTxtVal('break-making-charges'),
-                    SubTotal: getTxtVal('break-sub-total'),
-                    CGST: getTxtVal('break-cgst'),
-                    SGST: getTxtVal('break-sgst'),
-                    IGST: getTxtVal('break-igst'),
-                    TotalAmount: getTxtVal('break-total-amount'),
-                    RoundedOff: parseFloat(el('break-rounded')?.innerText.replace(/[^0-9.-]+/g, "")) || 0
-                };
-
-                const rows = itemsTableBody.querySelectorAll('tr');
-                rows.forEach(row => {
-                    const rowAmt = parseFloat(row.querySelector('.item-amount')?.innerText.replace(/[^0-9.-]+/g, "")) || 0;
-                    const gWt = parseFloat(row.querySelector('.gross-wt')?.value) || 0;
-                    const metalSelect = row.querySelector('.metal-select');
-                    invoiceData.Items.push({
-                        ItemName: row.querySelector('.item-name')?.value || row.querySelector('.item-name-select')?.value || "",
-                        RI: row.querySelector('.ri-select')?.value || "I",
-                        Metal: metalSelect ? metalSelect.value : (row.dataset.category || "Gold"),
-                        Purity: row.querySelector('.purity-val')?.value || "",
-                        GrossWt: gWt,
-                        NetWt: gWt, 
-                        FineWt: parseFloat(row.querySelector('.fine-wt')?.value) || 0,
-                        Rate: parseFloat(row.dataset.appliedRate) || 0,
-                        MetalAmount: parseFloat(row.dataset.metalAmount) || 0,
-                        MakingPercent: parseFloat(row.querySelector('.making-pct')?.value) || 0,
-                        MakingCharges: parseFloat(row.dataset.makingAmount) || 0,
-                        Amount: rowAmt
-                    });
-                });
+                const invoiceData = getInvoiceData();
 
                 const response = await fetch('/Invoices/Create', {
                     method: 'POST',

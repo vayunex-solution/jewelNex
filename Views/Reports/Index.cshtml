@@ -51,33 +51,33 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Invoice No</th>
-                        <th>Customer</th>
-                        <th>Total (₹)</th>
-                        <th>Paid (₹)</th>
-                        <th>Balance (₹)</th>
+                        <th>Customer Name</th>
+                        <th>Mobile</th>
+                        <th>Last Activity</th>
+                        <th class="text-right">Total Debit (₹)</th>
+                        <th class="text-right">Total Credit (₹)</th>
+                        <th class="text-right">Net Balance (₹)</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var inv in Model.PendingInvoices)
+                    @foreach (var cust in Model.PendingCustomers)
                     {
                         <tr>
-                            <td>@inv.Date.ToString("dd MMM yyyy")</td>
-                            <td><strong>@inv.InvoiceNo</strong></td>
-                            <td>@inv.Customer?.Name</td>
-                            <td>@inv.TotalAmount.ToString("N2")</td>
-                            <td>@inv.PaidAmount.ToString("N2")</td>
-                            <td style="color: #ff4d4d; font-weight: bold;">@((inv.TotalAmount - inv.PaidAmount).ToString("N2"))</td>
+                            <td><strong>@cust.Name</strong></td>
+                            <td>@cust.Mobile</td>
+                            <td>@(cust.LastTransactionDate != DateTime.MinValue ? cust.LastTransactionDate.ToString("dd MMM yyyy") : "N/A")</td>
+                            <td class="text-right">@cust.TotalBilled.ToString("N2")</td>
+                            <td class="text-right">@cust.TotalPaid.ToString("N2")</td>
+                            <td class="text-right" style="color: #ff4d4d; font-weight: bold;">@cust.NetBalance.ToString("N2")</td>
                             <td>
-                                <a asp-controller="Invoices" asp-action="Details" asp-route-id="@inv.Id" class="btn btn-secondary btn-small">
-                                    View Details
+                                <a asp-controller="Accounting" asp-action="AccountStatement" asp-route-accountId="@("CUST_" + cust.Name)" class="btn btn-secondary btn-small">
+                                    View Statement
                                 </a>
                             </td>
                         </tr>
                     }
-                    @if (!Model.PendingInvoices.Any())
+                    @if (!Model.PendingCustomers.Any())
                     {
                         <tr>
                             <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
