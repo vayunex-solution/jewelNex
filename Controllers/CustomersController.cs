@@ -28,7 +28,7 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Mobile,Address,StateCode,OpeningBalance,BalanceType")] Customer customer)
+        public async Task<IActionResult> Create([Bind("Name,Mobile,Address,StateCode,OpeningBalance,OpeningGold,OpeningSilver,BalanceType")] Customer customer)
         {
             if (ModelState.IsValid)
             {
@@ -47,9 +47,67 @@ namespace JewelleryApp.Controllers
         public async Task<JsonResult> GetAllCustomers()
         {
             var customers = await _context.Customers
-                .Select(x => new { id = x.Id, name = x.Name, mobile = x.Mobile, address = x.Address, stateCode = x.StateCode })
+                .Select(x => new { 
+                    id = x.Id, 
+                    name = x.Name, 
+                    mobile = x.Mobile, 
+                    address = x.Address, 
+                    stateCode = x.StateCode,
+                    openingBalance = x.OpeningBalance,
+                    openingGold = x.OpeningGold,
+                    openingSilver = x.OpeningSilver,
+                    balanceType = (int)x.BalanceType
+                })
                 .ToListAsync();
             return Json(customers);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCustomerBalance(int id)
+        {
+            var customer = await _context.Customers.FindAsync(id);
+            if (customer == null) return NotFound();
+
+            // 1. Calculate Amount Balance (Opening + Vouchers)
+            // Note: Invoices also create vouchers, so this covers everything
+            var voucherItems = await _context.VoucherItems
+                .Include(vi => vi.Voucher)
+                .Where(vi => vi.AccountName == customer.Name)
+                .ToListAsync();
+
+            decimal amountBal = customer.BalanceType == BalanceType.Dr ? customer.OpeningBalance : -customer.OpeningBalance;
+            foreach (var vi in voucherItems) amountBal += (vi.Debit - vi.Credit);
+
+            // 2. Calculate Metal Balance (Opening + InvoiceItems)
+            var invoiceItems = await _context.InvoiceItems
+                .Include(ii => ii.Invoice)
+                .Where(ii => ii.Invoice.CustomerId == id)
+                .ToListAsync();
+
+            decimal goldBal = customer.OpeningGold;
+            decimal silverBal = customer.OpeningSilver;
+
+            foreach (var item in invoiceItems)
+            {
+                if (item.Metal == "Gold")
+                {
+                    if (item.RI == "I") goldBal += item.FineWt;
+                    else goldBal -= item.FineWt;
+                }
+                else if (item.Metal == "Silver")
+                {
+                    if (item.RI == "I") silverBal += item.FineWt;
+                    else silverBal -= item.FineWt;
+                }
+            }
+
+            return Ok(new
+            {
+                amount = Math.Abs(amountBal),
+                amountType = amountBal >= 0 ? "Dr" : "Cr",
+                gold = goldBal,
+                silver = silverBal
+            });
         }
 
         // GET: Customers/Edit/5
@@ -63,7 +121,7 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Mobile,Address,StateCode,OpeningBalance,BalanceType,CustomerCode,CreatedAt")] Customer customer)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Mobile,Address,StateCode,OpeningBalance,OpeningGold,OpeningSilver,BalanceType,CustomerCode,CreatedAt")] Customer customer)
         {
             if (id != customer.Id) return NotFound();
 

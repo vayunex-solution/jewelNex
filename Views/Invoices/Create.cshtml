@@ -72,6 +72,24 @@
             </div>
         </div>
 
+        <!-- NEW: Dynamic Customer Balance Display -->
+        <div id="customer-balance-info" style="display:none; margin-top: 15px; margin-bottom: 20px;">
+            <div class="balance-grid">
+                <div class="balance-item glass-mini gold">
+                    <span class="label"><i class="fas fa-coins"></i> Pending Gold</span>
+                    <span id="bal-gold" class="value">0.000 g</span>
+                </div>
+                <div class="balance-item glass-mini silver">
+                    <span class="label"><i class="fas fa-ring"></i> Pending Silver</span>
+                    <span id="bal-silver" class="value">0.000 g</span>
+                </div>
+                <div class="balance-item glass-mini amount">
+                    <span class="label"><i class="fas fa-wallet"></i> Pending Amount</span>
+                    <span id="bal-amount" class="value">₹ 0.00</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Row 3: New Customer Details (Dynamic) -->
         <div id="new-cust-fields" style="display:none; transition: var(--transition); border-top: 1px dashed var(--primary-gold-light); margin-top: 20px; padding-top: 20px;">
             <div class="form-row">
@@ -86,6 +104,26 @@
                 <div class="form-group col-4">
                     <label>GSTIN (Optional)</label>
                     <input type="text" id="cust-gstin" placeholder="Ex: 22AAAAA0000A1Z5">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-4">
+                    <label>Opening Amount Balance (₹)</label>
+                    <div style="display:flex; gap:5px;">
+                        <input type="number" id="cust-opening-bal" step="0.01" value="0" style="flex:1;">
+                        <select id="cust-bal-type" style="width: 80px;">
+                            <option value="1">Dr</option>
+                            <option value="2">Cr</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group col-4">
+                    <label>Opening Gold (g)</label>
+                    <input type="number" id="cust-opening-gold" step="0.001" value="0.000">
+                </div>
+                <div class="form-group col-4">
+                    <label>Opening Silver (g)</label>
+                    <input type="number" id="cust-opening-silver" step="0.001" value="0.000">
                 </div>
             </div>
             <div class="form-group">
@@ -312,6 +350,34 @@
     @@media (max-width: 1400px) {
         .content-full { padding: 120px 20px 40px; }
     }
+
+    /* Balance Info Styles */
+    .balance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    .glass-mini {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px 20px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        transition: transform 0.2s;
+    }
+    .glass-mini:hover { transform: translateY(-3px); background: rgba(255, 255, 255, 0.08); }
+    .glass-mini .label { font-size: 0.75rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .glass-mini .value { font-size: 1.2rem; font-weight: bold; }
+    
+    .glass-mini.gold { border-left: 4px solid var(--primary-gold); }
+    .glass-mini.gold .value { color: var(--primary-gold); }
+    .glass-mini.silver { border-left: 4px solid #C0C0C0; }
+    .glass-mini.silver .value { color: #ddd; }
+    .glass-mini.amount { border-left: 4px solid #4CAF50; }
+    .glass-mini.amount .value { color: #4CAF50; }
 </style>
 
 @section Scripts {

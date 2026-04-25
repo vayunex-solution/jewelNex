@@ -118,6 +118,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
+    async function fetchCustomerBalance(id) {
+        try {
+            const res = await fetch(`/Customers/GetCustomerBalance/${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                el('bal-gold').textContent = `${data.gold.toFixed(3)} g`;
+                el('bal-silver').textContent = `${data.silver.toFixed(3)} g`;
+                el('bal-amount').textContent = `₹ ${data.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${data.amountType})`;
+                
+                // Color coding for amount
+                el('bal-amount').style.color = data.amountType === "Dr" ? "#4CAF50" : "#d9534f";
+                
+                el('customer-balance-info').style.display = "block";
+            }
+        } catch (err) {
+            console.error("Failed to fetch customer balance:", err);
+        }
+    }
+
     // Customer Selection Logic
     const custSelect = el('cust-name-select');
     const newCustContainer = el('new-cust-fields');
@@ -146,6 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (addressInput) addressInput.value = "";
                 if (el('cust-opening-bal')) el('cust-opening-bal').value = "0";
                 if (el('cust-bal-type')) el('cust-bal-type').value = "1";
+                if (el('cust-opening-gold')) el('cust-opening-gold').value = "0.000";
+                if (el('cust-opening-silver')) el('cust-opening-silver').value = "0.000";
+                if (el('customer-balance-info')) el('customer-balance-info').style.display = "none";
             } else if (val) {
                 if (newCustContainer) newCustContainer.style.display = "block";
                 setType(true);
@@ -157,15 +179,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (addressInput) addressInput.value = selected.address || "";
                     if (el('cust-opening-bal')) el('cust-opening-bal').value = selected.openingBalance || 0;
                     if (el('cust-bal-type')) el('cust-bal-type').value = selected.balanceType || 1;
+                    if (el('cust-opening-gold')) el('cust-opening-gold').value = selected.openingGold || 0;
+                    if (el('cust-opening-silver')) el('cust-opening-silver').value = selected.openingSilver || 0;
 
                     // AUTO GST
                     if (gstTypeSelect && shopSettings && selected.stateCode) {
                         gstTypeSelect.value = (shopSettings.stateCode === selected.stateCode) ? "intra" : "inter";
-                        calculateInvoice();
                     }
+                    
+                    fetchCustomerBalance(val);
+                    calculateInvoice();
                 }
             } else {
                 if (newCustContainer) newCustContainer.style.display = "none";
+                if (el('customer-balance-info')) el('customer-balance-info').style.display = "none";
             }
         };
     }
@@ -589,6 +616,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         GSTIN: el('cust-gstin')?.value || "",
                         Address: el('cust-address')?.value || "",
                         OpeningBalance: parseFloat(el('cust-opening-bal')?.value) || 0,
+                        OpeningGold: parseFloat(el('cust-opening-gold')?.value) || 0,
+                        OpeningSilver: parseFloat(el('cust-opening-silver')?.value) || 0,
                         BalanceType: parseInt(el('cust-bal-type')?.value) || 1
                     } : null,
                     Items: [],

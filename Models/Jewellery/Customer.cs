@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JewelleryApp.Models.Jewellery
 {
@@ -23,6 +24,14 @@ namespace JewelleryApp.Models.Jewellery
 
         [Display(Name = "Opening Balance")]
         public decimal OpeningBalance { get; set; } = 0;
+
+        [Display(Name = "Opening Gold (g)")]
+        [Column(TypeName = "decimal(10, 3)")]
+        public decimal OpeningGold { get; set; } = 0;
+
+        [Display(Name = "Opening Silver (g)")]
+        [Column(TypeName = "decimal(10, 3)")]
+        public decimal OpeningSilver { get; set; } = 0;
 
         [Display(Name = "Balance Type")]
         public BalanceType BalanceType { get; set; } = BalanceType.Dr;

@@ -228,21 +228,49 @@ namespace JewelleryApp.Controllers
             vm.ClosingBalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr;
             vm.PrintOption = printOption ?? "None";
 
-            // Calculate Total Weight for the statement period if requested
+            // Calculate Metal Balances if requested
             if (vm.PrintOption == "Weight" || vm.PrintOption == "Both")
             {
-                var invoiceNos = vm.Entries
-                    .Where(e => e.VoucherNo.Contains("INV-"))
-                    .Select(e => e.VoucherNo.Substring(e.VoucherNo.IndexOf("INV-")))
-                    .Distinct()
-                    .ToList();
-
-                if (invoiceNos.Any())
+                if (accountId.StartsWith("CUST_"))
                 {
-                    vm.TotalWeight = await _context.InvoiceItems
-                        .Include(ii => ii.Invoice)
-                        .Where(ii => invoiceNos.Contains(ii.Invoice.InvoiceNo))
-                        .SumAsync(ii => ii.NetWt);
+                    int custId = int.Parse(accountId.Replace("CUST_", ""));
+                    var customer = await _context.Customers.FindAsync(custId);
+                    if (customer != null)
+                    {
+                        // 1. Calculate Opening Metal Balance (before fromDate)
+                        var preInvoiceItems = await _context.InvoiceItems
+                            .Include(ii => ii.Invoice)
+                            .Where(ii => ii.Invoice.CustomerId == custId && ii.Invoice.Date < from)
+                            .ToListAsync();
+
+                        decimal preGold = customer.OpeningGold;
+                        decimal preSilver = customer.OpeningSilver;
+                        foreach (var item in preInvoiceItems)
+                        {
+                            if (item.Metal == "Gold") { if (item.RI == "I") preGold += item.FineWt; else preGold -= item.FineWt; }
+                            else if (item.Metal == "Silver") { if (item.RI == "I") preSilver += item.FineWt; else preSilver -= item.FineWt; }
+                        }
+                        vm.OpeningGold = preGold;
+                        vm.OpeningSilver = preSilver;
+
+                        // 2. Calculate Current Period Metal Transactions
+                        var periodInvoiceItems = await _context.InvoiceItems
+                            .Include(ii => ii.Invoice)
+                            .Where(ii => ii.Invoice.CustomerId == custId && ii.Invoice.Date >= from && ii.Invoice.Date <= to)
+                            .ToListAsync();
+
+                        decimal periodGold = 0;
+                        decimal periodSilver = 0;
+                        foreach (var item in periodInvoiceItems)
+                        {
+                            if (item.Metal == "Gold") { if (item.RI == "I") periodGold += item.FineWt; else periodGold -= item.FineWt; }
+                            else if (item.Metal == "Silver") { if (item.RI == "I") periodSilver += item.FineWt; else periodSilver -= item.FineWt; }
+                        }
+                        
+                        vm.ClosingGold = vm.OpeningGold + periodGold;
+                        vm.ClosingSilver = vm.OpeningSilver + periodSilver;
+                        vm.TotalWeight = periodInvoiceItems.Sum(ii => ii.NetWt);
+                    }
                 }
             }
 

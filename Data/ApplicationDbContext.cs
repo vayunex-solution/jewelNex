@@ -10,6 +10,11 @@ namespace JewelleryApp.Data
         {
         }
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        }
+
         public DbSet<Customer> Customers { get; set; } = default!;
         public DbSet<Invoice> Invoices { get; set; } = default!;
         public DbSet<InvoiceItem> InvoiceItems { get; set; } = default!;

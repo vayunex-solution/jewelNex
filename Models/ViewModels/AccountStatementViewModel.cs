@@ -27,5 +27,10 @@ namespace JewelleryApp.Models.ViewModels
         public BalanceType ClosingBalanceType { get; set; }
         public string PrintOption { get; set; } = "None";
         public decimal TotalWeight { get; set; }
+
+        public decimal OpeningGold { get; set; }
+        public decimal OpeningSilver { get; set; }
+        public decimal ClosingGold { get; set; }
+        public decimal ClosingSilver { get; set; }
     }
 }
