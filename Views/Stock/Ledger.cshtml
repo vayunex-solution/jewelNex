@@ -18,7 +18,17 @@
 <div class="form-card glass mb-4 mt-4 no-print">
     <form asp-action="Ledger" method="get">
         <div style="display:flex; gap:20px; align-items:flex-end;">
-            <div style="flex:1; position: relative;">
+            <div style="flex:1;">
+                <label>Filter by Category</label>
+                <select id="categoryFilter" class="premium-input">
+                    <option value="All">-- All Categories --</option>
+                    @foreach (var cat in (ViewBag.ItemsList as List<JewelleryApp.Models.Jewellery.ItemMaster>).Select(x => x.Category).Distinct().OrderBy(x => x))
+                    {
+                        <option value="@cat">@cat</option>
+                    }
+                </select>
+            </div>
+            <div style="flex:2; position: relative;">
                 <label>Select Items to Track</label>
                 <div class="custom-multiselect premium-input" id="multiSelectToggle">
                     <span id="selectedCount">@(ViewBag.SelectedIds.Length > 0 ? $"{ViewBag.SelectedIds.Length} Items Selected" : "-- Select Products --")</span>
@@ -31,7 +41,7 @@
                     </div>
                     @foreach (var p in ViewBag.ItemsList as List<JewelleryApp.Models.Jewellery.ItemMaster>)
                     {
-                        <div class="multiselect-option">
+                        <div class="multiselect-option" data-category="@p.Category">
                             <input type="checkbox" name="itemIds" value="@p.Id" id="item_@p.Id" 
                                    @(Array.IndexOf(ViewBag.SelectedIds as int[], p.Id) != -1 ? "checked" : "") />
                             <label for="item_@p.Id">@p.Name</label>
@@ -164,12 +174,45 @@
                 countSpan.innerText = checked.length > 0 ? checked.length + ' Items Selected' : '-- Select Products --';
             });
         });
+
+        // Category Filter Logic
+        const catFilter = document.getElementById('categoryFilter');
+        catFilter.addEventListener('change', function() {
+            const selectedCat = this.value;
+            const options = dropdown.querySelectorAll('.multiselect-option');
+            
+            options.forEach(opt => {
+                if (selectedCat === "All" || opt.getAttribute('data-category') === selectedCat) {
+                    opt.style.display = 'flex';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+
+            // Optional: Update Select All label
+            const selectAllBtn = dropdown.querySelector('button[onclick="toggleAll(true)"]');
+            if (selectedCat !== "All") {
+                selectAllBtn.innerText = "Select All " + selectedCat;
+            } else {
+                selectAllBtn.innerText = "Select All";
+            }
+        });
     });
 
     function toggleAll(select) {
-        const checkboxes = document.querySelectorAll('#multiSelectDropdown input[type="checkbox"]');
-        checkboxes.forEach(cb => cb.checked = select);
+        const selectedCat = document.getElementById('categoryFilter').value;
+        const options = document.querySelectorAll('#multiSelectDropdown .multiselect-option');
+        
+        let count = 0;
+        options.forEach(opt => {
+            const cb = opt.querySelector('input[type="checkbox"]');
+            if (selectedCat === "All" || opt.getAttribute('data-category') === selectedCat) {
+                cb.checked = select;
+            }
+            if (cb.checked) count++;
+        });
+
         const countSpan = document.getElementById('selectedCount');
-        countSpan.innerText = select ? checkboxes.length + ' Items Selected' : '-- Select Products --';
+        countSpan.innerText = count > 0 ? count + ' Items Selected' : '-- Select Products --';
     }
 </script>
