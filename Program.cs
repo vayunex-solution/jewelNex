@@ -151,6 +151,10 @@ using (var scope = app.Services.CreateScope())
     // Customer schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN CustomerCode TEXT NOT NULL DEFAULT '';"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN StateCode TEXT;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN OpeningGold decimal(10, 3) NOT NULL DEFAULT 0;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN OpeningSilver decimal(10, 3) NOT NULL DEFAULT 0;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN GoldBalanceType INTEGER NOT NULL DEFAULT 1;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN SilverBalanceType INTEGER NOT NULL DEFAULT 1;"); } catch { }
 
     // ShopSettings schema updates (Licensing)
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN LicenseKey TEXT;"); } catch { }

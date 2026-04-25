@@ -132,6 +132,9 @@ namespace JewelleryApp.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("GoldBalanceType")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Mobile")
                         .HasColumnType("TEXT");
 
@@ -147,6 +150,9 @@ namespace JewelleryApp.Migrations
 
                     b.Property<decimal>("OpeningSilver")
                         .HasColumnType("decimal(10, 3)");
+
+                    b.Property<int>("SilverBalanceType")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("StateCode")
                         .HasColumnType("TEXT");
@@ -323,7 +329,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 1,
                             Category = "Gold",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 913, DateTimeKind.Local).AddTicks(5513),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 101, DateTimeKind.Local).AddTicks(2310),
                             DefaultRate = 0m,
                             Name = "Gold Ring",
                             OpeningStock = 0,
@@ -335,7 +341,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 2,
                             Category = "Gold",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9159),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2651),
                             DefaultRate = 0m,
                             Name = "Gold Chain",
                             OpeningStock = 0,
@@ -347,7 +353,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 3,
                             Category = "Gold",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9196),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2670),
                             DefaultRate = 0m,
                             Name = "Gold Bangle",
                             OpeningStock = 0,
@@ -359,7 +365,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 4,
                             Category = "Gold",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9201),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2673),
                             DefaultRate = 0m,
                             Name = "Gold Necklace",
                             OpeningStock = 0,
@@ -371,7 +377,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 5,
                             Category = "Gold",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9206),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2674),
                             DefaultRate = 0m,
                             Name = "Gold Earrings",
                             OpeningStock = 0,
@@ -383,7 +389,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 6,
                             Category = "Gold",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9210),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2676),
                             DefaultRate = 0m,
                             Name = "Gold Pendant",
                             OpeningStock = 0,
@@ -395,7 +401,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 7,
                             Category = "Gold",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9214),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2677),
                             DefaultRate = 0m,
                             Name = "Gold Mangalsutra",
                             OpeningStock = 0,
@@ -407,7 +413,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 8,
                             Category = "Gold",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9217),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2680),
                             DefaultRate = 0m,
                             Name = "Gold Nose Pin",
                             OpeningStock = 0,
@@ -419,7 +425,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 9,
                             Category = "Gold",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9221),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2681),
                             DefaultRate = 0m,
                             Name = "Gold Bracelet",
                             OpeningStock = 0,
@@ -431,7 +437,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 10,
                             Category = "Silver",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9224),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2683),
                             DefaultRate = 0m,
                             Name = "Silver Payal (Anklet)",
                             OpeningStock = 0,
@@ -443,7 +449,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 11,
                             Category = "Silver",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9227),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2685),
                             DefaultRate = 0m,
                             Name = "Silver Bichiya (Toe Ring)",
                             OpeningStock = 0,
@@ -455,7 +461,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 12,
                             Category = "Silver",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9231),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2686),
                             DefaultRate = 0m,
                             Name = "Silver Coin",
                             OpeningStock = 0,
@@ -467,7 +473,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 13,
                             Category = "Silver",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9234),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2688),
                             DefaultRate = 0m,
                             Name = "Silver Glass",
                             OpeningStock = 0,
@@ -479,7 +485,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 14,
                             Category = "Silver",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9238),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2690),
                             DefaultRate = 0m,
                             Name = "Silver Spoon",
                             OpeningStock = 0,
@@ -491,7 +497,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 15,
                             Category = "Silver",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9241),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2692),
                             DefaultRate = 0m,
                             Name = "Silver Idol",
                             OpeningStock = 0,
@@ -503,7 +509,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 16,
                             Category = "Silver",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9245),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2693),
                             DefaultRate = 0m,
                             Name = "Silver Chain",
                             OpeningStock = 0,
@@ -515,7 +521,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 17,
                             Category = "Silver",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9248),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2695),
                             DefaultRate = 0m,
                             Name = "Silver Bracelet",
                             OpeningStock = 0,
@@ -527,7 +533,7 @@ namespace JewelleryApp.Migrations
                         {
                             Id = 18,
                             Category = "Silver",
-                            CreatedAt = new DateTime(2026, 4, 25, 9, 16, 41, 915, DateTimeKind.Local).AddTicks(9252),
+                            CreatedAt = new DateTime(2026, 4, 25, 17, 28, 35, 102, DateTimeKind.Local).AddTicks(2697),
                             DefaultRate = 0m,
                             Name = "Silver Ring",
                             OpeningStock = 0,

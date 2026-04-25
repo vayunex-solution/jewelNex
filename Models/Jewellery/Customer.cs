@@ -29,9 +29,15 @@ namespace JewelleryApp.Models.Jewellery
         [Column(TypeName = "decimal(10, 3)")]
         public decimal OpeningGold { get; set; } = 0;
 
+        [Display(Name = "Gold Balance Type")]
+        public BalanceType GoldBalanceType { get; set; } = BalanceType.Dr;
+
         [Display(Name = "Opening Silver (g)")]
         [Column(TypeName = "decimal(10, 3)")]
         public decimal OpeningSilver { get; set; } = 0;
+
+        [Display(Name = "Silver Balance Type")]
+        public BalanceType SilverBalanceType { get; set; } = BalanceType.Dr;
 
         [Display(Name = "Balance Type")]
         public BalanceType BalanceType { get; set; } = BalanceType.Dr;

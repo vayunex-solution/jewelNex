@@ -28,7 +28,7 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Mobile,Address,StateCode,OpeningBalance,OpeningGold,OpeningSilver,BalanceType")] Customer customer)
+        public async Task<IActionResult> Create([Bind("Name,Mobile,Address,StateCode,OpeningBalance,OpeningGold,OpeningSilver,BalanceType,GoldBalanceType,SilverBalanceType")] Customer customer)
         {
             if (ModelState.IsValid)
             {
@@ -56,7 +56,9 @@ namespace JewelleryApp.Controllers
                     openingBalance = x.OpeningBalance,
                     openingGold = x.OpeningGold,
                     openingSilver = x.OpeningSilver,
-                    balanceType = (int)x.BalanceType
+                    balanceType = (int)x.BalanceType,
+                    goldBalanceType = (int)x.GoldBalanceType,
+                    silverBalanceType = (int)x.SilverBalanceType
                 })
                 .ToListAsync();
             return Json(customers);
@@ -84,8 +86,8 @@ namespace JewelleryApp.Controllers
                 .Where(ii => ii.Invoice.CustomerId == id)
                 .ToListAsync();
 
-            decimal goldBal = customer.OpeningGold;
-            decimal silverBal = customer.OpeningSilver;
+            decimal goldBal = customer.GoldBalanceType == BalanceType.Dr ? customer.OpeningGold : -customer.OpeningGold;
+            decimal silverBal = customer.SilverBalanceType == BalanceType.Dr ? customer.OpeningSilver : -customer.OpeningSilver;
 
             foreach (var item in invoiceItems)
             {
@@ -121,7 +123,7 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Mobile,Address,StateCode,OpeningBalance,OpeningGold,OpeningSilver,BalanceType,CustomerCode,CreatedAt")] Customer customer)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Mobile,Address,StateCode,OpeningBalance,OpeningGold,OpeningSilver,BalanceType,GoldBalanceType,SilverBalanceType,CustomerCode,CreatedAt")] Customer customer)
         {
             if (id != customer.Id) return NotFound();
 

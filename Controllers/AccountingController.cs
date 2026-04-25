@@ -243,8 +243,8 @@ namespace JewelleryApp.Controllers
                             .Where(ii => ii.Invoice.CustomerId == custId && ii.Invoice.Date < from)
                             .ToListAsync();
 
-                        decimal preGold = customer.OpeningGold;
-                        decimal preSilver = customer.OpeningSilver;
+                        decimal preGold = customer.GoldBalanceType == BalanceType.Dr ? customer.OpeningGold : -customer.OpeningGold;
+                        decimal preSilver = customer.SilverBalanceType == BalanceType.Dr ? customer.OpeningSilver : -customer.OpeningSilver;
                         foreach (var item in preInvoiceItems)
                         {
                             if (item.Metal == "Gold") { if (item.RI == "I") preGold += item.FineWt; else preGold -= item.FineWt; }
