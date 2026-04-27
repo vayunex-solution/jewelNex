@@ -8,7 +8,9 @@ namespace JewelleryApp.Models.Jewellery
         General = 0,
         CashPayment = 1,
         CashReceipt = 2,
-        CashVoucher = 3
+        CashVoucher = 3,
+        MetalReceipt = 4,
+        MetalPayment = 5
     }
 
     public class Voucher
@@ -37,6 +39,17 @@ namespace JewelleryApp.Models.Jewellery
         public string? Particulars { get; set; }
 
         public string? Remarks { get; set; }
+
+        // Metal Tracking Fields
+        public string? Metal { get; set; } // Gold, Silver
+        
+        [Column(TypeName = "decimal(10, 3)")]
+        public decimal Weight { get; set; }
+        
+        public string? Purity { get; set; }
+        
+        [Column(TypeName = "decimal(10, 3)")]
+        public decimal FineWeight { get; set; }
 
         public List<VoucherItem> Items { get; set; } = new();
     }

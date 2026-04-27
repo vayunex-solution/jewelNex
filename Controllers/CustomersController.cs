@@ -80,15 +80,20 @@ namespace JewelleryApp.Controllers
             decimal amountBal = customer.BalanceType == BalanceType.Dr ? customer.OpeningBalance : -customer.OpeningBalance;
             foreach (var vi in voucherItems) amountBal += (vi.Debit - vi.Credit);
 
-            // 2. Calculate Metal Balance (Opening + InvoiceItems)
+            // 2. Calculate Metal Balance (Opening + InvoiceItems + Metal Vouchers)
             var invoiceItems = await _context.InvoiceItems
                 .Include(ii => ii.Invoice)
                 .Where(ii => ii.Invoice.CustomerId == id)
                 .ToListAsync();
 
+            var metalVouchers = await _context.Vouchers
+                .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment))
+                .ToListAsync();
+
             decimal goldBal = customer.GoldBalanceType == BalanceType.Dr ? customer.OpeningGold : -customer.OpeningGold;
             decimal silverBal = customer.SilverBalanceType == BalanceType.Dr ? customer.OpeningSilver : -customer.OpeningSilver;
 
+            // From Invoices
             foreach (var item in invoiceItems)
             {
                 if (item.Metal == "Gold")
@@ -100,6 +105,21 @@ namespace JewelleryApp.Controllers
                 {
                     if (item.RI == "I") silverBal += item.FineWt;
                     else silverBal -= item.FineWt;
+                }
+            }
+
+            // From Vouchers
+            foreach (var v in metalVouchers)
+            {
+                if (v.Metal == "Gold")
+                {
+                    if (v.Type == VoucherType.MetalPayment) goldBal += v.FineWeight; // We issued gold to them
+                    else goldBal -= v.FineWeight; // We received gold from them
+                }
+                else if (v.Metal == "Silver")
+                {
+                    if (v.Type == VoucherType.MetalPayment) silverBal += v.FineWeight;
+                    else silverBal -= v.FineWeight;
                 }
             }
 

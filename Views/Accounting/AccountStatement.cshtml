@@ -92,6 +92,10 @@
                         <th style="width:120px">V. No.</th>
                         <th style="width:100px">Date</th>
                         <th>Description</th>
+                        @if (Model.PrintOption == "Weight" || Model.PrintOption == "Both")
+                        {
+                            <th class="text-right" style="width:110px">Weight</th>
+                        }
                         <th class="text-right" style="width:130px">Debit (Dr)</th>
                         <th class="text-right" style="width:130px">Credit (Cr)</th>
                         <th class="text-right" style="width:150px">Balance</th>
@@ -113,6 +117,10 @@
                                 }
                             </div>
                         </td>
+                        @if (Model.PrintOption == "Weight" || Model.PrintOption == "Both")
+                        {
+                            <td></td>
+                        }
                         <td colspan="2"></td>
                         <td class="text-right"><strong>₹ @Model.OpeningBalance.ToString("N2") @Model.OpeningBalanceType</strong></td>
                     </tr>
@@ -123,6 +131,17 @@
                             <td>@entry.VoucherNo</td>
                             <td>@entry.Date.ToString("dd-MM-yy")</td>
                             <td class="small-desc">@entry.Description</td>
+                            @if (Model.PrintOption == "Weight" || Model.PrintOption == "Both")
+                            {
+                                <td class="text-right">
+                                    @if (entry.MetalWeight != 0)
+                                    {
+                                        <span style="font-weight:600; color:@(entry.MetalType == "Gold" ? "var(--primary-gold-dark)" : "#777")">
+                                            @entry.MetalWeight.ToString("N3") g
+                                        </span>
+                                    }
+                                </td>
+                            }
                             <td class="text-right text-dr">@(entry.Debit > 0 ? entry.Debit.ToString("N2") : "")</td>
                             <td class="text-right text-cr">@(entry.Credit > 0 ? entry.Credit.ToString("N2") : "")</td>
                             <td class="text-right">₹ @entry.RunningBalance.ToString("N2") @entry.BalanceType</td>
@@ -131,13 +150,13 @@
                 </tbody>
                 <tfoot>
                     <tr class="totals-row">
-                        <td colspan="3" class="text-right"><strong>TOTALS</strong></td>
+                        <td colspan="@(Model.PrintOption == "Weight" || Model.PrintOption == "Both" ? 4 : 3)" class="text-right"><strong>TOTALS</strong></td>
                         <td class="text-right"><strong>₹ @Model.TotalDebit.ToString("N2")</strong></td>
                         <td class="text-right"><strong>₹ @Model.TotalCredit.ToString("N2")</strong></td>
                         <td></td>
                     </tr>
                     <tr class="closing-row">
-                        <td colspan="3" class="text-right"><strong>CLOSING BALANCE</strong></td>
+                        <td colspan="@(Model.PrintOption == "Weight" || Model.PrintOption == "Both" ? 4 : 3)" class="text-right"><strong>CLOSING BALANCE</strong></td>
                         <td colspan="2">
                             @if (Model.PrintOption == "Weight" || Model.PrintOption == "Both")
                             {

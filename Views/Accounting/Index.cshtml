@@ -16,6 +16,9 @@
                 <a asp-action="Create" asp-route-type="CashVoucher"><i class="fas fa-money-check"></i> Cash Voucher</a>
                 <a asp-action="Create" asp-route-type="CashPayment"><i class="fas fa-hand-holding-usd"></i> Cash Payment</a>
                 <a asp-action="Create" asp-route-type="CashReceipt"><i class="fas fa-file-download"></i> Cash Receipt</a>
+                <hr style="margin: 5px 0; border-color: rgba(255,255,255,0.1)">
+                <a asp-action="Create" asp-route-type="MetalReceipt" style="color: #d4af37;"><i class="fas fa-weight-hanging"></i> Metal Receipt</a>
+                <a asp-action="Create" asp-route-type="MetalPayment" style="color: #c0c0c0;"><i class="fas fa-weight-hanging"></i> Metal Payment</a>
             </div>
         </div>
     </div>
@@ -47,7 +50,7 @@
                     <th>Voucher No</th>
                     <th>Type</th>
                     <th>Account Name</th>
-                    <th class="text-right">Amount</th>
+                    <th class="text-right">Amount / Weight</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -59,11 +62,22 @@
                         <td><strong>@item.VoucherNo</strong></td>
                         <td>
                             <span class="badge @GetVoucherClass(item.Type)">
-                                @item.Type.ToString()
+                                @item.Type.ToString().Replace("Receipt", " Receipt").Replace("Payment", " Payment")
                             </span>
                         </td>
                         <td>@item.AccountName</td>
-                        <td class="text-right">₹ @item.Amount.ToString("N2")</td>
+                        <td class="text-right">
+                            @if (item.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalReceipt || item.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalPayment)
+                            {
+                                <span style="color: @(item.Metal == "Gold" ? "#d4af37" : "#c0c0c0")">
+                                    @item.FineWeight.ToString("N3") g (@item.Metal)
+                                </span>
+                            }
+                            else
+                            {
+                                <span>₹ @item.Amount.ToString("N2")</span>
+                            }
+                        </td>
                         <td>
                             <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-small btn-secondary">
                                 <i class="fas fa-eye"></i> Details
@@ -89,6 +103,8 @@
         {
             JewelleryApp.Models.Jewellery.VoucherType.CashReceipt => "badge-success",
             JewelleryApp.Models.Jewellery.VoucherType.CashPayment => "badge-danger",
+            JewelleryApp.Models.Jewellery.VoucherType.MetalReceipt => "badge-metal-receipt",
+            JewelleryApp.Models.Jewellery.VoucherType.MetalPayment => "badge-metal-payment",
             _ => "badge-primary"
         };
     }
@@ -100,4 +116,6 @@
     .badge-primary { background: #007bff; color: white; }
     .badge-success { background: #28a745; color: white; }
     .badge-danger { background: #dc3545; color: white; }
+    .badge-metal-receipt { background: rgba(212, 175, 55, 0.2); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.3); }
+    .badge-metal-payment { background: rgba(192, 192, 192, 0.2); color: #ddd; border: 1px solid rgba(192, 192, 192, 0.3); }
 </style>

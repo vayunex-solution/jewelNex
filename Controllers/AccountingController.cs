@@ -90,8 +90,9 @@ namespace JewelleryApp.Controllers
                 // If it's a simple entry without items, create double entry automatically (Point 4, 5)
                 if (voucher.Items == null || !voucher.Items.Any())
                 {
-                    bool isReceipt = voucher.Type == VoucherType.CashReceipt;
-                    
+                    bool isReceipt = voucher.Type == VoucherType.CashReceipt || voucher.Type == VoucherType.MetalReceipt;
+                    bool isMetal = voucher.Type == VoucherType.MetalReceipt || voucher.Type == VoucherType.MetalPayment;
+
                     // Side 1: The Account (Customer or Expense)
                     voucher.Items.Add(new VoucherItem { 
                         AccountName = voucher.AccountName, 
@@ -100,10 +101,13 @@ namespace JewelleryApp.Controllers
                         Particulars = voucher.Particulars
                     });
 
-                    // Side 2: Cash/Bank Account (Auto-Post)
-                    string cashBankAcc = voucher.Type.ToString().Contains("Cash") ? "Cash A/c" : "Bank A/c";
+                    // Side 2: Cash/Bank/Metal Account (Auto-Post)
+                    string contraAcc = "Cash A/c";
+                    if (voucher.Type.ToString().Contains("Bank")) contraAcc = "Bank A/c";
+                    else if (isMetal) contraAcc = voucher.Metal == "Silver" ? "Silver Stock A/c" : "Gold Stock A/c";
+
                     voucher.Items.Add(new VoucherItem { 
-                        AccountName = cashBankAcc, 
+                        AccountName = contraAcc, 
                         Debit = isReceipt ? voucher.Amount : 0, 
                         Credit = isReceipt ? 0 : voucher.Amount,
                         Particulars = $"Auto-posted from {voucher.Type}"
@@ -212,15 +216,25 @@ namespace JewelleryApp.Controllers
             {
                 runningBal += (vi.Debit - vi.Credit);
 
+                string desc = vi.Particulars ?? vi.Voucher.Particulars ?? vi.Voucher.Type.ToString();
+                if (vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment)
+                {
+                    string typeLabel = vi.Voucher.Type == VoucherType.MetalReceipt ? "Metal Received" : "Metal Issued";
+                    desc = $"{typeLabel}: {vi.Voucher.FineWeight:N3}g {vi.Voucher.Metal} ({vi.Voucher.Weight:N3}g @ {vi.Voucher.Purity}%)";
+                    if (!string.IsNullOrEmpty(vi.Voucher.Particulars)) desc += $" - {vi.Voucher.Particulars}";
+                }
+
                 vm.Entries.Add(new LedgerEntry
                 {
                     VoucherNo = vi.Voucher.VoucherNo,
                     Date = vi.Voucher.Date,
-                    Description = vi.Particulars ?? vi.Voucher.Particulars ?? vi.Voucher.Type.ToString(),
+                    Description = desc,
                     Debit = vi.Debit,
                     Credit = vi.Credit,
                     RunningBalance = Math.Abs(runningBal),
-                    BalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr
+                    BalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr,
+                    MetalWeight = vi.Voucher.FineWeight,
+                    MetalType = vi.Voucher.Metal
                 });
             }
 
@@ -242,14 +256,25 @@ namespace JewelleryApp.Controllers
                             .Include(ii => ii.Invoice)
                             .Where(ii => ii.Invoice.CustomerId == custId && ii.Invoice.Date < from)
                             .ToListAsync();
+                        
+                        var preMetalVouchers = await _context.Vouchers
+                            .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment) && v.Date < from)
+                            .ToListAsync();
 
                         decimal preGold = customer.GoldBalanceType == BalanceType.Dr ? customer.OpeningGold : -customer.OpeningGold;
                         decimal preSilver = customer.SilverBalanceType == BalanceType.Dr ? customer.OpeningSilver : -customer.OpeningSilver;
+                        
                         foreach (var item in preInvoiceItems)
                         {
                             if (item.Metal == "Gold") { if (item.RI == "I") preGold += item.FineWt; else preGold -= item.FineWt; }
                             else if (item.Metal == "Silver") { if (item.RI == "I") preSilver += item.FineWt; else preSilver -= item.FineWt; }
                         }
+                        foreach (var v in preMetalVouchers)
+                        {
+                            if (v.Metal == "Gold") { if (v.Type == VoucherType.MetalPayment) preGold += v.FineWeight; else preGold -= v.FineWeight; }
+                            else if (v.Metal == "Silver") { if (v.Type == VoucherType.MetalPayment) preSilver += v.FineWeight; else preSilver -= v.FineWeight; }
+                        }
+                        
                         vm.OpeningGold = preGold;
                         vm.OpeningSilver = preSilver;
 
@@ -259,12 +284,21 @@ namespace JewelleryApp.Controllers
                             .Where(ii => ii.Invoice.CustomerId == custId && ii.Invoice.Date >= from && ii.Invoice.Date <= to)
                             .ToListAsync();
 
+                        var periodMetalVouchers = await _context.Vouchers
+                            .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment) && v.Date >= from && v.Date <= to)
+                            .ToListAsync();
+
                         decimal periodGold = 0;
                         decimal periodSilver = 0;
                         foreach (var item in periodInvoiceItems)
                         {
                             if (item.Metal == "Gold") { if (item.RI == "I") periodGold += item.FineWt; else periodGold -= item.FineWt; }
                             else if (item.Metal == "Silver") { if (item.RI == "I") periodSilver += item.FineWt; else periodSilver -= item.FineWt; }
+                        }
+                        foreach (var v in periodMetalVouchers)
+                        {
+                            if (v.Metal == "Gold") { if (v.Type == VoucherType.MetalPayment) periodGold += v.FineWeight; else periodGold -= v.FineWeight; }
+                            else if (v.Metal == "Silver") { if (v.Type == VoucherType.MetalPayment) periodSilver += v.FineWeight; else periodSilver -= v.FineWeight; }
                         }
                         
                         vm.ClosingGold = vm.OpeningGold + periodGold;
@@ -285,6 +319,8 @@ namespace JewelleryApp.Controllers
                 VoucherType.CashPayment => "CP",
                 VoucherType.CashReceipt => "CR",
                 VoucherType.CashVoucher => "CV",
+                VoucherType.MetalReceipt => "MR",
+                VoucherType.MetalPayment => "MP",
                 _ => "VO"
             };
             return $"{prefix}-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}";

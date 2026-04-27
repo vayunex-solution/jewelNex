@@ -1,18 +1,21 @@
 @model JewelleryApp.Models.Jewellery.Voucher
 @{
     var type = (JewelleryApp.Models.Jewellery.VoucherType)ViewBag.VoucherType;
-    var isReceipt = type == JewelleryApp.Models.Jewellery.VoucherType.CashReceipt;
+    var isReceipt = type == JewelleryApp.Models.Jewellery.VoucherType.CashReceipt || type == JewelleryApp.Models.Jewellery.VoucherType.MetalReceipt;
+    var isMetal = type == JewelleryApp.Models.Jewellery.VoucherType.MetalReceipt || type == JewelleryApp.Models.Jewellery.VoucherType.MetalPayment;
     var themeClass = isReceipt ? "receipt-theme" : "payment-theme";
+    if (isMetal) themeClass = isReceipt ? "metal-receipt-theme" : "metal-payment-theme";
+    
     ViewData["Title"] = $"New {type.ToString()}";
 }
 
 <header>
     <div class="header-title">
         <h2 class="@(isReceipt ? "text-success" : "text-danger")">
-            <i class="fas @(isReceipt ? "fa-file-invoice-dollar" : "fa-hand-holding-usd")"></i> 
-            New @(isReceipt ? "Cash Receipt" : "Cash Payment")
+            <i class="fas @(isMetal ? "fa-weight-hanging" : (isReceipt ? "fa-file-invoice-dollar" : "fa-hand-holding-usd"))"></i> 
+            New @(type.ToString().Replace("Receipt", " Receipt").Replace("Payment", " Payment"))
         </h2>
-        <p>Record a direct @(isReceipt ? "incoming" : "outgoing") financial transaction</p>
+        <p>Record a direct @(isReceipt ? "incoming" : "outgoing") @(isMetal ? "metal" : "financial") transaction</p>
     </div>
     <div class="header-actions">
         <a asp-action="Index" class="btn btn-secondary">Cancel</a>
@@ -52,11 +55,38 @@
             </datalist>
         </div>
 
+        @if (isMetal)
+        {
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label asp-for="Metal"></label>
+                    <select asp-for="Metal" class="form-control">
+                        <option value="Gold">Gold</option>
+                        <option value="Silver">Silver</option>
+                    </select>
+                </div>
+                <div class="form-group col-6">
+                    <label asp-for="Purity">Purity (%)</label>
+                    <input asp-for="Purity" type="number" step="0.01" id="metal-purity" value="100.00" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label asp-for="Weight">Gross Weight (g)</label>
+                    <input asp-for="Weight" type="number" step="0.001" id="metal-weight" />
+                </div>
+                <div class="form-group col-6">
+                    <label asp-for="FineWeight">Fine Weight (g)</label>
+                    <input asp-for="FineWeight" type="number" step="0.001" id="metal-fine-weight" readonly class="text-muted" />
+                </div>
+            </div>
+        }
+
         <div class="form-group">
-            <label asp-for="Amount"></label>
+            <label asp-for="Amount">Amount (₹)</label>
             <div class="input-with-icon">
                 <i class="fas fa-rupee-sign"></i>
-                <input asp-for="Amount" type="number" step="0.01" />
+                <input asp-for="Amount" type="number" step="0.01" value="0" />
             </div>
             <span asp-validation-for="Amount" class="text-danger"></span>
         </div>
@@ -73,7 +103,7 @@
 
         <div style="margin-top:30px">
             <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-save"></i> Save @(isReceipt ? "Receipt" : "Payment") Entry
+                <i class="fas fa-save"></i> Save @(type.ToString().Replace("Receipt", " Receipt").Replace("Payment", " Payment")) Entry
             </button>
         </div>
     </form>
@@ -108,6 +138,22 @@
                     });
             });
         }
+
+        // Metal Calculation
+        const weightInput = document.getElementById('metal-weight');
+        const purityInput = document.getElementById('metal-purity');
+        const fineWtInput = document.getElementById('metal-fine-weight');
+
+        if (weightInput && purityInput && fineWtInput) {
+            const calculateFine = () => {
+                const weight = parseFloat(weightInput.value) || 0;
+                const purity = parseFloat(purityInput.value) || 0;
+                fineWtInput.value = (weight * purity / 100).toFixed(3);
+            };
+
+            weightInput.addEventListener('input', calculateFine);
+            purityInput.addEventListener('input', calculateFine);
+        }
     });
 </script>
 
@@ -127,6 +173,12 @@
 
     .receipt-theme .input-with-icon i { color: #28a745; }
     .payment-theme .input-with-icon i { color: #dc3545; }
+    
+    .metal-receipt-theme .input-with-icon i { color: #d4af37; }
+    .metal-payment-theme .input-with-icon i { color: #c0c0c0; }
+
+    .metal-receipt-theme h2 i, .metal-receipt-theme label { color: #d4af37; }
+    .metal-payment-theme h2 i, .metal-payment-theme label { color: #c0c0c0; }
     
     .receipt-theme h2 i { color: #28a745; }
     .payment-theme h2 i { color: #dc3545; }

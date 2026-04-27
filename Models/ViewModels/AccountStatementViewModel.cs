@@ -11,6 +11,8 @@ namespace JewelleryApp.Models.ViewModels
         public decimal Credit { get; set; }
         public decimal RunningBalance { get; set; }
         public BalanceType BalanceType { get; set; }
+        public decimal MetalWeight { get; set; }
+        public string? MetalType { get; set; }
     }
 
     public class AccountStatementViewModel
