@@ -40,7 +40,7 @@
         <div class="form-group">
             <div style="display:flex; justify-content:space-between; align-items:center">
                 <label asp-for="AccountName">Account Name / Contact</label>
-                <span id="account-balance-display" class="balance-badge" style="display:none">Bal: ₹ 0.00 Dr</span>
+                <div id="account-balance-display" style="display:flex; gap: 5px; flex-wrap: wrap;"></div>
             </div>
             <input asp-for="AccountName" id="account-name-input" placeholder="Who is this transaction for?" list="account-list" autocomplete="off" />
             <span asp-validation-for="AccountName" class="text-danger"></span>
@@ -57,6 +57,20 @@
 
         @if (isMetal)
         {
+            <div class="basis-selector" style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.2);">
+                <label style="display: block; margin-bottom: 10px; font-weight: bold; color: var(--primary-gold);">Receipt Generation Type</label>
+                <div style="display: flex; gap: 20px;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="radio" asp-for="Basis" value="Weight" id="basis-weight" checked style="width: auto; margin-right: 8px;" />
+                        By Weight (Deducts from Metal Balance)
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="radio" asp-for="Basis" value="Amount" id="basis-amount" style="width: auto; margin-right: 8px;" />
+                        By Amount (Deducts from Cash Balance)
+                    </label>
+                </div>
+            </div>
+
             <div class="form-row">
                 <div class="form-group col-6">
                     <label asp-for="Metal"></label>
@@ -80,13 +94,19 @@
                     <input asp-for="FineWeight" type="number" step="0.001" id="metal-fine-weight" readonly class="text-muted" />
                 </div>
             </div>
+            <div class="form-row">
+                <div class="form-group col-12">
+                    <label asp-for="TodayRate">Today Rate (₹/g)</label>
+                    <input asp-for="TodayRate" type="number" step="0.01" id="metal-today-rate" placeholder="Enter current rate for conversion" />
+                </div>
+            </div>
         }
 
         <div class="form-group">
             <label asp-for="Amount">Amount (₹)</label>
             <div class="input-with-icon">
                 <i class="fas fa-rupee-sign"></i>
-                <input asp-for="Amount" type="number" step="0.01" value="0" />
+                <input asp-for="Amount" type="number" step="0.01" value="0" id="voucher-amount" />
             </div>
             <span asp-validation-for="Amount" class="text-danger"></span>
         </div>
@@ -118,7 +138,7 @@
             nameInput.addEventListener('change', function() {
                 const name = this.value;
                 if (!name) {
-                    balDisplay.style.display = 'none';
+                    balDisplay.innerHTML = '';
                     return;
                 }
 
@@ -126,15 +146,22 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data && data.balance !== undefined) {
-                            balDisplay.textContent = `Current Bal: ₹ ${data.balance.toLocaleString('en-IN', {minimumFractionDigits: 2})} ${data.type}`;
-                            balDisplay.style.display = 'inline-block';
-                            balDisplay.className = 'balance-badge ' + (data.type === 'Dr' ? 'bal-dr' : 'bal-cr');
+                            let html = `<span class="balance-badge ${data.type === 'Dr' ? 'bal-dr' : 'bal-cr'}">Bal: ₹ ${data.balance.toLocaleString('en-IN', {minimumFractionDigits: 2})} ${data.type}</span>`;
+                            
+                            if (data.goldBalance !== undefined) {
+                                html += `<span class="balance-badge ${data.goldType === 'Dr' ? 'bal-dr' : 'bal-cr'}" style="margin-left:5px">Gold: ${data.goldBalance.toFixed(3)}g ${data.goldType}</span>`;
+                            }
+                            if (data.silverBalance !== undefined) {
+                                html += `<span class="balance-badge ${data.silverType === 'Dr' ? 'bal-dr' : 'bal-cr'}" style="margin-left:5px">Silver: ${data.silverBalance.toFixed(3)}g ${data.silverType}</span>`;
+                            }
+                            
+                            balDisplay.innerHTML = html;
                         } else {
-                            balDisplay.style.display = 'none';
+                            balDisplay.innerHTML = '';
                         }
                     })
                     .catch(() => {
-                        balDisplay.style.display = 'none';
+                        balDisplay.innerHTML = '';
                     });
             });
         }
@@ -143,16 +170,81 @@
         const weightInput = document.getElementById('metal-weight');
         const purityInput = document.getElementById('metal-purity');
         const fineWtInput = document.getElementById('metal-fine-weight');
+        const rateInput = document.getElementById('metal-today-rate');
+        const amountInput = document.getElementById('voucher-amount');
 
         if (weightInput && purityInput && fineWtInput) {
-            const calculateFine = () => {
+            const calculateFineFromWeight = () => {
                 const weight = parseFloat(weightInput.value) || 0;
                 const purity = parseFloat(purityInput.value) || 0;
-                fineWtInput.value = (weight * purity / 100).toFixed(3);
+                const fineWt = (weight * purity / 100);
+                fineWtInput.value = fineWt.toFixed(3);
+                
+                // If "By Amount" is selected, update amount
+                const basis = document.querySelector('input[name="Basis"]:checked')?.value;
+                if (basis === 'Amount') {
+                    const rate = parseFloat(rateInput?.value) || 0;
+                    if (rate > 0) {
+                        amountInput.value = (fineWt * rate).toFixed(2);
+                    }
+                }
             };
 
-            weightInput.addEventListener('input', calculateFine);
-            purityInput.addEventListener('input', calculateFine);
+            const calculateFromAmount = () => {
+                const amount = parseFloat(amountInput.value) || 0;
+                const rate = parseFloat(rateInput.value) || 0;
+                const purity = parseFloat(purityInput.value) || 100;
+
+                if (amount > 0 && rate > 0) {
+                    const fineWt = amount / rate;
+                    fineWtInput.value = fineWt.toFixed(3);
+                    
+                    // Also update gross weight based on purity
+                    if (purity > 0) {
+                        weightInput.value = (fineWt * 100 / purity).toFixed(3);
+                    }
+                }
+            };
+
+            const handleBasisChange = () => {
+                const basis = document.querySelector('input[name="Basis"]:checked')?.value;
+                const basisHighlight = document.getElementById('account-balance-display');
+                
+                if (basis === 'Amount') {
+                    basisHighlight.querySelectorAll('.balance-badge').forEach(b => {
+                        if (b.textContent.includes('Bal: ₹')) b.style.boxShadow = '0 0 10px var(--primary-gold)';
+                        else b.style.boxShadow = 'none';
+                    });
+                    // If amount is not set but weight is, calculate amount
+                    if (parseFloat(amountInput.value) === 0 && parseFloat(weightInput.value) > 0) {
+                        calculateFineFromWeight();
+                    }
+                } else {
+                    basisHighlight.querySelectorAll('.balance-badge').forEach(b => {
+                        if (b.textContent.includes('Gold:') || b.textContent.includes('Silver:')) b.style.boxShadow = '0 0 10px var(--primary-gold)';
+                        else b.style.boxShadow = 'none';
+                    });
+                    // If weight is not set but amount is, calculate weight
+                    if (parseFloat(weightInput.value) === 0 && parseFloat(amountInput.value) > 0) {
+                        calculateFromAmount();
+                    }
+                }
+            };
+
+            weightInput.addEventListener('input', calculateFineFromWeight);
+            purityInput.addEventListener('input', calculateFineFromWeight);
+            
+            if (rateInput && amountInput) {
+                rateInput.addEventListener('input', calculateFromAmount);
+                amountInput.addEventListener('input', calculateFromAmount);
+            }
+
+            document.querySelectorAll('input[name="Basis"]').forEach(r => {
+                r.addEventListener('change', handleBasisChange);
+            });
+            
+            // Initial trigger after small delay to let balance badges load
+            setTimeout(handleBasisChange, 1000);
         }
     });
 </script>

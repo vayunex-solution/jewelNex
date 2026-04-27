@@ -25,7 +25,7 @@ namespace JewelleryApp.Controllers
             var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Name == name);
             if (customer != null)
             {
-                // Use the same logic as AccountStatement
+                // Cash Balance
                 var items = await _context.VoucherItems
                     .Include(vi => vi.Voucher)
                     .Where(vi => vi.AccountName == name)
@@ -34,10 +34,45 @@ namespace JewelleryApp.Controllers
                 decimal bal = customer.BalanceType == BalanceType.Dr ? customer.OpeningBalance : -customer.OpeningBalance;
                 foreach (var vi in items) bal += (vi.Debit - vi.Credit);
 
-                return Ok(new { balance = Math.Abs(bal), type = bal >= 0 ? "Dr" : "Cr" });
+                // Metal Balance
+                decimal goldBal = customer.GoldBalanceType == BalanceType.Dr ? customer.OpeningGold : -customer.OpeningGold;
+                decimal silverBal = customer.SilverBalanceType == BalanceType.Dr ? customer.OpeningSilver : -customer.OpeningSilver;
+
+                // From Invoices
+                var invoiceItems = await _context.InvoiceItems
+                    .Include(ii => ii.Invoice)
+                    .Where(ii => ii.Invoice.CustomerId == customer.Id)
+                    .ToListAsync();
+
+                foreach (var item in invoiceItems)
+                {
+                    if (item.Metal == "Gold") goldBal += (item.RI == "I" ? item.FineWt : -item.FineWt);
+                    else if (item.Metal == "Silver") silverBal += (item.RI == "I" ? item.FineWt : -item.FineWt);
+                }
+
+                // From Vouchers (Metal Receipt/Payment)
+                var metalVouchers = await _context.Vouchers
+                    .Where(v => v.AccountName == name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment))
+                    .Where(v => v.Basis == ReceiptBasis.Weight)
+                    .ToListAsync();
+
+                foreach (var v in metalVouchers)
+                {
+                    if (v.Metal == "Gold") goldBal += (v.Type == VoucherType.MetalPayment ? v.FineWeight : -v.FineWeight);
+                    else if (v.Metal == "Silver") silverBal += (v.Type == VoucherType.MetalPayment ? v.FineWeight : -v.FineWeight);
+                }
+
+                return Ok(new { 
+                    balance = Math.Abs(bal), 
+                    type = bal >= 0 ? "Dr" : "Cr",
+                    goldBalance = Math.Abs(goldBal),
+                    goldType = goldBal >= 0 ? "Dr" : "Cr",
+                    silverBalance = Math.Abs(silverBal),
+                    silverType = silverBal >= 0 ? "Dr" : "Cr"
+                });
             }
 
-            // 2. Try Account Head
+            // 2. Try Account Head (Assuming no metal for general accounts)
             var head = await _context.AccountHeads.FirstOrDefaultAsync(h => h.Name == name);
             if (head != null)
             {
@@ -104,7 +139,7 @@ namespace JewelleryApp.Controllers
                     // Side 2: Cash/Bank/Metal Account (Auto-Post)
                     string contraAcc = "Cash A/c";
                     if (voucher.Type.ToString().Contains("Bank")) contraAcc = "Bank A/c";
-                    else if (isMetal) contraAcc = voucher.Metal == "Silver" ? "Silver Stock A/c" : "Gold Stock A/c";
+                    else if (isMetal && voucher.Basis == ReceiptBasis.Weight) contraAcc = voucher.Metal == "Silver" ? "Silver Stock A/c" : "Gold Stock A/c";
 
                     voucher.Items.Add(new VoucherItem { 
                         AccountName = contraAcc, 
@@ -259,6 +294,7 @@ namespace JewelleryApp.Controllers
                         
                         var preMetalVouchers = await _context.Vouchers
                             .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment) && v.Date < from)
+                            .Where(v => v.Basis == ReceiptBasis.Weight)
                             .ToListAsync();
 
                         decimal preGold = customer.GoldBalanceType == BalanceType.Dr ? customer.OpeningGold : -customer.OpeningGold;
@@ -286,6 +322,7 @@ namespace JewelleryApp.Controllers
 
                         var periodMetalVouchers = await _context.Vouchers
                             .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment) && v.Date >= from && v.Date <= to)
+                            .Where(v => v.Basis == ReceiptBasis.Weight)
                             .ToListAsync();
 
                         decimal periodGold = 0;

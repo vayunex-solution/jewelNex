@@ -13,6 +13,12 @@ namespace JewelleryApp.Models.Jewellery
         MetalPayment = 5
     }
 
+    public enum ReceiptBasis
+    {
+        Weight = 0,
+        Amount = 1
+    }
+
     public class Voucher
     {
         public int Id { get; set; }
@@ -50,6 +56,11 @@ namespace JewelleryApp.Models.Jewellery
         
         [Column(TypeName = "decimal(10, 3)")]
         public decimal FineWeight { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal TodayRate { get; set; }
+
+        public ReceiptBasis Basis { get; set; } = ReceiptBasis.Weight;
 
         public List<VoucherItem> Items { get; set; } = new();
     }
