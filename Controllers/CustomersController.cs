@@ -108,6 +108,17 @@ namespace JewelleryApp.Controllers
                 }
             }
 
+            // From Invoice Level Metal Receipt (Dedicated Field)
+            var invoiceReceipts = await _context.Invoices
+                .Where(i => i.CustomerId == id && i.MetalReceivedFineWeight > 0)
+                .ToListAsync();
+
+            foreach (var inv in invoiceReceipts)
+            {
+                if (inv.MetalReceivedType == "Gold") goldBal -= inv.MetalReceivedFineWeight;
+                else if (inv.MetalReceivedType == "Silver") silverBal -= inv.MetalReceivedFineWeight;
+            }
+
             // From Vouchers
             foreach (var v in metalVouchers)
             {

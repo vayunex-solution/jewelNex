@@ -59,6 +59,24 @@ document.addEventListener('DOMContentLoaded', () => {
             calculateInvoice();
         });
     }
+
+    // Metal Receipt Calculations
+    const metalReceiptWeight = el('metal-receipt-weight');
+    const metalReceiptPurity = el('metal-receipt-purity');
+    const metalReceiptType = el('metal-receipt-type');
+    const metalReceiptFineDisplay = el('metal-receipt-fine-display');
+
+    if (metalReceiptWeight && metalReceiptPurity && metalReceiptFineDisplay) {
+        const updateMetalFine = () => {
+            const wt = parseFloat(metalReceiptWeight.value) || 0;
+            const pur = parseFloat(metalReceiptPurity.value) || 0;
+            const fine = wt * (pur / 100);
+            metalReceiptFineDisplay.textContent = fine.toFixed(3);
+        };
+        metalReceiptWeight.oninput = updateMetalFine;
+        metalReceiptPurity.oninput = updateMetalFine;
+    }
+
     if (el('print-option')) {
         el('print-option').addEventListener('change', () => {
             calculateInvoice();
@@ -599,7 +617,13 @@ document.addEventListener('DOMContentLoaded', () => {
             SGST: getTxtVal('break-sgst'),
             IGST: getTxtVal('break-igst'),
             TotalAmount: getTxtVal('break-total-amount'),
-            RoundedOff: parseFloat(el('break-rounded')?.innerText.replace(/[^0-9.-]+/g, "")) || 0
+            RoundedOff: parseFloat(el('break-rounded')?.innerText.replace(/[^0-9.-]+/g, "")) || 0,
+            
+            // New: Metal Receipt Fields
+            MetalReceivedType: el('metal-receipt-type')?.value,
+            MetalReceivedWeight: parseFloat(el('metal-receipt-weight')?.value) || 0,
+            MetalReceivedPurity: parseFloat(el('metal-receipt-purity')?.value) || 0,
+            MetalReceivedFineWeight: parseFloat(el('metal-receipt-fine-display')?.textContent) || 0
         };
 
         const rows = itemsTableBody.querySelectorAll('tr');

@@ -61,6 +61,16 @@ namespace JewelleryApp.Models.Jewellery
         public string? Remarks { get; set; }
         public string InvoiceType { get; set; } = "Tax Invoice"; // "Tax Invoice" or "Rough Estimate"
         public string PrintOption { get; set; } = "None"; // "None", "Balance", "Weight", "Both"
+
+        // New: Dedicated Metal Receipt at Invoice Time
+        public string? MetalReceivedType { get; set; } // Gold/Silver
+        [Column(TypeName = "decimal(10, 3)")]
+        public decimal MetalReceivedWeight { get; set; }
+        [Column(TypeName = "decimal(5, 2)")]
+        public decimal MetalReceivedPurity { get; set; }
+        [Column(TypeName = "decimal(10, 3)")]
+        public decimal MetalReceivedFineWeight { get; set; }
+
         public List<InvoiceItem> Items { get; set; } = new();
     }
 }

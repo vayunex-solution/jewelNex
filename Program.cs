@@ -146,6 +146,10 @@ using (var scope = app.Services.CreateScope())
 
     // Invoice schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN InvoiceType TEXT NOT NULL DEFAULT 'Tax Invoice';"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN MetalReceivedType TEXT;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN MetalReceivedWeight DECIMAL(10,3) NOT NULL DEFAULT 0;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN MetalReceivedPurity DECIMAL(5,2) NOT NULL DEFAULT 0;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN MetalReceivedFineWeight DECIMAL(10,3) NOT NULL DEFAULT 0;"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE Invoices ADD COLUMN PrintOption TEXT NOT NULL DEFAULT 'None';"); } catch { }
 
     // Customer schema updates

@@ -58,18 +58,28 @@
             <div class="info-item"><strong>GSTIN</strong> <span class="data-field"></span></div>
             <div class="info-item full"><strong>AADHAAR / PAN No.</strong> <span class="data-field"></span></div>
         </div>
+        <div class="info-row">
+            <div class="info-item"><strong>Opening Bal (₹)</strong> <span class="data-field">@Model.Customer?.OpeningBalance.ToString("N2") @Model.Customer?.BalanceType</span></div>
+            <div class="info-item"><strong>Opening Gold (g)</strong> <span class="data-field">@Model.Customer?.OpeningGold.ToString("N3") @Model.Customer?.GoldBalanceType</span></div>
+            <div class="info-item text-right"><strong>Opening Silver (g)</strong> <span class="data-field">@Model.Customer?.OpeningSilver.ToString("N3") @Model.Customer?.SilverBalanceType</span></div>
+        </div>
     </div>
 
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 5%;">S.No.</th>
-                <th style="width: 40%;">Description of Goods</th>
-                <th style="width: 10%;">Weight</th>
-                <th style="width: 10%;">Rate</th>
-                <th style="width: 10%;">Mk %</th>
-                <th style="width: 10%;">Making</th>
-                <th style="width: 15%; text-align: center;" colspan="2">Amount<br><span style="font-size: 0.8em;">Rs. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; P.</span></th>
+                <th style="width: 3%;">S.N</th>
+                <th style="width: 3%;">R/I</th>
+                <th style="width: 25%;">Item</th>
+                <th style="width: 6%;">Metal</th>
+                <th style="width: 8%;">Gross Wt</th>
+                <th style="width: 6%;">Purity</th>
+                <th style="width: 8%;">Fine Wt</th>
+                <th style="width: 8%;">Rate</th>
+                <th style="width: 10%;">Metal Amt</th>
+                <th style="width: 5%;">Mk%</th>
+                <th style="width: 8%;">Mk Amt</th>
+                <th style="width: 10%; text-align: center;">Total</th>
             </tr>
         </thead>
         <tbody>
@@ -79,13 +89,17 @@
                 
                 <tr>
                     <td class="text-center">@(item != null ? (i + 1).ToString() : "")</td>
+                    <td class="text-center">@(item?.RI ?? "")</td>
                     <td>@(item?.ItemName ?? "")</td>
-                    <td class="text-right">@(item != null ? item.NetWt.ToString("N3") : "")</td>
+                    <td class="text-center">@(item?.Metal ?? "")</td>
+                    <td class="text-right">@(item != null ? item.GrossWt.ToString("N3") : "")</td>
+                    <td class="text-center">@(item?.Purity ?? "")</td>
+                    <td class="text-right">@(item != null ? item.FineWt.ToString("N3") : "")</td>
                     <td class="text-right">@(item != null ? item.Rate.ToString("N2") : "")</td>
+                    <td class="text-right">@(item != null ? item.MetalAmount.ToString("N2") : "")</td>
                     <td class="text-right">@(item != null && item.MakingPercent > 0 ? item.MakingPercent.ToString("N1") + (settings.MakingChargeType == "Percentage" ? "%" : "") : (item != null ? "-" : ""))</td>
                     <td class="text-right">@(item != null && item.MakingCharges > 0 ? item.MakingCharges.ToString("N2") : (item != null ? "-" : ""))</td>
-                    <td class="amount-rs">@(item != null ? ((int)item.Amount).ToString() : "")</td>
-                    <td class="amount-p">@(item != null ? ((int)((item.Amount - (int)item.Amount) * 100)).ToString("00") : "")</td>
+                    <td class="text-right"><strong>@(item != null ? item.Amount.ToString("N2") : "")</strong></td>
                 </tr>
             }
         </tbody>
@@ -93,15 +107,13 @@
             @if (Model.Discount > 0)
             {
                 <tr>
-                    <td colspan="5" class="text-right"><strong>Discount</strong></td>
-                    <td class="amount-rs"><strong>@((int)Model.Discount)</strong></td>
-                    <td class="amount-p"><strong>@(((int)((Model.Discount - (int)Model.Discount) * 100)).ToString("00"))</strong></td>
+                    <td colspan="11" class="text-right"><strong>Discount</strong></td>
+                    <td class="text-right"><strong>@Model.Discount.ToString("N2")</strong></td>
                 </tr>
             }
             <tr>
-                <td colspan="5" class="text-right"><strong>TOTAL</strong></td>
-                <td class="amount-rs"><strong>@((int)Model.TotalAmount)</strong></td>
-                <td class="amount-p"><strong>@(((int)((Model.TotalAmount - (int)Model.TotalAmount) * 100)).ToString("00"))</strong></td>
+                <td colspan="11" class="text-right"><strong>GRAND TOTAL</strong></td>
+                <td class="text-right" style="background: #eee;"><strong>@Model.TotalAmount.ToString("N2")</strong></td>
             </tr>
         </tfoot>
     </table>
@@ -118,19 +130,90 @@
             </div>
         }
 
-        @if (Model.PrintOption == "Balance" || Model.PrintOption == "Both")
+        @if (Model.PrintOption == "Balance" || Model.PrintOption == "Both" || true) @* Always show closing balance as per user request *@
         {
-            var allInvoices = Db.Invoices.Where(i => i.CustomerId == Model.CustomerId && i.Date <= Model.Date).ToList();
-            var totalBilled = allInvoices.Sum(i => i.TotalAmount);
-            var totalPaid = allInvoices.Sum(i => i.PaidAmount);
-            var openingBal = Model.Customer?.OpeningBalance ?? 0;
-            if (Model.Customer?.BalanceType == JewelleryApp.Models.Jewellery.BalanceType.Cr) openingBal = -openingBal;
-            
-            var netPending = (openingBal + totalBilled) - totalPaid;
+            var customer = Model.Customer;
+            if (customer != null)
+            {
+                // 1. Calculate Amount Balance
+                var voucherItems = Db.VoucherItems
+                    .Include(vi => vi.Voucher)
+                    .Where(vi => vi.AccountName == customer.Name && vi.Voucher.Date <= Model.Date)
+                    .ToList();
+                    
+                decimal amountBal = (customer.BalanceType == JewelleryApp.Models.Jewellery.BalanceType.Dr) ? customer.OpeningBalance : -customer.OpeningBalance;
+                foreach (var vi in voucherItems) amountBal += (vi.Debit - vi.Credit);
 
-            <div class="amount-words" style="margin-top: 5px; font-weight: bold; color: #d9534f;">
-                <strong>Net Pending Balance</strong> <span class="data-field">₹ @netPending.ToString("N2")</span>
-            </div>
+                // 2. Calculate Metal Balance
+                var invoiceItems = Db.InvoiceItems
+                    .Include(ii => ii.Invoice)
+                    .Where(ii => ii.Invoice.CustomerId == Model.CustomerId && ii.Invoice.Date <= Model.Date)
+                    .ToList();
+
+                var metalVouchers = Db.Vouchers
+                    .Where(v => v.AccountName == customer.Name && (v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalReceipt || v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalPayment) && v.Date <= Model.Date)
+                    .ToList();
+
+                decimal goldBal = (customer.GoldBalanceType == JewelleryApp.Models.Jewellery.BalanceType.Dr) ? customer.OpeningGold : -customer.OpeningGold;
+                decimal silverBal = (customer.SilverBalanceType == JewelleryApp.Models.Jewellery.BalanceType.Dr) ? customer.OpeningSilver : -customer.OpeningSilver;
+
+                foreach (var item in invoiceItems)
+                {
+                    if (item.Metal == "Gold")
+                    {
+                        if (item.RI == "I") goldBal += item.FineWt;
+                        else goldBal -= item.FineWt;
+                    }
+                    else if (item.Metal == "Silver")
+                    {
+                        if (item.RI == "I") silverBal += item.FineWt;
+                        else silverBal -= item.FineWt;
+                    }
+                }
+
+                foreach (var v in metalVouchers)
+                {
+                    if (v.Metal == "Gold")
+                    {
+                        if (v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalPayment) goldBal += v.FineWeight;
+                        else goldBal -= v.FineWeight;
+                    }
+                    else if (v.Metal == "Silver")
+                    {
+                        if (v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalPayment) silverBal += v.FineWeight;
+                        else silverBal -= v.FineWeight;
+                    }
+                }
+
+                // Add Invoice-level Metal Receipt
+                if (Model.MetalReceivedFineWeight > 0)
+                {
+                    if (Model.MetalReceivedType == "Gold") goldBal -= Model.MetalReceivedFineWeight;
+                    else if (Model.MetalReceivedType == "Silver") silverBal -= Model.MetalReceivedFineWeight;
+                }
+
+                @if (Model.PaidAmount > 0 || Model.MetalReceivedFineWeight > 0)
+                {
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; padding: 5px; border-top: 1px dashed #ccc;">
+                        <span>RECEIPT / PAID INFORMATION :</span>
+                        <div style="text-align: right;">
+                            @if (Model.PaidAmount > 0) { <div>Amount: ₹ @Model.PaidAmount.ToString("N2") (@Model.PaymentMode)</div> }
+                            @if (Model.MetalReceivedFineWeight > 0) { <div>Metal: @Model.MetalReceivedWeight.ToString("N3") g @Model.MetalReceivedType (@Model.MetalReceivedPurity% Pure -> @Model.MetalReceivedFineWeight.ToString("N3") g Fine)</div> }
+                        </div>
+                    </div>
+                }
+
+                <div class="closing-balances" style="margin-top: 5px; border-top: 1px solid #000; padding-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; background: #f9f9f9; padding: 5px;">
+                        <span>CUSTOMER CLOSING BALANCE :</span>
+                        <div style="text-align: right;">
+                            <div style="color: @(amountBal >= 0 ? "#4CAF50" : "#d9534f")">Amount: ₹ @Math.Abs(amountBal).ToString("N2") @(amountBal >= 0 ? "Dr" : "Cr")</div>
+                            <div>Gold: @goldBal.ToString("N3") g @(goldBal >= 0 ? "Dr" : "Cr")</div>
+                            <div>Silver: @silverBal.ToString("N3") g @(silverBal >= 0 ? "Dr" : "Cr")</div>
+                        </div>
+                    </div>
+                </div>
+            }
         }
 
         <div class="disclaimer-section">
@@ -275,8 +358,8 @@
     .items-table th, .items-table td {
         border-right: var(--print-border);
         border-bottom: var(--print-border);
-        padding: 5px;
-        font-size: 14px;
+        padding: 4px 2px;
+        font-size: 11px;
         height: 25px;
     }
 
