@@ -5,16 +5,17 @@
     var settings = Db.ShopSettings.FirstOrDefault() ?? new JewelleryApp.Models.Jewellery.ShopSetting();
 }
 
-<header>
-    <div class="header-title">
-        <h2>Create Invoice</h2>
-        <p>Generate a professional jewellery invoice for your customer</p>
-    </div>
-    <div class="header-actions">
-        <button class="btn btn-secondary" id="preview-invoice-btn" style="margin-right: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);"><i class="fas fa-eye"></i> Print Preview</button>
-        <button class="btn btn-primary" id="save-invoice-btn"><i class="fas fa-save"></i> Save Invoice</button>
-    </div>
-</header>
+<div class="content-full">
+    <header>
+        <div class="header-title">
+            <h2>Create Invoice</h2>
+            <p>Generate a professional jewellery invoice for your customer</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="preview-invoice-btn" style="margin-right: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);"><i class="fas fa-eye"></i> Print Preview</button>
+            <button class="btn btn-primary" id="save-invoice-btn"><i class="fas fa-save"></i> Save Invoice</button>
+        </div>
+    </header>
 
     <!-- Row 1: Invoice Details -->
     <div class="form-row full-width">
@@ -73,25 +74,25 @@
             </div>
         </div>
 
-        <!-- NEW: Dynamic Customer Balance Display -->
+        <!-- Dynamic Customer Balance Display -->
         <div id="customer-balance-info" style="display:none; margin-top: 15px; margin-bottom: 20px;">
             <div class="balance-grid">
                 <div class="balance-item glass-mini gold">
-                    <span class="label"><i class="fas fa-coins"></i> Pending Gold</span>
+                    <span class="label"><i class="fas fa-coins"></i> Opening Gold</span>
                     <span id="bal-gold" class="value">0.000 g</span>
                 </div>
                 <div class="balance-item glass-mini silver">
-                    <span class="label"><i class="fas fa-ring"></i> Pending Silver</span>
+                    <span class="label"><i class="fas fa-ring"></i> Opening Silver</span>
                     <span id="bal-silver" class="value">0.000 g</span>
                 </div>
                 <div class="balance-item glass-mini amount">
-                    <span class="label"><i class="fas fa-wallet"></i> Pending Amount</span>
+                    <span class="label"><i class="fas fa-wallet"></i> Opening Amount</span>
                     <span id="bal-amount" class="value">₹ 0.00</span>
                 </div>
             </div>
         </div>
 
-        <!-- Row 3: New Customer Details (Dynamic) -->
+        <!-- New Customer Details (Dynamic) -->
         <div id="new-cust-fields" style="display:none; transition: var(--transition); border-top: 1px dashed var(--primary-gold-light); margin-top: 20px; padding-top: 20px;">
             <div class="form-row">
                 <div class="form-group col-4">
@@ -134,7 +135,7 @@
         </div>
     </section>
 
-    <!-- Row 2: Product Table -->
+    <!-- Row 3: Product Table -->
     <section class="form-card full-width glass items-section">
         <div class="section-header">
             <div class="title-with-rate">
@@ -220,8 +221,52 @@
         </div>
     </section>
 
-    <!-- Grand Total Detailed -->
+    <!-- Dynamic Print Summaries -->
+    <section class="form-card glass">
+        <!-- Detailed Weight Summary -->
+        <div id="weight-summary-section" class="weight-summary-grid" style="display:none; padding-top: 5px;">
+            <div class="weight-item gold">
+                <span class="label">Gold Purchased</span>
+                <span id="sum-gold-purchased" class="value">0.000 g</span>
+            </div>
+            <div class="weight-item gold received">
+                <span class="label">Gold Received</span>
+                <span id="sum-gold-received" class="value">0.000 g</span>
+            </div>
+            <div class="weight-item silver">
+                <span class="label">Silver Purchased</span>
+                <span id="sum-silver-purchased" class="value">0.000 g</span>
+            </div>
+            <div class="weight-item silver received">
+                <span class="label">Silver Received</span>
+                <span id="sum-silver-received" class="value">0.000 g</span>
+            </div>
+        </div>
+
+        <!-- Final Net Position Summary -->
+        <div id="final-net-position" class="net-position-card" style="margin-top: 15px; border-top: 1px solid var(--primary-gold-light); padding-top: 15px;">
+            <div class="section-title-mini">Customer Pending Metal Balance (After Invoice)</div>
+            <div class="weight-summary-grid">
+                <div class="weight-item">
+                    <span class="label">Pending Gold Weight</span>
+                    <span id="final-net-gold" class="value-gold">0.000 g (Dr)</span>
+                </div>
+                <div class="weight-item">
+                    <span class="label">Pending Silver Weight</span>
+                    <span id="final-net-silver" class="value-silver">0.000 g (Dr)</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="preview-balance-row" class="total-row" style="display:none; border-top: 1px dashed #d9534f; margin-top: 15px; color: #d9534f;">
+            <span><i class="fas fa-history"></i> Net Customer Balance (To Print)</span>
+            <span id="preview-net-balance">₹ 0.00</span>
+        </div>
+    </section>
+
+    <!-- Grand Total Detailed Breakdown -->
     <section class="form-card glass total-breakdown">
+        <h3><i class="fas fa-calculator"></i> Billing Breakdown</h3>
         <div class="total-row">
             <span>Metal Value</span>
             <span id="break-gold-value">₹ 0.00</span>
@@ -233,6 +278,14 @@
         <div class="total-row">
             <span>Sub Total:</span>
             <span id="break-sub-total">₹ 0.00</span>
+        </div>
+        <div class="total-row" style="background: rgba(76, 175, 80, 0.05); padding: 5px 10px; border-radius: 8px; margin: 5px 0;">
+            <span style="color: #2E7D32; font-weight: bold;">Purchase Total (Sale)</span>
+            <span id="break-purchase-total" style="color: #2E7D32; font-weight: bold;">₹ 0.00</span>
+        </div>
+        <div class="total-row" style="background: rgba(217, 83, 79, 0.05); padding: 5px 10px; border-radius: 8px; margin: 5px 0;">
+            <span style="color: #d9534f; font-weight: bold;">Exchange Deduction (Old Metal)</span>
+            <span id="break-exchange-total" style="color: #d9534f; font-weight: bold;">₹ 0.00</span>
         </div>
         <div id="gst-container">
             <div class="total-row" style="background: rgba(212, 175, 55, 0.05); padding: 5px 10px; border-radius: 8px;">
@@ -270,44 +323,53 @@
             <input type="number" id="discount-input" step="0.01" value="0.00" style="width: 100px; padding: 5px; font-size: 0.9rem; border: 1px solid #d9534f; text-align: right; color: #d9534f; font-weight: bold;">
         </div>
         <div class="total-row grand">
-            <span>Grand Total</span>
+            <span>Grand Total (Net Bill)</span>
             <span id="break-total-amount">₹ 0.00</span>
         </div>
-        <div class="total-row" style="margin-top: 20px; border-top: 2px solid var(--primary-gold); padding-top: 15px;">
-            <div style="display:flex; flex-direction:column; gap:5px; flex:1;">
-                <label style="margin:0; font-weight:bold; color:var(--primary-gold-dark);"><i class="fas fa-balance-scale"></i> Metal Receipt Now</label>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <select id="metal-receipt-type" style="width: 100px; padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
-                        <option value="Gold">Gold</option>
-                        <option value="Silver">Silver</option>
-                    </select>
-                    <input type="number" id="metal-receipt-weight" placeholder="Weight (g)" step="0.001" style="width: 100px; text-align: right; border-radius: 4px;">
-                    <input type="number" id="metal-receipt-purity" placeholder="Purity %" step="0.01" value="91.60" style="width: 80px; text-align: right; border-radius: 4px;">
-                    <div style="font-size: 0.8rem; color: #666;">
-                        Fine: <span id="metal-receipt-fine-display" style="font-weight:bold; color:var(--primary-gold-dark);">0.000</span> g
-                    </div>
-                </div>
-            </div>
-        </div>
         <div class="total-row" style="margin-top: 20px;">
-            <label style="margin:0; font-weight:bold;">Amount Paid Now (₹)</label>
+            <label style="margin:0; font-weight:bold;">Advance Paid Now (₹)</label>
             <input type="number" id="paid-amount" step="0.01" value="0.00" style="width: 150px; text-align: right; border: 2px solid #4CAF50; border-radius: 8px; font-weight:bold;">
         </div>
         <div class="total-row rounded">
-            <span>Outstanding Balance</span>
+            <span>Final Pending Balance</span>
             <span id="outstanding-balance">₹ 0.00</span>
         </div>
-        <div class="total-row rounded">
-            <span>Rounded Off</span>
-            <span id="break-rounded">₹ 0.00</span>
-        </div>
-        <div id="preview-weight-row" class="total-row" style="display:none; border-top: 1px dashed var(--primary-gold); margin-top: 10px; color: var(--primary-gold-dark);">
-            <span><i class="fas fa-weight-hanging"></i> Total Metal Weight (To Print)</span>
-            <span id="preview-total-weight">0.000 g</span>
-        </div>
-        <div id="preview-balance-row" class="total-row" style="display:none; border-top: 1px dashed #d9534f; margin-top: 5px; color: #d9534f;">
-            <span><i class="fas fa-history"></i> Net Customer Balance (To Print)</span>
-            <span id="preview-net-balance">₹ 0.00</span>
+    </section>
+
+    <!-- Final Payment Summary -->
+    <section class="form-card glass" style="border-top: 3px solid var(--primary-gold); margin-top: 30px;">
+        <h2 style="color: var(--primary-gold-dark); text-align: center; margin-bottom: 20px;">Payment Summary</h2>
+        <div class="summary-table-container">
+            <table class="premium-table" style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
+                <thead>
+                    <tr style="background: transparent;">
+                        <th style="border-bottom: 2px solid #eee; padding-bottom: 10px; font-weight: bold; color: #666; text-align: left;">Description</th>
+                        <th style="border-bottom: 2px solid #eee; padding-bottom: 10px; font-weight: bold; color: #666; text-align: right;">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">Purchase Total</td>
+                        <td id="sum-purchase-total" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5; text-align: right; font-weight: bold;">₹ 0.00</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">Exchange Deduction</td>
+                        <td id="sum-exchange-total" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5; text-align: right; color: #d9534f;">₹ 0.00</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">Net Bill Amount</td>
+                        <td id="sum-net-bill" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5; text-align: right; font-weight: bold; color: var(--primary-gold-dark); font-size: 1.1rem;">₹ 0.00</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">Advance Paid</td>
+                        <td id="sum-advance-paid" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5; text-align: right; color: #4CAF50; font-weight: bold;">₹ 0.00</td>
+                    </tr>
+                    <tr style="background: rgba(212, 175, 55, 0.05);">
+                        <td style="padding: 15px; border-radius: 8px 0 0 8px; font-weight: 800; font-size: 1.2rem; color: var(--primary-gold-dark);">Final Pending Balance</td>
+                        <td id="sum-pending-balance" style="padding: 15px; border-radius: 0 8px 8px 0; text-align: right; font-weight: 800; font-size: 1.4rem; color: #222;">₹ 0.00</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </section>
 </div>
@@ -330,14 +392,102 @@
 </script>
 
 <style>
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .content-full { 
+        padding: 20px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 20px; 
+        width: 100%;
+        max-width: 1600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Ensure content doesn't go under fixed sidebar if exists */
+    @@media (min-width: 992px) {
+        .content-full {
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .title-with-rate {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .payment-modes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .payment-option { cursor: pointer; }
+    .radio-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        border: 2px solid rgba(0,0,0,0.05);
+        border-radius: 12px;
+        background: white;
+        transition: all 0.2s;
+        gap: 10px;
+        text-align: center;
+    }
+    input[type="radio"]:checked + .radio-card {
+        border-color: var(--primary-gold);
+        background: rgba(212, 175, 55, 0.05);
+        color: var(--primary-gold-dark);
+    }
+    .radio-card i { font-size: 1.5rem; }
+
+    .form-row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+    }
+    .form-group { flex: 1; min-width: 200px; }
+    .col-4 { flex: 1; min-width: 250px; }
+    .flex-2 { flex: 2; min-width: 300px; }
+    .flex-1 { flex: 1; min-width: 300px; }
+
     .table-container {
         overflow-x: auto;
         margin-top: 10px;
         padding-bottom: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     
     #product-table {
-        min-width: 1400px; /* Wider table for new columns */
+        min-width: 1400px; 
         width: 100%;
         border-collapse: collapse;
     }
@@ -345,29 +495,19 @@
     #product-table th, #product-table td {
         padding: 12px 8px; 
         vertical-align: middle;
-        overflow: hidden;
     }
 
     #product-table input, #product-table select {
         width: 100%;
-        min-width: 50px;
         padding: 10px;
         font-size: 0.9rem;
         border-radius: 8px;
     }
 
-    /* Column Specific consistency */
-    .huid-num { text-transform: uppercase; }
-    .item-amount { color: var(--primary-gold-dark); white-space: nowrap; }
+    .item-amount { color: var(--primary-gold-dark); white-space: nowrap; font-weight: bold; }
     
-    .total-breakdown {
-        transition: transform 0.2s ease-out;
-    }
+    .total-breakdown { transition: transform 0.2s ease-out; }
     
-    @@media (max-width: 1400px) {
-        .content-full { padding: 120px 20px 40px; }
-    }
-
     /* Balance Info Styles */
     .balance-grid {
         display: grid;
@@ -383,10 +523,8 @@
         display: flex;
         flex-direction: column;
         gap: 5px;
-        transition: transform 0.2s;
     }
-    .glass-mini:hover { transform: translateY(-3px); background: rgba(255, 255, 255, 0.08); }
-    .glass-mini .label { font-size: 0.75rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .glass-mini .label { font-size: 0.75rem; color: #999; text-transform: uppercase; }
     .glass-mini .value { font-size: 1.2rem; font-weight: bold; }
     
     .glass-mini.gold { border-left: 4px solid var(--primary-gold); }
@@ -395,6 +533,76 @@
     .glass-mini.silver .value { color: #ddd; }
     .glass-mini.amount { border-left: 4px solid #4CAF50; }
     .glass-mini.amount .value { color: #4CAF50; }
+
+    /* Weight Summary Grid */
+    .weight-summary-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .weight-item {
+        display: flex;
+        justify-content: space-between;
+        background: rgba(212, 175, 55, 0.03);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        border: 1px solid rgba(212, 175, 55, 0.1);
+    }
+    .weight-item .label { color: #666; }
+    .weight-item .value { font-weight: bold; color: var(--primary-gold-dark); }
+    .weight-item.received {
+        background: rgba(217, 83, 79, 0.03);
+        border-color: rgba(217, 83, 79, 0.1);
+    }
+    .weight-item.received .label { color: #d9534f; }
+    .weight-item.received .value { color: #d9534f; }
+    .weight-item.silver {
+        background: rgba(224, 224, 224, 0.1);
+        border-color: rgba(0, 0, 0, 0.05);
+    }
+    .weight-item.silver .value { color: #555; }
+
+    /* Net Position Card */
+    .net-position-card {
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 8px;
+    }
+    .section-title-mini {
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: var(--primary-gold-dark);
+        margin-bottom: 10px;
+    }
+    .value-gold { color: var(--primary-gold-dark); font-weight: bold; }
+    .value-silver { color: #555; font-weight: bold; }
+
+    /* Responsive Adjustments */
+    @@media (max-width: 1200px) {
+        .form-row.full-width { flex-direction: column; }
+        .flex-2, .flex-1 { width: 100%; }
+        .summary-card { order: -1; }
+    }
+
+    @@media (max-width: 768px) {
+        .content-full { padding: 10px; }
+        header { 
+            flex-direction: column; 
+            align-items: flex-start; 
+            gap: 15px; 
+            padding: 15px;
+        }
+        .header-actions { width: 100%; display: flex; gap: 10px; }
+        .header-actions button { flex: 1; }
+        .balance-grid { grid-template-columns: 1fr; }
+        .weight-summary-grid { grid-template-columns: 1fr; }
+        
+        .section-header { flex-direction: column; align-items: flex-start; }
+        .title-with-rate { flex-direction: column; align-items: flex-start; width: 100%; }
+        .rate-badge { width: 100%; }
+        #add-row-btn { width: 100%; }
+    }
 </style>
 
 @section Scripts {

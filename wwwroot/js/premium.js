@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let masterItems = [];
     let masterCustomers = [];
     let shopSettings = null;
+    let customerInitialBalance = { gold: 0, silver: 0, amount: 0, amountType: 'Dr' };
 
     // Apply column visibility from Bill Settings
     function applyColumnVisibility() {
@@ -60,22 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Metal Receipt Calculations
-    const metalReceiptWeight = el('metal-receipt-weight');
-    const metalReceiptPurity = el('metal-receipt-purity');
-    const metalReceiptType = el('metal-receipt-type');
-    const metalReceiptFineDisplay = el('metal-receipt-fine-display');
+    // Opening balance fields for manual entry
+    if (el('cust-opening-bal')) el('cust-opening-bal').oninput = calculateInvoice;
+    if (el('cust-bal-type')) el('cust-bal-type').onchange = calculateInvoice;
+    if (el('cust-opening-gold')) el('cust-opening-gold').oninput = calculateInvoice;
+    if (el('cust-opening-silver')) el('cust-opening-silver').oninput = calculateInvoice;
 
-    if (metalReceiptWeight && metalReceiptPurity && metalReceiptFineDisplay) {
-        const updateMetalFine = () => {
-            const wt = parseFloat(metalReceiptWeight.value) || 0;
-            const pur = parseFloat(metalReceiptPurity.value) || 0;
-            const fine = wt * (pur / 100);
-            metalReceiptFineDisplay.textContent = fine.toFixed(3);
-        };
-        metalReceiptWeight.oninput = updateMetalFine;
-        metalReceiptPurity.oninput = updateMetalFine;
-    }
 
     if (el('print-option')) {
         el('print-option').addEventListener('change', () => {
@@ -141,14 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/Customers/GetCustomerBalance/${id}`);
             if (res.ok) {
                 const data = await res.json();
-                el('bal-gold').textContent = `${data.gold.toFixed(3)} g`;
-                el('bal-silver').textContent = `${data.silver.toFixed(3)} g`;
-                el('bal-amount').textContent = `₹ ${data.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${data.amountType})`;
-                
-                // Color coding for amount
-                el('bal-amount').style.color = data.amountType === "Dr" ? "#4CAF50" : "#d9534f";
+                customerInitialBalance = {
+                    gold: data.gold,
+                    silver: data.silver,
+                    amount: data.amount,
+                    amountType: data.amountType
+                };
                 
                 el('customer-balance-info').style.display = "block";
+                calculateInvoice(); // Trigger recalculation with new initial balance
             }
         } catch (err) {
             console.error("Failed to fetch customer balance:", err);
@@ -389,6 +381,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!itemsTableBody) return;
         let metalValTotal = 0;
         let makingTotal = 0;
+        let purchaseOnlyTotal = 0; // Total of 'I' items
+        let exchangeOnlyTotal = 0; // Total of 'R' items
+
         const goldRate = parseFloat(el('daily-rate')?.value) || 0;
         const silverRate = parseFloat(el('silver-rate')?.value) || 0;
         
@@ -460,9 +455,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalRow = -totalRow;
                 metalValTotal += -metalAmt;
                 makingTotal += -makingAmt;
+                exchangeOnlyTotal += (metalAmt + makingAmt);
             } else {
                 metalValTotal += metalAmt;
                 makingTotal += makingAmt;
+                purchaseOnlyTotal += (metalAmt + makingAmt);
             }
             
             const amtEl = row.querySelector('.item-amount');
@@ -524,6 +521,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setTxt('break-gold-value', metalValTotal);
         setTxt('break-making-charges', makingTotal);
         setTxt('break-sub-total', subTotalVal);
+        setTxt('break-purchase-total', purchaseOnlyTotal);
+        setTxt('break-exchange-total', exchangeOnlyTotal);
         setTxt('break-cgst', cgstVal);
         setTxt('break-sgst', sgstVal);
         setTxt('break-igst', igstVal);
@@ -537,39 +536,99 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // --- PREVIEW PRINT OPTIONS ---
         const printOpt = el('print-option')?.value || "None";
-        const weightRow = el('preview-weight-row');
+        const weightSection = el('weight-summary-section');
         const balanceRow = el('preview-balance-row');
         
-        if (weightRow) weightRow.style.display = (printOpt === "Weight" || printOpt === "Both") ? "flex" : "none";
+        if (weightSection) weightSection.style.display = (printOpt === "Weight" || printOpt === "Both") ? "grid" : "none";
         if (balanceRow) balanceRow.style.display = (printOpt === "Balance" || printOpt === "Both") ? "flex" : "none";
 
-        // Calculate Total Fine Weight
-        let totalFineWt = 0;
+        // Calculate Metal Totals by Category
+        let totalGoldFineInInvoice = 0;
+        let totalSilverFineInInvoice = 0;
+        
+        let goldPurchased = 0;
+        let goldReceived = 0;
+        let silverPurchased = 0;
+        let silverReceived = 0;
+        
         itemsTableBody.querySelectorAll('tr').forEach(row => {
-            totalFineWt += parseFloat(row.querySelector('.fine-wt')?.value) || 0;
-        });
-        if (el('preview-total-weight')) el('preview-total-weight').textContent = `${totalFineWt.toFixed(3)} g`;
+            const ri = row.querySelector('.ri-select')?.value || 'I';
+            const metal = row.querySelector('.metal-select')?.value || row.dataset.category || "Gold";
+            const fWt = parseFloat(row.querySelector('.fine-wt')?.value) || 0;
 
-        // Calculate Net Balance
-        const custId = el('cust-name-select')?.value;
-        let currentBalance = 0;
-        if (custId && custId !== 'custom') {
-            const cust = masterCustomers.find(c => c.id == custId);
-            if (cust) {
-                // Simplified calculation: Opening + Net of all current sessions
-                // For a real-time "Net Balance", we ideally need the server's current balance for the customer.
-                // But we can approximate with OpeningBalance + Outstanding of this invoice for now.
-                currentBalance = parseFloat(cust.openingBalance) || 0;
-                if (cust.balanceType == 2) currentBalance = -currentBalance; // Cr
+            if (metal === "Gold") {
+                if (ri === 'I') {
+                    totalGoldFineInInvoice += fWt;
+                    goldPurchased += fWt;
+                } else {
+                    totalGoldFineInInvoice -= fWt;
+                    goldReceived += fWt;
+                }
+            } else if (metal === "Silver") {
+                if (ri === 'I') {
+                    totalSilverFineInInvoice += fWt;
+                    silverPurchased += fWt;
+                } else {
+                    totalSilverFineInInvoice -= fWt;
+                    silverReceived += fWt;
+                }
             }
-        } else if (custId === 'custom') {
-            currentBalance = parseFloat(el('cust-opening-bal')?.value) || 0;
-            if (el('cust-bal-type')?.value == "2") currentBalance = -currentBalance;
+        });
+
+
+        // Update Weight Summary UI
+        if (el('sum-gold-purchased')) el('sum-gold-purchased').textContent = `${goldPurchased.toFixed(3)} g`;
+        if (el('sum-gold-received')) el('sum-gold-received').textContent = `${goldReceived.toFixed(3)} g`;
+        if (el('sum-silver-purchased')) el('sum-silver-purchased').textContent = `${silverPurchased.toFixed(3)} g`;
+        if (el('sum-silver-received')) el('sum-silver-received').textContent = `${silverReceived.toFixed(3)} g`;
+
+        // Calculate Net Balances
+        const custId = el('cust-name-select')?.value;
+        if (custId === 'custom') {
+            customerInitialBalance = {
+                gold: parseFloat(el('cust-opening-gold')?.value) || 0,
+                silver: parseFloat(el('cust-opening-silver')?.value) || 0,
+                amount: parseFloat(el('cust-opening-bal')?.value) || 0,
+                amountType: el('cust-bal-type')?.value == "2" ? "Cr" : "Dr"
+            };
+        } else if (!custId) {
+            customerInitialBalance = { gold: 0, silver: 0, amount: 0, amountType: 'Dr' };
         }
 
+        const netGold = customerInitialBalance.gold + totalGoldFineInInvoice;
+        const netSilver = customerInitialBalance.silver + totalSilverFineInInvoice;
+        
+        // Calculate Net Totals for Closing
+        const initialAmtVal = customerInitialBalance.amountType === 'Dr' ? customerInitialBalance.amount : -customerInitialBalance.amount;
         const outstanding = roundedTotal - (parseFloat(el('paid-amount')?.value) || 0);
-        const netPending = currentBalance + outstanding;
-        if (el('preview-net-balance')) el('preview-net-balance').textContent = `₹ ${netPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        const netAmtTotal = initialAmtVal + outstanding;
+        const netAmtAbs = Math.abs(netAmtTotal);
+        const netAmtType = netAmtTotal >= 0 ? "Dr" : "Cr";
+
+        // Update Opening Balance Boxes (In Customer Section)
+        if (el('bal-gold')) el('bal-gold').textContent = `${customerInitialBalance.gold.toFixed(3)} g`;
+        if (el('bal-silver')) el('bal-silver').textContent = `${customerInitialBalance.silver.toFixed(3)} g`;
+
+        const initAmtAbs = Math.abs(initialAmtVal);
+        const initAmtType = customerInitialBalance.amountType;
+        if (el('bal-amount')) {
+            el('bal-amount').textContent = `₹ ${initAmtAbs.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${initAmtType})`;
+            el('bal-amount').style.color = initAmtType === "Dr" ? "#4CAF50" : "#d9534f";
+        }
+
+        // Preview Weight & Balance (Legacy fields)
+        if (el('preview-net-balance')) el('preview-net-balance').textContent = `₹ ${netAmtAbs.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${netAmtType})`;
+
+        // Update Final Net Position Summary (Bottom)
+        if (el('final-net-gold')) el('final-net-gold').textContent = `${Math.abs(totalGoldFineInInvoice + (customerInitialBalance.gold || 0)).toFixed(3)} g (${(totalGoldFineInInvoice + (customerInitialBalance.gold || 0)) >= 0 ? "Dr" : "Cr"})`;
+        if (el('final-net-silver')) el('final-net-silver').textContent = `${Math.abs(totalSilverFineInInvoice + (customerInitialBalance.silver || 0)).toFixed(3)} g (${(totalSilverFineInInvoice + (customerInitialBalance.silver || 0)) >= 0 ? "Dr" : "Cr"})`;
+
+        // Update Payment Summary (New Section)
+        if (el('sum-purchase-total')) el('sum-purchase-total').textContent = el('break-purchase-total')?.textContent || "₹ 0.00";
+        if (el('sum-exchange-total')) el('sum-exchange-total').textContent = el('break-exchange-total')?.textContent || "₹ 0.00";
+        if (el('sum-net-bill')) el('sum-net-bill').textContent = el('break-total-amount')?.textContent || "₹ 0.00";
+        if (el('sum-advance-paid')) el('sum-advance-paid').textContent = `₹ ${(parseFloat(el('paid-amount')?.value) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        if (el('sum-pending-balance')) el('sum-pending-balance').textContent = el('outstanding-balance')?.textContent || "₹ 0.00";
 
         updateOutstanding();
     }
@@ -620,10 +679,10 @@ document.addEventListener('DOMContentLoaded', () => {
             RoundedOff: parseFloat(el('break-rounded')?.innerText.replace(/[^0-9.-]+/g, "")) || 0,
             
             // New: Metal Receipt Fields
-            MetalReceivedType: el('metal-receipt-type')?.value,
-            MetalReceivedWeight: parseFloat(el('metal-receipt-weight')?.value) || 0,
-            MetalReceivedPurity: parseFloat(el('metal-receipt-purity')?.value) || 0,
-            MetalReceivedFineWeight: parseFloat(el('metal-receipt-fine-display')?.textContent) || 0
+            MetalReceivedType: null,
+            MetalReceivedWeight: 0,
+            MetalReceivedPurity: 0,
+            MetalReceivedFineWeight: 0
         };
 
         const rows = itemsTableBody.querySelectorAll('tr');
