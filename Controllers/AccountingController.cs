@@ -32,7 +32,15 @@ namespace JewelleryApp.Controllers
                     .ToListAsync();
 
                 decimal bal = customer.BalanceType == BalanceType.Dr ? customer.OpeningBalance : -customer.OpeningBalance;
-                foreach (var vi in items) bal += (vi.Debit - vi.Credit);
+                foreach (var vi in items)
+                {
+                    // Skip Bhav Cut and Weight-based metal transactions from cash balance
+                    if (vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment || 
+                        (vi.Voucher.FineWeight > 0 && (vi.Voucher.Type == VoucherType.General || (vi.Particulars != null && vi.Particulars.Contains("Bhav Cut")))))
+                        continue;
+
+                    bal += (vi.Debit - vi.Credit);
+                }
 
                 // Metal Balance
                 decimal goldBal = customer.GoldBalanceType == BalanceType.Dr ? customer.OpeningGold : -customer.OpeningGold;
@@ -235,6 +243,11 @@ namespace JewelleryApp.Controllers
             var preTransactions = voucherItems.Where(vi => vi.Voucher.Date < from);
             foreach (var vi in preTransactions)
             {
+                // Skip Bhav Cut and Weight-based metal transactions from cash balance
+                if (vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment || 
+                    (vi.Voucher.FineWeight > 0 && (vi.Voucher.Type == VoucherType.General || (vi.Particulars != null && vi.Particulars.Contains("Bhav Cut")))))
+                    continue;
+
                 runningBal += (vi.Debit - vi.Credit);
             }
 
@@ -249,10 +262,16 @@ namespace JewelleryApp.Controllers
 
             foreach (var vi in currentItems)
             {
-                runningBal += (vi.Debit - vi.Credit);
+                bool isBhavCutOrMetal = vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment || 
+                                      (vi.Voucher.FineWeight > 0 && (vi.Voucher.Type == VoucherType.General || (vi.Particulars != null && vi.Particulars.Contains("Bhav Cut"))));
+
+                if (!isBhavCutOrMetal)
+                {
+                    runningBal += (vi.Debit - vi.Credit);
+                }
 
                 string desc = vi.Particulars ?? vi.Voucher.Particulars ?? vi.Voucher.Type.ToString();
-                if (vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment || (vi.Voucher.Type == VoucherType.General && vi.Voucher.FineWeight > 0))
+                if (isBhavCutOrMetal)
                 {
                     string typeLabel = vi.Voucher.Type == VoucherType.MetalReceipt ? "Metal Received" : 
                                      (vi.Voucher.Type == VoucherType.MetalPayment ? "Metal Issued" : "Bhav Cut Adjustment");
@@ -267,8 +286,8 @@ namespace JewelleryApp.Controllers
                     VoucherNo = vi.Voucher.VoucherNo,
                     Date = vi.Voucher.Date,
                     Description = desc,
-                    Debit = vi.Debit,
-                    Credit = vi.Credit,
+                    Debit = isBhavCutOrMetal ? 0 : vi.Debit,
+                    Credit = isBhavCutOrMetal ? 0 : vi.Credit,
                     RunningBalance = Math.Abs(runningBal),
                     BalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr,
                     MetalWeight = vi.Voucher.FineWeight,
