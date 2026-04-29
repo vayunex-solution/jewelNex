@@ -172,7 +172,48 @@ namespace JewelleryApp.Controllers
                     receiptVoucher.Items.Add(new VoucherItem { AccountName = drAccount, Debit = invoice.PaidAmount, Credit = 0, Particulars = $"Via {invoice.PaymentMode}" });
                     receiptVoucher.Items.Add(new VoucherItem { AccountName = customerName, Debit = 0, Credit = invoice.PaidAmount, Particulars = "Paid by Customer" });
 
+                    // Add Bhav Cut Adjustment to Receipt Voucher (Transfer from Cash to Metal)
+                    if (invoice.BhavCutWeight > 0 && invoice.BhavCutCash > 0)
+                    {
+                        receiptVoucher.Items.Add(new VoucherItem { 
+                            AccountName = customerName, 
+                            Debit = invoice.BhavCutCash, 
+                            Credit = 0, 
+                            Particulars = $"Bhav Cut Conversion: ₹{invoice.BhavCutCash} to {invoice.BhavCutWeight}g {invoice.BhavCutMetalType}" 
+                        });
+                        receiptVoucher.Items.Add(new VoucherItem { 
+                            AccountName = "Metal Adjustment A/c", 
+                            Debit = 0, 
+                            Credit = invoice.BhavCutCash, 
+                            Particulars = $"Metal Conversion Adjustment" 
+                        });
+                        // Link Bhav Cut weight to the voucher for reporting
+                        receiptVoucher.Metal = invoice.BhavCutMetalType;
+                        receiptVoucher.FineWeight = invoice.BhavCutWeight;
+                        receiptVoucher.Weight = invoice.BhavCutWeight;
+                        receiptVoucher.Particulars = $"Incl. Bhav Cut: {invoice.BhavCutWeight}g {invoice.BhavCutMetalType}";
+                    }
+
                     _context.Vouchers.Add(receiptVoucher);
+                }
+                else if (invoice.BhavCutWeight > 0 && invoice.BhavCutCash > 0)
+                {
+                    // If no PaidAmount but Bhav Cut exists (maybe using existing credit)
+                    var bhavVoucher = new Voucher
+                    {
+                        VoucherNo = $"BVC-{invoice.InvoiceNo}",
+                        Date = invoice.Date,
+                        Type = VoucherType.General,
+                        AccountName = customerName,
+                        Amount = invoice.BhavCutCash,
+                        Particulars = $"Bhav Cut: ₹{invoice.BhavCutCash} to {invoice.BhavCutWeight}g {invoice.BhavCutMetalType}",
+                        Metal = invoice.BhavCutMetalType,
+                        FineWeight = invoice.BhavCutWeight,
+                        Weight = invoice.BhavCutWeight
+                    };
+                    bhavVoucher.Items.Add(new VoucherItem { AccountName = customerName, Debit = invoice.BhavCutCash, Credit = 0, Particulars = "Amount converted to Metal" });
+                    bhavVoucher.Items.Add(new VoucherItem { AccountName = "Metal Adjustment A/c", Debit = 0, Credit = invoice.BhavCutCash, Particulars = "Bhav Cut Adjustment" });
+                    _context.Vouchers.Add(bhavVoucher);
                 }
 
                 await _context.SaveChangesAsync();

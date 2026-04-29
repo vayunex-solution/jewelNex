@@ -108,15 +108,23 @@ namespace JewelleryApp.Controllers
                 }
             }
 
-            // From Invoice Level Metal Receipt (Dedicated Field)
+            // From Invoice Level Metal Receipt & Bhav Cut
             var invoiceReceipts = await _context.Invoices
-                .Where(i => i.CustomerId == id && i.MetalReceivedFineWeight > 0)
+                .Where(i => i.CustomerId == id && (i.MetalReceivedFineWeight > 0 || i.BhavCutWeight > 0))
                 .ToListAsync();
-
+ 
             foreach (var inv in invoiceReceipts)
             {
+                // Metal Received
                 if (inv.MetalReceivedType == "Gold") goldBal -= inv.MetalReceivedFineWeight;
                 else if (inv.MetalReceivedType == "Silver") silverBal -= inv.MetalReceivedFineWeight;
+
+                // Bhav Cut (Cash to Metal Conversion)
+                if (inv.BhavCutWeight > 0)
+                {
+                    if (inv.BhavCutMetalType == "Gold") goldBal -= inv.BhavCutWeight;
+                    else if (inv.BhavCutMetalType == "Silver") silverBal -= inv.BhavCutWeight;
+                }
             }
 
             // From Vouchers

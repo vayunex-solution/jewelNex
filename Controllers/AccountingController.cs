@@ -252,10 +252,13 @@ namespace JewelleryApp.Controllers
                 runningBal += (vi.Debit - vi.Credit);
 
                 string desc = vi.Particulars ?? vi.Voucher.Particulars ?? vi.Voucher.Type.ToString();
-                if (vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment)
+                if (vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment || (vi.Voucher.Type == VoucherType.General && vi.Voucher.FineWeight > 0))
                 {
-                    string typeLabel = vi.Voucher.Type == VoucherType.MetalReceipt ? "Metal Received" : "Metal Issued";
-                    desc = $"{typeLabel}: {vi.Voucher.FineWeight:N3}g {vi.Voucher.Metal} ({vi.Voucher.Weight:N3}g @ {vi.Voucher.Purity}%)";
+                    string typeLabel = vi.Voucher.Type == VoucherType.MetalReceipt ? "Metal Received" : 
+                                     (vi.Voucher.Type == VoucherType.MetalPayment ? "Metal Issued" : "Bhav Cut Adjustment");
+                    desc = $"{typeLabel}: {vi.Voucher.FineWeight:N3}g {vi.Voucher.Metal}";
+                    if (vi.Voucher.Weight > 0 && vi.Voucher.Purity != null && vi.Voucher.Purity != "0") 
+                        desc += $" ({vi.Voucher.Weight:N3}g @ {vi.Voucher.Purity}%)";
                     if (!string.IsNullOrEmpty(vi.Voucher.Particulars)) desc += $" - {vi.Voucher.Particulars}";
                 }
 
@@ -293,8 +296,7 @@ namespace JewelleryApp.Controllers
                             .ToListAsync();
                         
                         var preMetalVouchers = await _context.Vouchers
-                            .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment) && v.Date < from)
-                            .Where(v => v.Basis == ReceiptBasis.Weight)
+                            .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment || (v.Type == VoucherType.General && v.FineWeight > 0)) && v.Date < from)
                             .ToListAsync();
 
                         decimal preGold = customer.GoldBalanceType == BalanceType.Dr ? customer.OpeningGold : -customer.OpeningGold;
@@ -307,8 +309,14 @@ namespace JewelleryApp.Controllers
                         }
                         foreach (var v in preMetalVouchers)
                         {
-                            if (v.Metal == "Gold") { if (v.Type == VoucherType.MetalPayment) preGold += v.FineWeight; else preGold -= v.FineWeight; }
-                            else if (v.Metal == "Silver") { if (v.Type == VoucherType.MetalPayment) preSilver += v.FineWeight; else preSilver -= v.FineWeight; }
+                            if (v.Metal == "Gold") { 
+                                if (v.Type == VoucherType.MetalPayment) preGold += v.FineWeight; 
+                                else preGold -= v.FineWeight; // MetalReceipt or Bhav Cut (General)
+                            }
+                            else if (v.Metal == "Silver") { 
+                                if (v.Type == VoucherType.MetalPayment) preSilver += v.FineWeight; 
+                                else preSilver -= v.FineWeight; // MetalReceipt or Bhav Cut (General)
+                            }
                         }
                         
                         vm.OpeningGold = preGold;
@@ -321,8 +329,7 @@ namespace JewelleryApp.Controllers
                             .ToListAsync();
 
                         var periodMetalVouchers = await _context.Vouchers
-                            .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment) && v.Date >= from && v.Date <= to)
-                            .Where(v => v.Basis == ReceiptBasis.Weight)
+                            .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment || (v.Type == VoucherType.General && v.FineWeight > 0)) && v.Date >= from && v.Date <= to)
                             .ToListAsync();
 
                         decimal periodGold = 0;
@@ -334,13 +341,22 @@ namespace JewelleryApp.Controllers
                         }
                         foreach (var v in periodMetalVouchers)
                         {
-                            if (v.Metal == "Gold") { if (v.Type == VoucherType.MetalPayment) periodGold += v.FineWeight; else periodGold -= v.FineWeight; }
-                            else if (v.Metal == "Silver") { if (v.Type == VoucherType.MetalPayment) periodSilver += v.FineWeight; else periodSilver -= v.FineWeight; }
+                            if (v.Metal == "Gold") { 
+                                if (v.Type == VoucherType.MetalPayment) periodGold += v.FineWeight; 
+                                else periodGold -= v.FineWeight; // MetalReceipt or Bhav Cut (General)
+                            }
+                            else if (v.Metal == "Silver") { 
+                                if (v.Type == VoucherType.MetalPayment) periodSilver += v.FineWeight; 
+                                else periodSilver -= v.FineWeight; // MetalReceipt or Bhav Cut (General)
+                            }
                         }
                         
                         vm.ClosingGold = vm.OpeningGold + periodGold;
                         vm.ClosingSilver = vm.OpeningSilver + periodSilver;
-                        vm.TotalWeight = periodInvoiceItems.Sum(ii => ii.NetWt);
+                        
+                        // Total weight of all metal movements (Billed + Received/Paid/Adjusted)
+                        vm.TotalWeight = periodInvoiceItems.Sum(ii => ii.FineWt) + 
+                                         periodMetalVouchers.Sum(v => v.FineWeight);
                     }
                 }
             }

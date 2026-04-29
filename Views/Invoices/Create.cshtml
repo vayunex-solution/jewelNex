@@ -187,6 +187,50 @@
         </div>
     </section>
 
+    <!-- Row 4: Bhav Cut (Cash to Metal Conversion) -->
+    <section class="form-card glass bhav-cut-section">
+        <div class="section-header">
+            <h3><i class="fas fa-cut"></i> Bhav Cut (Cash to Metal Adjustment)</h3>
+            <div class="toggle-container">
+                <label class="switch">
+                    <input type="checkbox" id="enable-bhav-cut">
+                    <span class="slider round"></span>
+                </label>
+                <span style="font-size: 0.85rem; color: #666; margin-left: 10px;">Enable Bhav Cut</span>
+            </div>
+        </div>
+        <div id="bhav-cut-fields" style="display:none; transition: var(--transition);">
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Convert cash received into metal weight to adjust the customer's metal balance.</p>
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label>Metal Type</label>
+                    <select id="bhav-cut-metal-type" class="form-control">
+                        <option value="Gold">Gold</option>
+                        <option value="Silver">Silver</option>
+                    </select>
+                </div>
+                <div class="form-group flex-1">
+                    <label>Cash for Conversion (₹)</label>
+                    <input type="number" id="bhav-cut-cash" step="0.01" value="0.00" placeholder="Enter amount">
+                </div>
+                <div class="form-group flex-1">
+                    <label>Conversion Rate (₹/g)</label>
+                    <input type="number" id="bhav-cut-rate" step="0.01" value="0.00" placeholder="Enter rate">
+                </div>
+            </div>
+            <div class="form-row" style="background: rgba(212, 175, 55, 0.05); padding: 15px; border-radius: 12px; align-items: center;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="margin-bottom: 0;">Equivalent Weight Deduction:</label>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-gold-dark);" id="bhav-cut-result-raw">0.000 g</div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Rounded Adjustment (g)</label>
+                    <input type="number" id="bhav-cut-weight" step="0.001" value="0.000" style="font-size: 1.2rem; font-weight: bold; border: 2px solid var(--primary-gold);">
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Payment & Additional -->
     <section class="form-card glass">
         <h3><i class="fas fa-credit-card"></i> Payment Information</h3>
@@ -603,6 +647,34 @@
         .rate-badge { width: 100%; }
         #add-row-btn { width: 100%; }
     }
+    /* Switch Toggle */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 24px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px; width: 18px;
+        left: 3px; bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--primary-gold); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
 </style>
 
 @section Scripts {

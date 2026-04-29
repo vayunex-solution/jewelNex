@@ -71,6 +71,15 @@ namespace JewelleryApp.Models.Jewellery
         [Column(TypeName = "decimal(10, 3)")]
         public decimal MetalReceivedFineWeight { get; set; }
 
+        // Bhav Cut (Cash to Metal Conversion)
+        public string? BhavCutMetalType { get; set; } // Gold/Silver
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal BhavCutCash { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal BhavCutRate { get; set; }
+        [Column(TypeName = "decimal(10, 3)")]
+        public decimal BhavCutWeight { get; set; }
+
         public List<InvoiceItem> Items { get; set; } = new();
     }
 }

@@ -67,6 +67,41 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el('cust-opening-gold')) el('cust-opening-gold').oninput = calculateInvoice;
     if (el('cust-opening-silver')) el('cust-opening-silver').oninput = calculateInvoice;
 
+    // Bhav Cut Listeners
+    if (el('enable-bhav-cut')) {
+        el('enable-bhav-cut').onchange = (e) => {
+            el('bhav-cut-fields').style.display = e.target.checked ? 'block' : 'none';
+            calculateInvoice();
+        };
+    }
+    if (el('bhav-cut-cash')) el('bhav-cut-cash').oninput = calculateBhavCut;
+    if (el('bhav-cut-rate')) el('bhav-cut-rate').oninput = calculateBhavCut;
+    if (el('bhav-cut-metal-type')) el('bhav-cut-metal-type').onchange = calculateInvoice;
+    if (el('bhav-cut-weight')) el('bhav-cut-weight').oninput = calculateInvoice;
+
+    function calculateBhavCut() {
+        const cash = parseFloat(el('bhav-cut-cash')?.value) || 0;
+        const rate = parseFloat(el('bhav-cut-rate')?.value) || 0;
+        const resultEl = el('bhav-cut-result-raw');
+        
+        if (rate > 0) {
+            const weight = (cash / rate).toFixed(3);
+            if (resultEl) {
+                resultEl.innerHTML = `${weight} g <button type="button" class="btn-apply-weight" title="Apply this weight" style="background: var(--primary-gold); color: white; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer; margin-left: 10px;">Apply</button>`;
+                resultEl.querySelector('.btn-apply-weight').onclick = () => {
+                    const weightInput = el('bhav-cut-weight');
+                    if (weightInput) {
+                        weightInput.value = weight;
+                        calculateInvoice();
+                    }
+                };
+            }
+        } else {
+            if (resultEl) resultEl.textContent = `0.000 g`;
+        }
+        calculateInvoice();
+    }
+
 
     if (el('print-option')) {
         el('print-option').addEventListener('change', () => {
@@ -598,6 +633,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const netGold = customerInitialBalance.gold + totalGoldFineInInvoice;
         const netSilver = customerInitialBalance.silver + totalSilverFineInInvoice;
         
+        // Apply Bhav Cut to Net Balances
+        let goldWithBhavCut = netGold;
+        let silverWithBhavCut = netSilver;
+
+        if (el('enable-bhav-cut')?.checked) {
+            const cutWeight = parseFloat(el('bhav-cut-weight')?.value) || 0;
+            const cutMetal = el('bhav-cut-metal-type')?.value || "Gold";
+            if (cutMetal === "Gold") goldWithBhavCut -= cutWeight;
+            else silverWithBhavCut -= cutWeight;
+        }
+
         // Calculate Net Totals for Closing
         const initialAmtVal = customerInitialBalance.amountType === 'Dr' ? customerInitialBalance.amount : -customerInitialBalance.amount;
         const outstanding = roundedTotal - (parseFloat(el('paid-amount')?.value) || 0);
@@ -620,8 +666,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el('preview-net-balance')) el('preview-net-balance').textContent = `₹ ${netAmtAbs.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${netAmtType})`;
 
         // Update Final Net Position Summary (Bottom)
-        if (el('final-net-gold')) el('final-net-gold').textContent = `${Math.abs(totalGoldFineInInvoice + (customerInitialBalance.gold || 0)).toFixed(3)} g (${(totalGoldFineInInvoice + (customerInitialBalance.gold || 0)) >= 0 ? "Dr" : "Cr"})`;
-        if (el('final-net-silver')) el('final-net-silver').textContent = `${Math.abs(totalSilverFineInInvoice + (customerInitialBalance.silver || 0)).toFixed(3)} g (${(totalSilverFineInInvoice + (customerInitialBalance.silver || 0)) >= 0 ? "Dr" : "Cr"})`;
+        if (el('final-net-gold')) {
+            const val = goldWithBhavCut;
+            el('final-net-gold').textContent = `${Math.abs(val).toFixed(3)} g (${val >= 0 ? "Dr" : "Cr"})`;
+        }
+        if (el('final-net-silver')) {
+            const val = silverWithBhavCut;
+            el('final-net-silver').textContent = `${Math.abs(val).toFixed(3)} g (${val >= 0 ? "Dr" : "Cr"})`;
+        }
 
         // Update Payment Summary (New Section)
         if (el('sum-purchase-total')) el('sum-purchase-total').textContent = el('break-purchase-total')?.textContent || "₹ 0.00";
@@ -682,7 +734,13 @@ document.addEventListener('DOMContentLoaded', () => {
             MetalReceivedType: null,
             MetalReceivedWeight: 0,
             MetalReceivedPurity: 0,
-            MetalReceivedFineWeight: 0
+            MetalReceivedFineWeight: 0,
+
+            // Bhav Cut Fields
+            BhavCutMetalType: el('enable-bhav-cut')?.checked ? el('bhav-cut-metal-type')?.value : null,
+            BhavCutCash: el('enable-bhav-cut')?.checked ? (parseFloat(el('bhav-cut-cash')?.value) || 0) : 0,
+            BhavCutRate: el('enable-bhav-cut')?.checked ? (parseFloat(el('bhav-cut-rate')?.value) || 0) : 0,
+            BhavCutWeight: el('enable-bhav-cut')?.checked ? (parseFloat(el('bhav-cut-weight')?.value) || 0) : 0
         };
 
         const rows = itemsTableBody.querySelectorAll('tr');

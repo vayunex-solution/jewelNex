@@ -159,6 +159,13 @@
                 <div class="summary-line"><span>Silver Purchased:</span> <strong>@silverPurchased.ToString("N3") g</strong></div>
                 <div class="summary-line"><span>Gold Received:</span> <strong>@goldReceived.ToString("N3") g</strong></div>
                 <div class="summary-line"><span>Silver Received:</span> <strong>@silverReceived.ToString("N3") g</strong></div>
+                @if (Model.BhavCutWeight > 0)
+                {
+                    <div class="summary-line" style="color: #d4af37; font-weight: bold;">
+                        <span>Bhav Cut (@Model.BhavCutMetalType):</span> 
+                        <strong>- @Model.BhavCutWeight.ToString("N3") g</strong>
+                    </div>
+                }
             </div>
 
             <div class="summary-box" style="margin-top: 10px;">
@@ -192,6 +199,13 @@
                             if (Model.MetalReceivedType == "Gold") netGoldBal -= Model.MetalReceivedFineWeight;
                             else if (Model.MetalReceivedType == "Silver") netSilverBal -= Model.MetalReceivedFineWeight;
                         }
+                        
+                        // Add Bhav Cut to real-time balance
+                        if (Model.BhavCutWeight > 0)
+                        {
+                            if (Model.BhavCutMetalType == "Gold") netGoldBal -= Model.BhavCutWeight;
+                            else if (Model.BhavCutMetalType == "Silver") netSilverBal -= Model.BhavCutWeight;
+                        }
 
                         goldType = netGoldBal >= 0 ? "Dr" : "Cr";
                         silverType = netSilverBal >= 0 ? "Dr" : "Cr";
@@ -221,6 +235,13 @@
                     <div class="summary-line"><span>Discount:</span> <strong style="color:#d9534f;">₹ @Model.Discount.ToString("N2")</strong></div>
                 }
                 <div class="summary-line net-row"><span>Net Bill Amount:</span> <strong>₹ @netBillAmt.ToString("N2")</strong></div>
+                @if (Model.BhavCutCash > 0)
+                {
+                    <div class="summary-line" style="color: #d4af37;">
+                        <span>Bhav Cut Adj:</span> 
+                        <strong>₹ @Model.BhavCutCash.ToString("N2")</strong>
+                    </div>
+                }
                 <div class="summary-line"><span>Advance Paid:</span> <strong>₹ @Model.PaidAmount.ToString("N2")</strong></div>
                 <div class="summary-line final-row"><span>Final Pending Balance:</span> <strong>₹ @Math.Abs(netAmtBal).ToString("N2") (@amtType)</strong></div>
             </div>

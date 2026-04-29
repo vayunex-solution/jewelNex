@@ -159,6 +159,17 @@
                     <span>- ₹ @Model.Discount.ToString("N2")</span>
                 </div>
             }
+            @if (Model.BhavCutWeight > 0)
+            {
+                <div class="total-row" style="color: var(--primary-gold-dark); border-top: 1px dashed #eee; margin-top: 5px; padding-top: 5px;">
+                    <span>Bhav Cut (@Model.BhavCutMetalType):</span>
+                    <span>- @Model.BhavCutWeight.ToString("N3") g</span>
+                </div>
+                <div class="total-row" style="color: var(--primary-gold-dark); font-size: 0.9rem;">
+                    <span>Bhav Cut Value:</span>
+                    <span>₹ @Model.BhavCutCash.ToString("N2")</span>
+                </div>
+            }
             <div class="total-row grand">
                 <span>Grand Total:</span>
                 <span>₹ @Model.TotalAmount.ToString("N0")</span>
