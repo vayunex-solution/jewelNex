@@ -398,8 +398,10 @@ document.addEventListener('DOMContentLoaded', () => {
             itemsTableBody.appendChild(row);
             applyColumnVisibility();
             calculateInvoice();
+            return row;
         } catch (err) {
             console.error("Error adding row:", err);
+            return null;
         }
     }
 
@@ -754,10 +756,10 @@ document.addEventListener('DOMContentLoaded', () => {
             MetalReceivedFineWeight: 0,
 
             // Bhav Cut Fields
-            BhavCutMetalType: el('enable-bhav-cut')?.checked ? el('bhav-cut-metal-type')?.value : null,
-            BhavCutCash: el('enable-bhav-cut')?.checked ? (parseFloat(el('bhav-cut-cash')?.value) || 0) : 0,
-            BhavCutRate: el('enable-bhav-cut')?.checked ? (parseFloat(el('bhav-cut-rate')?.value) || 0) : 0,
-            BhavCutWeight: el('enable-bhav-cut')?.checked ? (parseFloat(el('bhav-cut-weight')?.value) || 0) : 0
+            BhavCutMetalType: el('enable-bhav-cut')?.value === "true" ? el('bhav-cut-metal-type')?.value : null,
+            BhavCutCash: el('enable-bhav-cut')?.value === "true" ? (parseFloat(el('bhav-cut-cash')?.value) || 0) : 0,
+            BhavCutRate: el('enable-bhav-cut')?.value === "true" ? (parseFloat(el('bhav-cut-rate')?.value) || 0) : 0,
+            BhavCutWeight: el('enable-bhav-cut')?.value === "true" ? (parseFloat(el('bhav-cut-weight')?.value) || 0) : 0
         };
 
         const rows = itemsTableBody.querySelectorAll('tr');
@@ -859,6 +861,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const calcCashInput = el('calc-cash');
     const calcRateInput = el('calc-rate');
     const calcMetalSelect = el('calc-metal-type');
+    const calcPurityInput = el('calc-purity');
     const calcResultVal = el('calc-result-val');
     const applyBtn = el('apply-calc-to-invoice');
 
@@ -886,34 +889,68 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateCalcToolResult() {
         const cash = parseFloat(calcCashInput?.value) || 0;
         const rate = parseFloat(calcRateInput?.value) || 0;
+        const purity = parseFloat(calcPurityInput?.value) || 100;
+
         if (rate > 0) {
-            calcResultVal.textContent = (cash / rate).toFixed(3);
+            const weight = (cash / rate) * (purity / 100);
+            calcResultVal.textContent = weight.toFixed(3);
         } else {
             calcResultVal.textContent = "0.000";
         }
     }
 
     function handleApplyCalc() {
-        const cash = calcCashInput?.value || "0.00";
-        const rate = calcRateInput?.value || "0.00";
+        const cash = parseFloat(calcCashInput?.value) || 0;
+        const rate = parseFloat(calcRateInput?.value) || 0;
+        const purity = parseFloat(calcPurityInput?.value) || 100;
         const metal = calcMetalSelect?.value || "Gold";
         const weight = calcResultVal.textContent;
 
-        // Apply to hidden fields
-        if (el('bhav-cut-cash')) el('bhav-cut-cash').value = cash;
-        if (el('bhav-cut-rate')) el('bhav-cut-rate').value = rate;
-        if (el('bhav-cut-metal-type')) el('bhav-cut-metal-type').value = metal;
-        if (el('bhav-cut-weight')) el('bhav-cut-weight').value = weight;
-        if (el('enable-bhav-cut')) el('enable-bhav-cut').value = "true";
-
-        if (typeof calculateInvoice === 'function') calculateInvoice();
-        
-        // Visual feedback on the summary row
-        const summaryRow = el('bhav-cut-summary-row');
-        if (summaryRow) {
-            summaryRow.style.transform = 'scale(1.05)';
-            setTimeout(() => summaryRow.style.transform = 'scale(1)', 300);
+        if (cash <= 0 || rate <= 0) {
+            alert("Please enter a valid cash amount and conversion rate.");
+            return;
         }
+
+        // Auto-post as a new item line
+        if (typeof window.addRow === 'function') {
+            const row = window.addRow();
+            if (row) {
+                const riSelect = row.querySelector('.ri-select');
+                const nameSelect = row.querySelector('.item-name-select');
+                const nameInput = row.querySelector('.item-name');
+                const metalSelect = row.querySelector('.metal-select');
+                const grossWtInput = row.querySelector('.gross-wt');
+                const purityInput = row.querySelector('.purity-val');
+                const rateInput = row.querySelector('.rate-val');
+                const makingPctInput = row.querySelector('.making-pct');
+
+                if (riSelect) riSelect.value = "R";
+                if (nameSelect) {
+                    nameSelect.value = "custom";
+                    nameSelect.dispatchEvent(new Event('change'));
+                }
+                
+                if (nameInput) nameInput.value = `Bhav Cut: ₹${cash.toLocaleString('en-IN')}`;
+                if (metalSelect) metalSelect.value = metal;
+                
+                // Gross weight is calculated so that Fine weight * rate = cash
+                const calculatedGrossWt = (cash / rate) / (purity / 100);
+                if (grossWtInput) grossWtInput.value = calculatedGrossWt.toFixed(3);
+                if (purityInput) purityInput.value = purity.toFixed(2);
+                if (rateInput) rateInput.value = rate.toFixed(2);
+                if (makingPctInput) {
+                    makingPctInput.value = 0;
+                    // Trigger input event to clear making charges logic if any
+                    makingPctInput.dispatchEvent(new Event('input'));
+                }
+                
+                // Final recalculation for the entire invoice
+                if (typeof calculateInvoice === 'function') calculateInvoice();
+            }
+        }
+
+        // Close modal
+        calcModal.classList.remove('show');
     }
 
     // Remove Bhav Cut Logic
@@ -925,7 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    [calcCashInput, calcRateInput].forEach(inp => {
+    [calcCashInput, calcRateInput, calcPurityInput].forEach(inp => {
         if (inp) {
             inp.oninput = updateCalcToolResult;
             // Add Enter key listener for auto-close/apply
