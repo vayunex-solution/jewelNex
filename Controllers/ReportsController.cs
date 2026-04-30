@@ -65,12 +65,28 @@ namespace JewelleryApp.Controllers
             return View(summary);
         }
 
-        public async Task<IActionResult> AllInvoices()
+        public async Task<IActionResult> AllInvoices(string? customerName, string? invoiceNo)
         {
-            var invoices = await _context.Invoices
+            var query = _context.Invoices
                 .Include(i => i.Customer)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(customerName))
+            {
+                query = query.Where(i => i.Customer.Name.Contains(customerName));
+            }
+
+            if (!string.IsNullOrEmpty(invoiceNo))
+            {
+                query = query.Where(i => i.InvoiceNo.Contains(invoiceNo));
+            }
+
+            var invoices = await query
                 .OrderByDescending(i => i.Date)
                 .ToListAsync();
+
+            ViewBag.CustomerName = customerName;
+            ViewBag.InvoiceNo = invoiceNo;
 
             return View(invoices);
         }
