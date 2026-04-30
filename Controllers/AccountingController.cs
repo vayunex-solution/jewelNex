@@ -275,11 +275,44 @@ namespace JewelleryApp.Controllers
                         
                         if (purchased != 0 || received != 0)
                         {
+                            // Get item names and purities
+                            var itemDetails = group.Select(i => i.ItemName + (string.IsNullOrEmpty(i.Purity) ? "" : " " + i.Purity)).Distinct();
+                            string itemsStr = string.Join(", ", itemDetails);
+
+                            string desc = $"Invoice Metal: {group.Key}";
+                            
+                            // Check if this is a Bhav Cut entry
+                            if (inv.BhavCutCash > 0 && inv.BhavCutMetalType == group.Key)
+                            {
+                                // If itemsStr already contains the full description (from our new JS), use it
+                                if (itemsStr.Contains("Bhav Cut:") && itemsStr.Contains("Conversion Rate"))
+                                {
+                                    desc = itemsStr;
+                                }
+                                else
+                                {
+                                    // Fallback for old data: Construct the full description
+                                    string purity = "100";
+                                    var purityItem = group.FirstOrDefault(i => !string.IsNullOrEmpty(i.Purity));
+                                    if (purityItem != null) purity = purityItem.Purity;
+                                    else if (inv.MetalReceivedPurity > 0) purity = inv.MetalReceivedPurity.ToString("G29");
+
+                                    desc = $"Bhav Cut: ₹{inv.BhavCutCash:N0} (Fine Weight : {inv.BhavCutWeight:N3} Conversion Rate : {inv.BhavCutRate:N0}  Purity : {purity})";
+                                    if (!string.IsNullOrEmpty(itemsStr) && !itemsStr.Contains("Bhav Cut"))
+                                        desc += $" | Items: {itemsStr}";
+                                }
+                            }
+                            else
+                            {
+                                // Regular metal entry
+                                desc = $"Invoice Metal: {group.Key} - {itemsStr} (P: {purchased:N3}g, R: {received:N3}g)";
+                            }
+
                             invoiceEntries.Add(new LedgerEntry
                             {
                                 VoucherNo = inv.InvoiceNo,
                                 Date = inv.Date,
-                                Description = $"Invoice Metal: {group.Key} (P: {purchased:N3}g, E: {received:N3}g)",
+                                Description = desc,
                                 WeightDebit = purchased,
                                 WeightCredit = received,
                                 MetalWeight = purchased + received,
@@ -316,10 +349,20 @@ namespace JewelleryApp.Controllers
                 {
                     string typeLabel = vi.Voucher.Type == VoucherType.MetalReceipt ? "Metal Received" : 
                                      (vi.Voucher.Type == VoucherType.MetalPayment ? "Metal Issued" : "Bhav Cut Adjustment");
-                    desc = $"{typeLabel}: {vi.Voucher.FineWeight:N3}g {vi.Voucher.Metal}";
-                    if (vi.Voucher.Weight > 0 && vi.Voucher.Purity != null && vi.Voucher.Purity != "0") 
-                        desc += $" ({vi.Voucher.Weight:N3}g @ {vi.Voucher.Purity}%)";
-                    if (!string.IsNullOrEmpty(vi.Voucher.Particulars)) desc += $" - {vi.Voucher.Particulars}";
+                    
+                    if (vi.Voucher.Amount > 0 && vi.Voucher.FineWeight > 0 && (typeLabel == "Bhav Cut Adjustment" || vi.Voucher.Particulars?.Contains("Bhav Cut") == true))
+                    {
+                        decimal rate = vi.Voucher.TodayRate > 0 ? vi.Voucher.TodayRate : (vi.Voucher.Amount / vi.Voucher.FineWeight);
+                        string purity = !string.IsNullOrEmpty(vi.Voucher.Purity) && vi.Voucher.Purity != "0" ? vi.Voucher.Purity : "100";
+                        desc = $"Bhav Cut: ₹{vi.Voucher.Amount:N0} (Fine Weight : {vi.Voucher.FineWeight:N3} Conversion Rate : {rate:N0}  Purity : {purity})";
+                    }
+                    else
+                    {
+                        desc = $"{typeLabel}: {vi.Voucher.FineWeight:N3}g {vi.Voucher.Metal}";
+                        if (vi.Voucher.Weight > 0 && vi.Voucher.Purity != null && vi.Voucher.Purity != "0") 
+                            desc += $" ({vi.Voucher.Weight:N3}g @ {vi.Voucher.Purity}%)";
+                        if (!string.IsNullOrEmpty(vi.Voucher.Particulars)) desc += $" - {vi.Voucher.Particulars}";
+                    }
                 }
 
                 vm.Entries.Add(new LedgerEntry

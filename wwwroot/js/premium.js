@@ -930,7 +930,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     nameSelect.dispatchEvent(new Event('change'));
                 }
                 
-                if (nameInput) nameInput.value = `Bhav Cut: ₹${cash.toLocaleString('en-IN')}`;
+                if (nameInput) nameInput.value = `Bhav Cut: ₹${cash.toLocaleString('en-IN')} (Fine Weight : ${weight} Conversion Rate : ${rate}  Purity : ${purity})`;
                 if (metalSelect) metalSelect.value = metal;
                 
                 // Gross weight is calculated so that Fine weight * rate = cash
