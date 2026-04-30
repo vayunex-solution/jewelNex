@@ -500,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const amtEl = row.querySelector('.item-amount');
             if (amtEl) {
                 const prefix = totalRow < 0 ? "- ₹ " : "₹ ";
-                amtEl.textContent = `${prefix}${Math.abs(Math.round(totalRow)).toLocaleString('en-IN')}`;
+                amtEl.textContent = `${prefix}${Math.abs(totalRow).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
                 if (totalRow < 0) amtEl.style.color = "#d9534f"; // Red for receipt
                 else amtEl.style.color = "var(--primary-gold-dark)";
             }
@@ -545,8 +545,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const discountVal = parseFloat(el('discount-input')?.value) || 0;
         const totalWithGst = (subTotalVal + cgstVal + sgstVal + igstVal) - discountVal;
-        const roundedTotal = Math.round(totalWithGst);
-        const roundOffVal = roundedTotal - totalWithGst;
+        const roundedTotal = totalWithGst;
+        const roundOffVal = 0;
 
         const setTxt = (id, val) => {
             const target = el(id);
@@ -590,6 +590,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const ri = row.querySelector('.ri-select')?.value || 'I';
             const metal = row.querySelector('.metal-select')?.value || row.dataset.category || "Gold";
             const fWt = parseFloat(row.querySelector('.fine-wt')?.value) || 0;
+            
+            const rowTotalStr = row.querySelector('.item-amount')?.innerText || "0";
+            const rowTotal = parseFloat(rowTotalStr.replace(/[^0-9.-]+/g, "")) || 0;
+
+            // If the item has a cash value (sold for cash or exchanged for cash credit), 
+            // it does not affect the metal ledger (Account Statement).
+            if (Math.abs(rowTotal) > 0.01) return;
 
             if (metal === "Gold") {
                 if (ri === 'I') {
@@ -637,11 +644,28 @@ document.addEventListener('DOMContentLoaded', () => {
         let goldWithBhavCut = netGold;
         let silverWithBhavCut = netSilver;
 
-        if (el('enable-bhav-cut')?.checked) {
+        const isBhavCutEnabled = el('enable-bhav-cut')?.value === "true";
+        if (isBhavCutEnabled) {
             const cutWeight = parseFloat(el('bhav-cut-weight')?.value) || 0;
             const cutMetal = el('bhav-cut-metal-type')?.value || "Gold";
             if (cutMetal === "Gold") goldWithBhavCut -= cutWeight;
             else silverWithBhavCut -= cutWeight;
+        }
+
+        // Update Bhav Cut Summary Row in Breakdown
+        const summaryRow = el('bhav-cut-summary-row');
+        if (summaryRow) {
+            if (isBhavCutEnabled) {
+                summaryRow.style.display = 'flex';
+                const cutWeight = el('bhav-cut-weight')?.value || "0.000";
+                const cutMetal = el('bhav-cut-metal-type')?.value || "Gold";
+                const cutRate = el('bhav-cut-rate')?.value || "0.00";
+                
+                if (el('bhav-cut-display-weight')) el('bhav-cut-display-weight').textContent = `- ${cutWeight} g`;
+                if (el('bhav-cut-display-details')) el('bhav-cut-display-details').textContent = `${cutMetal}: ${cutWeight} g (Rate: ₹ ${cutRate})`;
+            } else {
+                summaryRow.style.display = 'none';
+            }
         }
 
         // Calculate Net Totals for Closing
@@ -674,13 +698,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const val = silverWithBhavCut;
             el('final-net-silver').textContent = `${Math.abs(val).toFixed(3)} g (${val >= 0 ? "Dr" : "Cr"})`;
         }
-
-        // Update Payment Summary (New Section)
-        if (el('sum-purchase-total')) el('sum-purchase-total').textContent = el('break-purchase-total')?.textContent || "₹ 0.00";
-        if (el('sum-exchange-total')) el('sum-exchange-total').textContent = el('break-exchange-total')?.textContent || "₹ 0.00";
-        if (el('sum-net-bill')) el('sum-net-bill').textContent = el('break-total-amount')?.textContent || "₹ 0.00";
-        if (el('sum-advance-paid')) el('sum-advance-paid').textContent = `₹ ${(parseFloat(el('paid-amount')?.value) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-        if (el('sum-pending-balance')) el('sum-pending-balance').textContent = el('outstanding-balance')?.textContent || "₹ 0.00";
 
         updateOutstanding();
     }
@@ -832,6 +849,97 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Save failed: " + err.message); 
             }
         };
+    }
+
+    // --- Metal Conversion Tool (Popup) Logic ---
+    const calcModal = el('calculator-modal');
+    const openCalcBtns = document.querySelectorAll('.open-calculator-btn');
+    const closeCalcBtn = document.querySelector('.close-modal');
+    
+    const calcCashInput = el('calc-cash');
+    const calcRateInput = el('calc-rate');
+    const calcMetalSelect = el('calc-metal-type');
+    const calcResultVal = el('calc-result-val');
+    const applyBtn = el('apply-calc-to-invoice');
+
+    openCalcBtns.forEach(btn => {
+        btn.onclick = (e) => {
+            e.preventDefault();
+            // Sync values from main section if they exist
+            if (calcCashInput) calcCashInput.value = el('bhav-cut-cash')?.value || "0.00";
+            if (calcRateInput) calcRateInput.value = el('bhav-cut-rate')?.value || "0.00";
+            if (calcMetalSelect) calcMetalSelect.value = el('bhav-cut-metal-type')?.value || "Gold";
+            
+            updateCalcToolResult();
+            calcModal.classList.add('show');
+            
+            // Auto-focus the first field for speed
+            setTimeout(() => calcCashInput?.focus(), 300);
+        };
+    });
+
+    if (closeCalcBtn) {
+        closeCalcBtn.onclick = () => calcModal.classList.remove('show');
+    }
+
+    // Modal no longer closes on outside click or on Apply
+    function updateCalcToolResult() {
+        const cash = parseFloat(calcCashInput?.value) || 0;
+        const rate = parseFloat(calcRateInput?.value) || 0;
+        if (rate > 0) {
+            calcResultVal.textContent = (cash / rate).toFixed(3);
+        } else {
+            calcResultVal.textContent = "0.000";
+        }
+    }
+
+    function handleApplyCalc() {
+        const cash = calcCashInput?.value || "0.00";
+        const rate = calcRateInput?.value || "0.00";
+        const metal = calcMetalSelect?.value || "Gold";
+        const weight = calcResultVal.textContent;
+
+        // Apply to hidden fields
+        if (el('bhav-cut-cash')) el('bhav-cut-cash').value = cash;
+        if (el('bhav-cut-rate')) el('bhav-cut-rate').value = rate;
+        if (el('bhav-cut-metal-type')) el('bhav-cut-metal-type').value = metal;
+        if (el('bhav-cut-weight')) el('bhav-cut-weight').value = weight;
+        if (el('enable-bhav-cut')) el('enable-bhav-cut').value = "true";
+
+        if (typeof calculateInvoice === 'function') calculateInvoice();
+        
+        // Visual feedback on the summary row
+        const summaryRow = el('bhav-cut-summary-row');
+        if (summaryRow) {
+            summaryRow.style.transform = 'scale(1.05)';
+            setTimeout(() => summaryRow.style.transform = 'scale(1)', 300);
+        }
+    }
+
+    // Remove Bhav Cut Logic
+    if (el('remove-bhav-cut')) {
+        el('remove-bhav-cut').onclick = () => {
+            if (el('enable-bhav-cut')) el('enable-bhav-cut').value = "false";
+            if (el('bhav-cut-weight')) el('bhav-cut-weight').value = "0";
+            calculateInvoice();
+        };
+    }
+
+    [calcCashInput, calcRateInput].forEach(inp => {
+        if (inp) {
+            inp.oninput = updateCalcToolResult;
+            // Add Enter key listener for auto-close/apply
+            inp.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleApplyCalc();
+                }
+            };
+        }
+    });
+
+    if (applyBtn) {
+        applyBtn.onclick = handleApplyCalc;
     }
 
     // Run initialization

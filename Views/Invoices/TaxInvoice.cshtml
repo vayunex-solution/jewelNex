@@ -75,7 +75,7 @@
                 <th>Item Name</th>
                 <th style="width: 60px;">Metal</th>
                 <th style="width: 80px;">Gross Wt (g)</th>
-                <th style="width: 70px;">Purity (%)</th>
+                <th style="width: 70px;">P (%)</th>
                 <th style="width: 80px;">Fine Wt (g)</th>
                 <th style="width: 80px;">Rate (₹/g)</th>
                 <th style="width: 100px;">Metal Amt (₹)</th>
@@ -126,7 +126,7 @@
                     <th>Item Name</th>
                     <th style="width: 60px;">Metal</th>
                     <th style="width: 80px;">Gross Wt (g)</th>
-                    <th style="width: 70px;">Purity (%)</th>
+                    <th style="width: 70px;">P (%)</th>
                     <th style="width: 80px;">Fine Wt (g)</th>
                     <th style="width: 100px;">Deduction Rate (₹/g)</th>
                     <th style="width: 120px; text-align: right;">Deduction Amount (₹)</th>
@@ -177,47 +177,73 @@
 
                     if (customer != null)
                     {
-                        // Real-time calculation including previous history
+                        // 1. Calculate Ledger Balances up to Model.Date
                         var invoiceItems = Db.InvoiceItems.Include(ii => ii.Invoice).Where(ii => ii.Invoice.CustomerId == Model.CustomerId && ii.Invoice.Date <= Model.Date).ToList();
-                        var metalVouchers = Db.Vouchers.Where(v => v.AccountName == customer.Name && (v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalReceipt || v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalPayment) && v.Date <= Model.Date).ToList();
-                        
+                        var metalVouchers = Db.Vouchers.Where(v => v.AccountName == customer.Name && (v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalReceipt || v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalPayment || (v.Type == JewelleryApp.Models.Jewellery.VoucherType.General && v.FineWeight > 0)) && v.Date <= Model.Date).ToList();
+                        var voucherItems = Db.VoucherItems.Include(vi => vi.Voucher).Where(vi => vi.AccountName == customer.Name && vi.Voucher.Date <= Model.Date).ToList();
+
                         netGoldBal = (customer.GoldBalanceType == JewelleryApp.Models.Jewellery.BalanceType.Dr) ? customer.OpeningGold : -customer.OpeningGold;
                         netSilverBal = (customer.SilverBalanceType == JewelleryApp.Models.Jewellery.BalanceType.Dr) ? customer.OpeningSilver : -customer.OpeningSilver;
+                        netAmtBal = (customer.BalanceType == JewelleryApp.Models.Jewellery.BalanceType.Dr) ? customer.OpeningBalance : -customer.OpeningBalance;
 
-                        foreach (var item in invoiceItems)
-                        {
+                        foreach (var item in invoiceItems) {
+                            if (item.Amount > 0) continue; // Skip cash items from metal ledger
                             if (item.Metal == "Gold") { if (item.RI == "I") netGoldBal += item.FineWt; else netGoldBal -= item.FineWt; }
                             else if (item.Metal == "Silver") { if (item.RI == "I") netSilverBal += item.FineWt; else netSilverBal -= item.FineWt; }
                         }
-                        foreach (var v in metalVouchers)
-                        {
+                        foreach (var v in metalVouchers) {
                             if (v.Metal == "Gold") { if (v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalPayment) netGoldBal += v.FineWeight; else netGoldBal -= v.FineWeight; }
                             else if (v.Metal == "Silver") { if (v.Type == JewelleryApp.Models.Jewellery.VoucherType.MetalPayment) netSilverBal += v.FineWeight; else netSilverBal -= v.FineWeight; }
                         }
-                        if (Model.MetalReceivedFineWeight > 0)
-                        {
-                            if (Model.MetalReceivedType == "Gold") netGoldBal -= Model.MetalReceivedFineWeight;
-                            else if (Model.MetalReceivedType == "Silver") netSilverBal -= Model.MetalReceivedFineWeight;
+                        foreach (var vi in voucherItems) netAmtBal += (vi.Debit - vi.Credit);
+
+                        // 2. Determine Impact of Current Invoice to find Previous Balances
+                        var currMetalItems = Model.Items.Where(i => i.Amount <= 0).ToList();
+                        decimal goldImpact = currMetalItems.Where(i => i.Metal == "Gold" && i.RI == "I").Sum(i => i.FineWt) - currMetalItems.Where(i => i.Metal == "Gold" && i.RI == "R").Sum(i => i.FineWt);
+                        decimal silverImpact = currMetalItems.Where(i => i.Metal == "Silver" && i.RI == "I").Sum(i => i.FineWt) - currMetalItems.Where(i => i.Metal == "Silver" && i.RI == "R").Sum(i => i.FineWt);
+
+                        if (Model.BhavCutWeight > 0) {
+                            if (Model.BhavCutMetalType == "Gold") goldImpact -= Model.BhavCutWeight;
+                            else if (Model.BhavCutMetalType == "Silver") silverImpact -= Model.BhavCutWeight;
                         }
-                        
-                        // Add Bhav Cut to real-time balance
-                        if (Model.BhavCutWeight > 0)
-                        {
-                            if (Model.BhavCutMetalType == "Gold") netGoldBal -= Model.BhavCutWeight;
-                            else if (Model.BhavCutMetalType == "Silver") netSilverBal -= Model.BhavCutWeight;
+                        // Note: MetalReceivedFineWeight (Direct Receipt) is usually handled by a separate voucher or logic
+
+                        decimal prevGold = netGoldBal, prevSilver = netSilverBal, prevAmt = netAmtBal;
+                        decimal cashImpact = (netBillAmt - Model.PaidAmount) + Model.BhavCutCash;
+
+                        if (Model.Id > 0) {
+                            // Saved: LEDGER IS CLOSING. Substract impact.
+                            prevGold = netGoldBal - goldImpact;
+                            prevSilver = netSilverBal - silverImpact;
+                            prevAmt = netAmtBal - cashImpact;
+                        } else {
+                            // Preview: LEDGER IS PREVIOUS. Add impact.
+                            prevGold = netGoldBal;
+                            netGoldBal = prevGold + goldImpact;
+                            prevSilver = netSilverBal;
+                            netSilverBal = prevSilver + silverImpact;
+                            prevAmt = netAmtBal;
+                            netAmtBal = prevAmt + cashImpact;
                         }
 
                         goldType = netGoldBal >= 0 ? "Dr" : "Cr";
                         silverType = netSilverBal >= 0 ? "Dr" : "Cr";
-
-                        // Amount Balance
-                        var voucherItems = Db.VoucherItems.Include(vi => vi.Voucher).Where(vi => vi.AccountName == customer.Name && vi.Voucher.Date <= Model.Date).ToList();
-                        netAmtBal = (customer.BalanceType == JewelleryApp.Models.Jewellery.BalanceType.Dr) ? customer.OpeningBalance : -customer.OpeningBalance;
-                        foreach (var vi in voucherItems) netAmtBal += (vi.Debit - vi.Credit);
                         amtType = netAmtBal >= 0 ? "Dr" : "Cr";
+                        ViewBag.PrevGold = prevGold;
+                        ViewBag.PrevSilver = prevSilver;
+                        ViewBag.PrevAmtBal = prevAmt;
                     }
                 }
+                @if (ViewBag.PrevGold != null && Math.Abs((decimal)ViewBag.PrevGold) > 0.0001m) {
+                    decimal pg = (decimal)ViewBag.PrevGold;
+                    <div class="summary-line"><span>Old Gold Bal:</span> <strong>@Math.Abs(pg).ToString("N3") g (@(pg >= 0 ? "Dr" : "Cr"))</strong></div>
+                }
                 <div class="summary-line"><span>Gold Pending:</span> <strong>@Math.Abs(netGoldBal).ToString("N3") g (@goldType)</strong></div>
+                
+                @if (ViewBag.PrevSilver != null && Math.Abs((decimal)ViewBag.PrevSilver) > 0.0001m) {
+                    decimal ps = (decimal)ViewBag.PrevSilver;
+                    <div class="summary-line"><span>Old Silver Bal:</span> <strong>@Math.Abs(ps).ToString("N3") g (@(ps >= 0 ? "Dr" : "Cr"))</strong></div>
+                }
                 <div class="summary-line"><span>Silver Pending:</span> <strong>@Math.Abs(netSilverBal).ToString("N3") g (@silverType)</strong></div>
             </div>
         </div>
@@ -235,6 +261,11 @@
                     <div class="summary-line"><span>Discount:</span> <strong style="color:#d9534f;">₹ @Model.Discount.ToString("N2")</strong></div>
                 }
                 <div class="summary-line net-row"><span>Net Bill Amount:</span> <strong>₹ @netBillAmt.ToString("N2")</strong></div>
+                @if (ViewBag.PrevAmtBal != null && Math.Abs((decimal)ViewBag.PrevAmtBal) > 0.1m)
+                {
+                    decimal pBal = (decimal)ViewBag.PrevAmtBal;
+                    <div class="summary-line"><span>Previous Balance:</span> <strong>₹ @Math.Abs(pBal).ToString("N2") (@(pBal >= 0 ? "Dr" : "Cr"))</strong></div>
+                }
                 @if (Model.BhavCutCash > 0)
                 {
                     <div class="summary-line" style="color: #d4af37;">
@@ -248,6 +279,13 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrEmpty(Model.Remarks))
+    {
+        <div class="remarks-section">
+            <p><strong>Remarks:</strong> @Model.Remarks</p>
+        </div>
+    }
+    
     <div class="footer-sections">
         <div class="bank-info">
             <p><strong>Bank Details:</strong> @settings.BankName, @settings.BankBranch</p>
@@ -402,6 +440,15 @@
         border-radius: 4px;
         margin-top: 10px;
         font-size: 15px;
+    }
+
+    .remarks-section {
+        margin-top: 20px;
+        padding: 10px;
+        background: #fdfdfd;
+        border-left: 4px solid #ddd;
+        font-size: 13px;
+        color: #444;
     }
 
     .footer-sections {

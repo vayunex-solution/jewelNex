@@ -157,9 +157,14 @@
                    </div>
                 </div>
             </div>
-            <button type="button" class="btn btn-primary btn-add-new" id="add-row-btn">
-                <i class="fas fa-plus"></i> Add New Item Line
-            </button>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button type="button" class="btn btn-secondary btn-sm open-calculator-btn" style="background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary-gold); color: var(--primary-gold-dark); padding: 5px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; height: 42px;">
+                    <i class="fas fa-calculator" style="margin-right: 5px;"></i> Calculation Tool
+                </button>
+                <button type="button" class="btn btn-primary btn-add-new" id="add-row-btn" style="height: 42px;">
+                    <i class="fas fa-plus"></i> Add New Item Line
+                </button>
+            </div>
         </div>
         <div class="table-container">
             <table id="product-table" class="premium-table">
@@ -187,49 +192,7 @@
         </div>
     </section>
 
-    <!-- Row 4: Bhav Cut (Cash to Metal Conversion) -->
-    <section class="form-card glass bhav-cut-section">
-        <div class="section-header">
-            <h3><i class="fas fa-cut"></i> Bhav Cut (Cash to Metal Adjustment)</h3>
-            <div class="toggle-container">
-                <label class="switch">
-                    <input type="checkbox" id="enable-bhav-cut">
-                    <span class="slider round"></span>
-                </label>
-                <span style="font-size: 0.85rem; color: #666; margin-left: 10px;">Enable Bhav Cut</span>
-            </div>
-        </div>
-        <div id="bhav-cut-fields" style="display:none; transition: var(--transition);">
-            <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Convert cash received into metal weight to adjust the customer's metal balance.</p>
-            <div class="form-row">
-                <div class="form-group flex-1">
-                    <label>Metal Type</label>
-                    <select id="bhav-cut-metal-type" class="form-control">
-                        <option value="Gold">Gold</option>
-                        <option value="Silver">Silver</option>
-                    </select>
-                </div>
-                <div class="form-group flex-1">
-                    <label>Cash for Conversion (₹)</label>
-                    <input type="number" id="bhav-cut-cash" step="0.01" value="0.00" placeholder="Enter amount">
-                </div>
-                <div class="form-group flex-1">
-                    <label>Conversion Rate (₹/g)</label>
-                    <input type="number" id="bhav-cut-rate" step="0.01" value="0.00" placeholder="Enter rate">
-                </div>
-            </div>
-            <div class="form-row" style="background: rgba(212, 175, 55, 0.05); padding: 15px; border-radius: 12px; align-items: center;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label style="margin-bottom: 0;">Equivalent Weight Deduction:</label>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-gold-dark);" id="bhav-cut-result-raw">0.000 g</div>
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>Rounded Adjustment (g)</label>
-                    <input type="number" id="bhav-cut-weight" step="0.001" value="0.000" style="font-size: 1.2rem; font-weight: bold; border: 2px solid var(--primary-gold);">
-                </div>
-            </div>
-        </div>
-    </section>
+
 
     <!-- Payment & Additional -->
     <section class="form-card glass">
@@ -308,6 +271,14 @@
         </div>
     </section>
 
+    <!-- Row 4: Bhav Cut (Cash to Metal Conversion) moved here -->
+    <!-- Hidden Bhav Cut Data -->
+    <input type="hidden" id="enable-bhav-cut" value="false">
+    <input type="hidden" id="bhav-cut-metal-type" value="Gold">
+    <input type="hidden" id="bhav-cut-cash" value="0">
+    <input type="hidden" id="bhav-cut-rate" value="0">
+    <input type="hidden" id="bhav-cut-weight" value="0">
+
     <!-- Grand Total Detailed Breakdown -->
     <section class="form-card glass total-breakdown">
         <h3><i class="fas fa-calculator"></i> Billing Breakdown</h3>
@@ -366,6 +337,16 @@
             <label style="margin:0; font-size: 0.8rem; color: #d9534f;">Discount (₹)</label>
             <input type="number" id="discount-input" step="0.01" value="0.00" style="width: 100px; padding: 5px; font-size: 0.9rem; border: 1px solid #d9534f; text-align: right; color: #d9534f; font-weight: bold;">
         </div>
+        <div id="bhav-cut-summary-row" class="total-row" style="display:none; background: rgba(212, 175, 55, 0.1); padding: 8px 12px; border-radius: 8px; margin: 5px 0; border: 1px solid var(--primary-gold-light);">
+            <div style="display:flex; flex-direction:column;">
+                <span style="color: var(--primary-gold-dark); font-weight: bold; font-size: 0.85rem;">Bhav Cut Adjustment</span>
+                <span id="bhav-cut-display-details" style="font-size: 0.7rem; color: #666;">Gold: 0.000 g (Rate: ₹ 0.00)</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span id="bhav-cut-display-weight" style="color: var(--primary-gold-dark); font-weight: 800; font-size: 1rem;">- 0.000 g</span>
+                <button type="button" id="remove-bhav-cut" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size: 0.8rem;" title="Remove Bhav Cut"><i class="fas fa-times-circle"></i></button>
+            </div>
+        </div>
         <div class="total-row grand">
             <span>Grand Total (Net Bill)</span>
             <span id="break-total-amount">₹ 0.00</span>
@@ -380,42 +361,6 @@
         </div>
     </section>
 
-    <!-- Final Payment Summary -->
-    <section class="form-card glass" style="border-top: 3px solid var(--primary-gold); margin-top: 30px;">
-        <h2 style="color: var(--primary-gold-dark); text-align: center; margin-bottom: 20px;">Payment Summary</h2>
-        <div class="summary-table-container">
-            <table class="premium-table" style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
-                <thead>
-                    <tr style="background: transparent;">
-                        <th style="border-bottom: 2px solid #eee; padding-bottom: 10px; font-weight: bold; color: #666; text-align: left;">Description</th>
-                        <th style="border-bottom: 2px solid #eee; padding-bottom: 10px; font-weight: bold; color: #666; text-align: right;">Amount (₹)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">Purchase Total</td>
-                        <td id="sum-purchase-total" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5; text-align: right; font-weight: bold;">₹ 0.00</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">Exchange Deduction</td>
-                        <td id="sum-exchange-total" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5; text-align: right; color: #d9534f;">₹ 0.00</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">Net Bill Amount</td>
-                        <td id="sum-net-bill" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5; text-align: right; font-weight: bold; color: var(--primary-gold-dark); font-size: 1.1rem;">₹ 0.00</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">Advance Paid</td>
-                        <td id="sum-advance-paid" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5; text-align: right; color: #4CAF50; font-weight: bold;">₹ 0.00</td>
-                    </tr>
-                    <tr style="background: rgba(212, 175, 55, 0.05);">
-                        <td style="padding: 15px; border-radius: 8px 0 0 8px; font-weight: 800; font-size: 1.2rem; color: var(--primary-gold-dark);">Final Pending Balance</td>
-                        <td id="sum-pending-balance" style="padding: 15px; border-radius: 0 8px 8px 0; text-align: right; font-weight: 800; font-size: 1.4rem; color: #222;">₹ 0.00</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
 </div>
 
 <!-- Bill Settings passed to JS -->
@@ -675,7 +620,199 @@
     input:checked + .slider { background-color: var(--primary-gold); }
     input:checked + .slider:before { transform: translateX(20px); }
 
+    /* Calculator Modal Styles */
+    .premium-modal {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    .premium-modal.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    .modal-content.glass {
+        background: rgba(255, 255, 255, 0.98);
+        padding: 0;
+        border-radius: 24px;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+        width: 320px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.4);
+        transform: translateY(20px);
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .premium-modal.show .modal-content {
+        transform: translateY(0);
+    }
+    .modal-header {
+        background: var(--primary-gold-dark);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-header h3 { margin: 0; font-size: 1rem; }
+    .close-modal {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        opacity: 0.8;
+    }
+    .close-modal:hover { opacity: 1; }
+    .modal-body { padding: 20px; }
+    
+    .calculator-display {
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        padding: 10px;
+        border: 1px solid #eee;
+    }
+    #calc-display {
+        width: 100%;
+        border: none;
+        background: transparent;
+        text-align: right;
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #333;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    .calculator-keys {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .calc-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .calc-form-group label {
+        font-size: 0.8rem;
+        color: #666;
+        font-weight: 600;
+    }
+    .calc-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .calc-input-wrapper span {
+        position: absolute;
+        left: 12px;
+        color: #888;
+        font-weight: 600;
+    }
+    .calc-input-wrapper input {
+        padding-left: 30px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: #fdfdfd;
+    }
+    .calc-result-box {
+        background: rgba(212, 175, 55, 0.08);
+        border: 2px dashed var(--primary-gold);
+        padding: 20px;
+        border-radius: 16px;
+        text-align: center;
+        margin-top: 10px;
+    }
+    .calc-result-box .res-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--primary-gold-dark);
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+        display: block;
+    }
+    .calc-result-box .res-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--secondary-charcoal);
+    }
+    .calc-result-box .res-unit {
+        font-size: 1rem;
+        color: #888;
+        margin-left: 5px;
+    }
+    .btn-calc-apply {
+        background: var(--primary-gold);
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+        font-size: 1rem;
+        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    }
+    .btn-calc-apply:hover {
+        background: var(--primary-gold-dark);
+        transform: translateY(-2px);
+    }
+
 </style>
+
+<!-- Calculation Modal (Bhav Cut Helper) -->
+<div id="calculator-modal" class="premium-modal">
+    <div class="modal-content glass">
+        <div class="modal-header">
+            <h3><i class="fas fa-calculator"></i> Metal Conversion Tool</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="calculator-keys">
+                <div class="calc-form-group">
+                    <label>Metal Type</label>
+                    <select id="calc-metal-type" class="form-control">
+                        <option value="Gold">Gold</option>
+                        <option value="Silver">Silver</option>
+                    </select>
+                </div>
+                <div class="calc-form-group">
+                    <label>Cash Amount to Convert</label>
+                    <div class="calc-input-wrapper">
+                        <span>₹</span>
+                        <input type="number" id="calc-cash" step="0.01" value="0.00" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="calc-form-group">
+                    <label>Conversion Rate</label>
+                    <div class="calc-input-wrapper">
+                        <span>₹</span>
+                        <input type="number" id="calc-rate" step="0.01" value="0.00" placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="calc-result-box">
+                    <span class="res-label">Equivalent Weight</span>
+                    <div>
+                        <span class="res-value" id="calc-result-val">0.000</span>
+                        <span class="res-unit">g</span>
+                    </div>
+                </div>
+
+                <button type="button" id="apply-calc-to-invoice" class="btn-calc-apply">
+                    <i class="fas fa-check-circle"></i> Apply to Invoice
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script src="~/js/premium.js"></script>

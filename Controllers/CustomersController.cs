@@ -87,7 +87,7 @@ namespace JewelleryApp.Controllers
                 .ToListAsync();
 
             var metalVouchers = await _context.Vouchers
-                .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment))
+                .Where(v => v.AccountName == customer.Name && (v.Type == VoucherType.MetalReceipt || v.Type == VoucherType.MetalPayment || v.FineWeight > 0))
                 .ToListAsync();
 
             decimal goldBal = customer.GoldBalanceType == BalanceType.Dr ? customer.OpeningGold : -customer.OpeningGold;
@@ -96,6 +96,8 @@ namespace JewelleryApp.Controllers
             // From Invoices
             foreach (var item in invoiceItems)
             {
+                if (item.Amount > 0) continue; // Skip cash-based items from metal ledger
+
                 if (item.Metal == "Gold")
                 {
                     if (item.RI == "I") goldBal += item.FineWt;

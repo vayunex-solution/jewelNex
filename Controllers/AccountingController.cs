@@ -34,11 +34,7 @@ namespace JewelleryApp.Controllers
                 decimal bal = customer.BalanceType == BalanceType.Dr ? customer.OpeningBalance : -customer.OpeningBalance;
                 foreach (var vi in items)
                 {
-                    // Skip Bhav Cut and Weight-based metal transactions from cash balance
-                    if (vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment || 
-                        (vi.Voucher.FineWeight > 0 && (vi.Voucher.Type == VoucherType.General || (vi.Particulars != null && vi.Particulars.Contains("Bhav Cut")))))
-                        continue;
-
+                    // Include all vouchers in cash balance calculation
                     bal += (vi.Debit - vi.Credit);
                 }
 
@@ -54,6 +50,8 @@ namespace JewelleryApp.Controllers
 
                 foreach (var item in invoiceItems)
                 {
+                    if (item.Amount > 0) continue; // Skip cash-based items from metal ledger
+
                     if (item.Metal == "Gold") goldBal += (item.RI == "I" ? item.FineWt : -item.FineWt);
                     else if (item.Metal == "Silver") silverBal += (item.RI == "I" ? item.FineWt : -item.FineWt);
                 }
@@ -137,11 +135,15 @@ namespace JewelleryApp.Controllers
                     bool isMetal = voucher.Type == VoucherType.MetalReceipt || voucher.Type == VoucherType.MetalPayment;
 
                     // Side 1: The Account (Customer or Expense)
+                    decimal lineAmount = (isMetal && voucher.Basis == ReceiptBasis.Weight) ? 0 : voucher.Amount;
+
                     voucher.Items.Add(new VoucherItem { 
                         AccountName = voucher.AccountName, 
-                        Debit = isReceipt ? 0 : voucher.Amount, 
-                        Credit = isReceipt ? voucher.Amount : 0,
-                        Particulars = voucher.Particulars
+                        Debit = isReceipt ? 0 : lineAmount, 
+                        Credit = isReceipt ? lineAmount : 0,
+                        Particulars = (isMetal && voucher.Basis == ReceiptBasis.Weight) ? 
+                                     $"{voucher.Particulars} (Weight Basis: {voucher.FineWeight}g @ {voucher.TodayRate})" : 
+                                     voucher.Particulars
                     });
 
                     // Side 2: Cash/Bank/Metal Account (Auto-Post)
@@ -151,9 +153,11 @@ namespace JewelleryApp.Controllers
 
                     voucher.Items.Add(new VoucherItem { 
                         AccountName = contraAcc, 
-                        Debit = isReceipt ? voucher.Amount : 0, 
-                        Credit = isReceipt ? 0 : voucher.Amount,
-                        Particulars = $"Auto-posted from {voucher.Type}"
+                        Debit = isReceipt ? lineAmount : 0, 
+                        Credit = isReceipt ? 0 : lineAmount,
+                        Particulars = (isMetal && voucher.Basis == ReceiptBasis.Weight) ? 
+                                     $"{voucher.Particulars} (Metal Stock Entry)" : 
+                                     $"Auto-posted from {voucher.Type}"
                     });
                 }
 
@@ -239,22 +243,54 @@ namespace JewelleryApp.Controllers
 
             // Calculate Opening Balance at 'from' date
             decimal runningBal = vm.OpeningBalanceType == BalanceType.Dr ? vm.OpeningBalance : -vm.OpeningBalance;
+            decimal runningGold = vm.OpeningGold; // Already calculated as Dr-Cr balance
+            decimal runningSilver = vm.OpeningSilver;
             
             var preTransactions = voucherItems.Where(vi => vi.Voucher.Date < from);
             foreach (var vi in preTransactions)
             {
-                // Skip Bhav Cut and Weight-based metal transactions from cash balance
-                if (vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment || 
-                    (vi.Voucher.FineWeight > 0 && (vi.Voucher.Type == VoucherType.General || (vi.Particulars != null && vi.Particulars.Contains("Bhav Cut")))))
-                    continue;
-
+                // Include all vouchers in cash balance calculation
                 runningBal += (vi.Debit - vi.Credit);
             }
 
             vm.OpeningBalance = Math.Abs(runningBal);
             vm.OpeningBalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr;
 
-            // Current Transactions
+            // Get Invoice items for metal weight tracking
+            var invoiceEntries = new List<LedgerEntry>();
+            if (accountId.StartsWith("CUST_"))
+            {
+                int custId = int.Parse(accountId.Replace("CUST_", ""));
+                var invoices = await _context.Invoices
+                    .Include(i => i.Items)
+                    .Where(i => i.CustomerId == custId && i.Date >= from && i.Date <= to)
+                    .ToListAsync();
+
+                foreach (var inv in invoices)
+                {
+                    foreach (var group in inv.Items.GroupBy(i => i.Metal))
+                    {
+                        decimal purchased = group.Where(i => i.RI == "I" && i.Amount <= 0).Sum(i => i.FineWt);
+                        decimal received = group.Where(i => i.RI == "R" && i.Amount <= 0).Sum(i => i.FineWt);
+                        
+                        if (purchased != 0 || received != 0)
+                        {
+                            invoiceEntries.Add(new LedgerEntry
+                            {
+                                VoucherNo = inv.InvoiceNo,
+                                Date = inv.Date,
+                                Description = $"Invoice Metal: {group.Key} (P: {purchased:N3}g, E: {received:N3}g)",
+                                WeightDebit = purchased,
+                                WeightCredit = received,
+                                MetalWeight = purchased + received,
+                                MetalType = group.Key
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Current Transactions (Vouchers)
             var currentItems = voucherItems
                 .Where(vi => vi.Voucher.Date >= from && vi.Voucher.Date <= to)
                 .OrderBy(vi => vi.Voucher.Date)
@@ -265,9 +301,14 @@ namespace JewelleryApp.Controllers
                 bool isBhavCutOrMetal = vi.Voucher.Type == VoucherType.MetalReceipt || vi.Voucher.Type == VoucherType.MetalPayment || 
                                       (vi.Voucher.FineWeight > 0 && (vi.Voucher.Type == VoucherType.General || (vi.Particulars != null && vi.Particulars.Contains("Bhav Cut"))));
 
-                if (!isBhavCutOrMetal)
+                // All vouchers affect cash balance unless they are pure metal (handled by 0 debit/credit)
+                runningBal += (vi.Debit - vi.Credit);
+
+                decimal wDr = 0, wCr = 0;
+                if (isBhavCutOrMetal)
                 {
-                    runningBal += (vi.Debit - vi.Credit);
+                    if (vi.Voucher.Type == VoucherType.MetalPayment) wDr = vi.Voucher.FineWeight;
+                    else wCr = vi.Voucher.FineWeight;
                 }
 
                 string desc = vi.Particulars ?? vi.Voucher.Particulars ?? vi.Voucher.Type.ToString();
@@ -288,6 +329,8 @@ namespace JewelleryApp.Controllers
                     Description = desc,
                     Debit = isBhavCutOrMetal ? 0 : vi.Debit,
                     Credit = isBhavCutOrMetal ? 0 : vi.Credit,
+                    WeightDebit = wDr,
+                    WeightCredit = wCr,
                     RunningBalance = Math.Abs(runningBal),
                     BalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr,
                     MetalWeight = vi.Voucher.FineWeight,
@@ -295,8 +338,39 @@ namespace JewelleryApp.Controllers
                 });
             }
 
-            vm.ClosingBalance = Math.Abs(runningBal);
-            vm.ClosingBalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr;
+            // Merge and Sort all entries by date
+            if (invoiceEntries.Any())
+            {
+                vm.Entries.AddRange(invoiceEntries);
+                vm.Entries = vm.Entries.OrderBy(e => e.Date).ThenBy(e => e.VoucherNo).ToList();
+                
+                // Recalculate running amounts for the merged list
+                decimal rAmount = vm.OpeningBalanceType == BalanceType.Dr ? vm.OpeningBalance : -vm.OpeningBalance;
+                decimal rGold = vm.OpeningGold;
+                decimal rSilver = vm.OpeningSilver;
+
+                foreach (var entry in vm.Entries)
+                {
+                    rAmount += (entry.Debit - entry.Credit);
+                    if (entry.MetalType == "Gold") rGold += (entry.WeightDebit - entry.WeightCredit);
+                    else if (entry.MetalType == "Silver") rSilver += (entry.WeightDebit - entry.WeightCredit);
+
+                    entry.RunningBalance = Math.Abs(rAmount);
+                    entry.BalanceType = rAmount >= 0 ? BalanceType.Dr : BalanceType.Cr;
+                    
+                    if (entry.MetalType == "Gold") { entry.RunningWeight = Math.Abs(rGold); entry.WeightBalanceType = rGold >= 0 ? BalanceType.Dr : BalanceType.Cr; }
+                    else if (entry.MetalType == "Silver") { entry.RunningWeight = Math.Abs(rSilver); entry.WeightBalanceType = rSilver >= 0 ? BalanceType.Dr : BalanceType.Cr; }
+                }
+                
+                vm.ClosingBalance = Math.Abs(rAmount);
+                vm.ClosingBalanceType = rAmount >= 0 ? BalanceType.Dr : BalanceType.Cr;
+            }
+            else
+            {
+                 vm.ClosingBalance = Math.Abs(runningBal);
+                 vm.ClosingBalanceType = runningBal >= 0 ? BalanceType.Dr : BalanceType.Cr;
+            }
+
             vm.PrintOption = printOption ?? "None";
 
             // Calculate Metal Balances if requested
@@ -323,6 +397,7 @@ namespace JewelleryApp.Controllers
                         
                         foreach (var item in preInvoiceItems)
                         {
+                            if (item.Amount > 0) continue; // Skip cash-paid items
                             if (item.Metal == "Gold") { if (item.RI == "I") preGold += item.FineWt; else preGold -= item.FineWt; }
                             else if (item.Metal == "Silver") { if (item.RI == "I") preSilver += item.FineWt; else preSilver -= item.FineWt; }
                         }
@@ -355,6 +430,7 @@ namespace JewelleryApp.Controllers
                         decimal periodSilver = 0;
                         foreach (var item in periodInvoiceItems)
                         {
+                            if (item.Amount > 0) continue; // Skip cash-paid items
                             if (item.Metal == "Gold") { if (item.RI == "I") periodGold += item.FineWt; else periodGold -= item.FineWt; }
                             else if (item.Metal == "Silver") { if (item.RI == "I") periodSilver += item.FineWt; else periodSilver -= item.FineWt; }
                         }

@@ -9,8 +9,12 @@ namespace JewelleryApp.Models.ViewModels
         public string Description { get; set; } = string.Empty;
         public decimal Debit { get; set; }
         public decimal Credit { get; set; }
+        public decimal WeightDebit { get; set; }
+        public decimal WeightCredit { get; set; }
         public decimal RunningBalance { get; set; }
         public BalanceType BalanceType { get; set; }
+        public decimal RunningWeight { get; set; }
+        public BalanceType WeightBalanceType { get; set; }
         public decimal MetalWeight { get; set; }
         public string? MetalType { get; set; }
     }
