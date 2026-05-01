@@ -66,7 +66,7 @@ namespace JewelleryApp.Controllers
 
                 _context.Add(entry);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Ledger), new { itemId = entry.ItemMasterId });
+                return RedirectToAction(nameof(Ledger), new { itemIds = new int[] { entry.ItemMasterId } });
             }
 
             // Re-populate View data if validation fails

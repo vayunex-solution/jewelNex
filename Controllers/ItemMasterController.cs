@@ -28,14 +28,32 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,DefaultRate,Category,Purity,OpeningStock,TotalWeight")] ItemMaster itemMaster)
+        public async Task<IActionResult> Create([Bind("Name,DefaultRate,Category,Purity,OpeningStock,OpeningWeight,TotalWeight")] ItemMaster itemMaster)
         {
             if (ModelState.IsValid)
             {
-                // Initialize current stock with opening stock
+                // Initialize current stock with opening stock and weight
                 itemMaster.StockQuantity = itemMaster.OpeningStock;
+                itemMaster.TotalWeight = itemMaster.OpeningWeight;
                 
                 _context.Add(itemMaster);
+
+                // Create a Stock Ledger entry for the opening balance
+                if (itemMaster.OpeningStock != 0 || itemMaster.OpeningWeight != 0)
+                {
+                    var stockEntry = new StockEntry
+                    {
+                        Item = itemMaster, // Use navigation property for atomic save
+                        Date = DateTime.Now,
+                        Type = StockEntryType.Opening,
+                        ReferenceNo = "OPENING",
+                        Quantity = itemMaster.OpeningStock,
+                        Weight = itemMaster.OpeningWeight,
+                        Remarks = "Initial Opening Balance"
+                    };
+                    _context.StockEntries.Add(stockEntry);
+                }
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
@@ -53,7 +71,7 @@ namespace JewelleryApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,DefaultRate,Category,Purity,StockQuantity,OpeningStock,TotalWeight,CreatedAt")] ItemMaster itemMaster)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,DefaultRate,Category,Purity,StockQuantity,OpeningStock,OpeningWeight,TotalWeight,CreatedAt")] ItemMaster itemMaster)
         {
             if (id != itemMaster.Id) return NotFound();
 
@@ -65,9 +83,36 @@ namespace JewelleryApp.Controllers
                     var existingItem = await _context.ItemsMaster.AsNoTracking().FirstOrDefaultAsync(i => i.Id == itemMaster.Id);
                     if (existingItem != null)
                     {
-                        // If Opening Stock was changed, adjust Current Stock by the difference
-                        int diff = itemMaster.OpeningStock - existingItem.OpeningStock;
-                        itemMaster.StockQuantity = existingItem.StockQuantity + diff;
+                        // If Opening Stock/Weight was changed, adjust Current Stock by the difference
+                        int qtyDiff = itemMaster.OpeningStock - existingItem.OpeningStock;
+                        decimal weightDiff = itemMaster.OpeningWeight - existingItem.OpeningWeight;
+                        
+                        itemMaster.StockQuantity = existingItem.StockQuantity + qtyDiff;
+                        itemMaster.TotalWeight = existingItem.TotalWeight + weightDiff;
+
+                        // Also update the Opening Stock entry in ledger if it exists, or create one
+                        var openingEntry = await _context.StockEntries
+                            .FirstOrDefaultAsync(s => s.ItemMasterId == itemMaster.Id && s.Type == StockEntryType.Opening);
+                        
+                        if (openingEntry != null)
+                        {
+                            openingEntry.Quantity = itemMaster.OpeningStock;
+                            openingEntry.Weight = itemMaster.OpeningWeight;
+                            _context.Update(openingEntry);
+                        }
+                        else if (itemMaster.OpeningStock != 0 || itemMaster.OpeningWeight != 0)
+                        {
+                            _context.StockEntries.Add(new StockEntry
+                            {
+                                ItemMasterId = itemMaster.Id,
+                                Date = itemMaster.CreatedAt,
+                                Type = StockEntryType.Opening,
+                                ReferenceNo = "OPENING",
+                                Quantity = itemMaster.OpeningStock,
+                                Weight = itemMaster.OpeningWeight,
+                                Remarks = "Initial Opening Balance"
+                            });
+                        }
                     }
                     
                     _context.Update(itemMaster);
@@ -83,6 +128,64 @@ namespace JewelleryApp.Controllers
             return View(itemMaster);
         }
 
+        public async Task<IActionResult> SyncStock()
+        {
+            try
+            {
+                // 1. First, align Opening ledger rows with Item Master opening values
+                var items = await _context.ItemsMaster.ToListAsync();
+                foreach (var item in items)
+                {
+                    var openingEntry = await _context.StockEntries
+                        .FirstOrDefaultAsync(s => s.ItemMasterId == item.Id && s.Type == StockEntryType.Opening);
+                    
+                    if (openingEntry != null)
+                    {
+                        openingEntry.Quantity = item.OpeningStock;
+                        openingEntry.Weight = item.OpeningWeight;
+                        _context.Update(openingEntry);
+                    }
+                    else if (item.OpeningStock != 0 || item.OpeningWeight != 0)
+                    {
+                        _context.StockEntries.Add(new StockEntry
+                        {
+                            ItemMasterId = item.Id,
+                            Date = item.CreatedAt,
+                            Type = StockEntryType.Opening,
+                            ReferenceNo = "OPENING",
+                            Quantity = item.OpeningStock,
+                            Weight = item.OpeningWeight,
+                            Remarks = "Initial Opening Balance (Synced)"
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+
+                // 2. Direct SQL Update for atomic accuracy
+                await _context.Database.ExecuteSqlRawAsync(@"
+                    UPDATE ItemsMaster 
+                    SET StockQuantity = (
+                        SELECT COALESCE(SUM(Quantity), 0) 
+                        FROM StockEntries 
+                        WHERE StockEntries.ItemMasterId = ItemsMaster.Id
+                    ),
+                    TotalWeight = (
+                        SELECT COALESCE(SUM(Weight), 0) 
+                        FROM StockEntries 
+                        WHERE StockEntries.ItemMasterId = ItemsMaster.Id
+                    );
+                ");
+
+                TempData["Message"] = "Stock levels synchronized successfully from Ledger history!";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Sync failed: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
         public async Task<JsonResult> GetAllItems()
         {
             var items = await _context.ItemsMaster
@@ -93,6 +196,7 @@ namespace JewelleryApp.Controllers
                     purity = x.Purity, 
                     stockQuantity = x.StockQuantity,
                     openingStock = x.OpeningStock,
+                    openingWeight = x.OpeningWeight,
                     totalWeight = x.TotalWeight,
                     category = x.Category
                 })

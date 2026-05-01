@@ -62,14 +62,24 @@
     <div class="stock-summary-grid mb-4">
         @foreach (var item in selectedItems)
         {
+            var itemEntries = Model.Where(m => m.ItemMasterId == item.Id).ToList();
+            var ledgerQty = itemEntries.Sum(e => e.Quantity);
+            var ledgerWeight = itemEntries.Sum(e => e.Weight);
+
             <div class="stat-card glass" style="border-left: 4px solid var(--primary-gold);">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-start">
                     <span class="stat-label">@item.Name</span>
                     <span class="badge badge-outline">@item.Category</span>
                 </div>
-                <div class="mt-2">
-                    <span class="small text-muted">Stock:</span> <strong class="text-gold">@item.StockQuantity</strong> 
-                    | <span class="small text-muted">Weight:</span> <strong class="text-gold">@item.TotalWeight.ToString("N3")g</strong>
+                <div class="mt-2" style="font-size: 0.9rem;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Opening:</span>
+                        <span><strong>@item.OpeningStock</strong> | <strong>@item.OpeningWeight.ToString("N3")g</strong></span>
+                    </div>
+                    <div class="d-flex justify-content-between" style="border-top: 1px solid rgba(212, 175, 55, 0.1); padding-top: 5px;">
+                        <span class="text-muted">Ledger Balance:</span>
+                        <span class="text-gold"><strong>@ledgerQty</strong> | <strong>@ledgerWeight.ToString("N3")g</strong></span>
+                    </div>
                 </div>
             </div>
         }

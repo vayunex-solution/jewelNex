@@ -193,6 +193,7 @@ using (var scope = app.Services.CreateScope())
 
     // ItemMaster schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ItemsMaster ADD COLUMN OpeningStock INTEGER NOT NULL DEFAULT 0;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ItemsMaster ADD COLUMN OpeningWeight DECIMAL(18, 3) NOT NULL DEFAULT 0;"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE ItemsMaster ADD COLUMN TotalWeight DECIMAL(18, 3) NOT NULL DEFAULT 0;"); } catch { }
     
     // Users table
@@ -215,11 +216,12 @@ using (var scope = app.Services.CreateScope())
     }
     catch { }
 
-    // Sync StockQuantity for existing items if it was 0
-    var itemsToSync = context.ItemsMaster.Where(i => i.StockQuantity == 0 && i.OpeningStock > 0).ToList();
+    // Sync StockQuantity and TotalWeight for existing items if they were 0 but have opening balances
+    var itemsToSync = context.ItemsMaster.Where(i => (i.StockQuantity == 0 && i.OpeningStock > 0) || (i.TotalWeight == 0 && i.OpeningWeight > 0)).ToList();
     if (itemsToSync.Any()) {
         foreach(var item in itemsToSync) {
-            item.StockQuantity = item.OpeningStock;
+            if (item.StockQuantity == 0) item.StockQuantity = item.OpeningStock;
+            if (item.TotalWeight == 0) item.TotalWeight = item.OpeningWeight;
         }
         context.SaveChanges();
     }

@@ -5,6 +5,7 @@ namespace JewelleryApp.Models.Jewellery
 {
     public enum StockEntryType
     {
+        Opening = 0,
         Purchase = 1,
         Production = 2,
         IssueSlip = 3,

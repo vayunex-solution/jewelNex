@@ -60,6 +60,15 @@
     </form>
 </div>
 
+<script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const btn = this.querySelector('button[type="submit"]');
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    });
+</script>
+
 <style>
     .premium-input { border: 1px solid #ddd; background: white; border-radius: 10px; padding: 10px 15px; width: 100%; margin-top: 5px; }
     .w-100 { width: 100%; justify-content: center; }

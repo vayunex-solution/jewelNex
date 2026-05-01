@@ -20,8 +20,12 @@ namespace JewelleryApp.Models.Jewellery
         [Display(Name = "In Stock (Qty)")]
         public int StockQuantity { get; set; }
 
-        [Display(Name = "Opening Stock")]
+        [Display(Name = "Opening Qty")]
         public int OpeningStock { get; set; } = 0;
+
+        [Display(Name = "Opening Weight (g)")]
+        [Column(TypeName = "decimal(18, 3)")]
+        public decimal OpeningWeight { get; set; } = 0;
 
         [Display(Name = "Total Weight (g)")]
         [Column(TypeName = "decimal(18, 3)")]

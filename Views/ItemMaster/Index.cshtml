@@ -9,6 +9,9 @@
         <p>Manage your product catalog and default rates</p>
     </div>
     <div class="header-actions">
+        <a asp-action="SyncStock" class="btn btn-secondary" style="margin-right: 10px;" onclick="return confirm('Recalculate all stock levels from ledger history?')">
+            <i class="fas fa-sync"></i> Sync All Stock
+        </a>
         <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus"></i> Add New Item</a>
     </div>
 </header>
@@ -21,9 +24,10 @@
                     <th>Item Name</th>
                     <th>Category</th>
                     <th>Purity</th>
-                    <th style="text-align: right;">Opening Stock</th>
-                    <th style="text-align: right;">Total Wt. (g)</th>
-                    <th>Current Stock</th>
+                    <th style="text-align: right;">Opening Qty</th>
+                    <th style="text-align: right;">Opening Wt.</th>
+                    <th style="text-align: right;">Current Qty</th>
+                    <th style="text-align: right;">Current Wt.</th>
                     <th>Default Rate (₹/g)</th>
                     <th>Added On</th>
                     <th>Actions</th>
@@ -37,12 +41,13 @@
                         <td>@item.Category</td>
                         <td>@item.Purity</td>
                         <td style="text-align: right;">@item.OpeningStock</td>
-                        <td style="text-align: right;">@item.TotalWeight.ToString("N3")</td>
-                        <td>
+                        <td style="text-align: right;">@item.OpeningWeight.ToString("N3")</td>
+                        <td style="text-align: right;">
                             <span class="badge @(item.StockQuantity == 0 ? "badge-danger" : (item.StockQuantity < 10 ? "badge-warning" : "badge-success"))">
-                                @(item.StockQuantity == 0 ? "Out of Stock" : item.StockQuantity.ToString())
+                                @item.StockQuantity
                             </span>
                         </td>
+                        <td style="text-align: right;">@item.TotalWeight.ToString("N3")</td>
                         <td>₹ @item.DefaultRate.ToString("N2")</td>
                         <td>@item.CreatedAt.ToString("dd MMM yyyy")</td>
                         <td>
