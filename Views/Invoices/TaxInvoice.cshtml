@@ -251,7 +251,19 @@
         <div class="summary-right">
             <div class="summary-box payment-summary">
                 <div class="summary-title">Payment Summary</div>
-                <div class="summary-line"><span>Purchase Total:</span> <strong>₹ @purchaseTotalAmt.ToString("N2")</strong></div>
+                <div class="summary-line"><span>Purchase Total:</span> <strong>₹ @purchases.Sum(i => i.Amount).ToString("N2")</strong></div>
+                @if (Model.CGST > 0)
+                {
+                    <div class="summary-line"><span>CGST:</span> <strong>₹ @Model.CGST.ToString("N2")</strong></div>
+                }
+                @if (Model.SGST > 0)
+                {
+                    <div class="summary-line"><span>SGST:</span> <strong>₹ @Model.SGST.ToString("N2")</strong></div>
+                }
+                @if (Model.IGST > 0)
+                {
+                    <div class="summary-line"><span>IGST:</span> <strong>₹ @Model.IGST.ToString("N2")</strong></div>
+                }
                 @if (exchangeDeductionAmt > 0)
                 {
                     <div class="summary-line"><span>Exchange Deduction:</span> <strong style="color:#d9534f;">₹ @exchangeDeductionAmt.ToString("N2")</strong></div>

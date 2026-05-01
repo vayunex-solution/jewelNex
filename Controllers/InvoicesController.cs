@@ -237,7 +237,7 @@ namespace JewelleryApp.Controllers
                 invoice.Customer = _context.Customers.Find(invoice.CustomerId);
             }
 
-            if (invoice.PrintOption == "Estimate")
+            if (invoice.InvoiceType == "Rough Estimate")
                 return View("Estimate", invoice);
             
             return View("TaxInvoice", invoice);
