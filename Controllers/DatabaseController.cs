@@ -151,10 +151,15 @@ namespace JewelleryApp.Controllers
         {
             try
             {
-                string dbPath = "jewellery_v5.db";
+                string dbPath = _context.Database.GetDbConnection().DataSource;
+                if (!Path.IsPathRooted(dbPath))
+                {
+                    dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dbPath);
+                }
+
                 if (!System.IO.File.Exists(dbPath))
                 {
-                    TempData["Error"] = "Database file not found!";
+                    TempData["Error"] = "Database file not found at: " + dbPath;
                     return RedirectToAction(nameof(Backup));
                 }
 
@@ -197,6 +202,7 @@ namespace JewelleryApp.Controllers
 
                 // 2. Validate SQLite Structure
                 bool isValid = false;
+                string validationError = "The file is either corrupted or not a valid Jewellery ERP backup.";
                 try
                 {
                     using (var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={tempPath};Pooling=False"))
@@ -204,28 +210,40 @@ namespace JewelleryApp.Controllers
                         conn.Open();
                         using (var cmd = conn.CreateCommand())
                         {
-                            // Check for essential tables to ensure it's our DB format
-                            cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('ShopSettings', 'Invoices', 'Customers', 'ItemsMaster')";
+                            // Check for essential tables (case-insensitive check)
+                            cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND LOWER(name) IN ('shopsettings', 'invoices', 'customers', 'itemsmaster')";
                             var result = cmd.ExecuteScalar();
-                            if (result != null) isValid = true;
+                            if (result != null) 
+                            {
+                                isValid = true;
+                            }
+                            else
+                            {
+                                validationError = "Missing essential tables. Please ensure you are uploading a valid Jewellery ERP database file.";
+                            }
                         }
                         conn.Close();
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
                     isValid = false;
+                    validationError = "Error reading database: " + ex.Message;
                 }
 
                 if (!isValid)
                 {
                     if (System.IO.File.Exists(tempPath)) System.IO.File.Delete(tempPath);
-                    TempData["Error"] = "Invalid backup file. The file is either corrupted or not a valid Jewellery ERP backup.";
+                    TempData["Error"] = "Invalid backup file. " + validationError;
                     return RedirectToAction(nameof(Backup));
                 }
 
                 // 3. Perform the Restore (Safe Swap)
-                string dbPath = "jewellery_v5.db";
+                string dbPath = _context.Database.GetDbConnection().DataSource;
+                if (!Path.IsPathRooted(dbPath))
+                {
+                    dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dbPath);
+                }
                 
                 _context.Database.CloseConnection();
                 Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
@@ -246,7 +264,7 @@ namespace JewelleryApp.Controllers
                 // Cleanup temp
                 if (System.IO.File.Exists(tempPath)) System.IO.File.Delete(tempPath);
 
-                TempData["Success"] = "Database restored successfully!";
+                TempData["Success"] = "Database restored successfully! Please restart the application if you encounter any issues.";
             }
             catch (Exception ex)
             {
