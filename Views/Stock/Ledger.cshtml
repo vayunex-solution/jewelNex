@@ -1,6 +1,23 @@
 @model IEnumerable<JewelleryApp.Models.Jewellery.StockEntry>
 @{
     ViewData["Title"] = "Stock Ledger";
+    
+    var allItemsList = ViewBag.ItemsList as List<JewelleryApp.Models.Jewellery.ItemMaster> ?? new List<JewelleryApp.Models.Jewellery.ItemMaster>();
+    
+    var goldCategoryItems = allItemsList.Where(x => string.Equals(x.Category, "Gold", StringComparison.OrdinalIgnoreCase)).ToList();
+    var silverCategoryItems = allItemsList.Where(x => string.Equals(x.Category, "Silver", StringComparison.OrdinalIgnoreCase)).ToList();
+
+    var overallGoldOpeningQty = goldCategoryItems.Sum(x => x.OpeningStock);
+    var overallGoldOpeningWeight = goldCategoryItems.Sum(x => x.OpeningWeight);
+
+    var overallSilverOpeningQty = silverCategoryItems.Sum(x => x.OpeningStock);
+    var overallSilverOpeningWeight = silverCategoryItems.Sum(x => x.OpeningWeight);
+    
+    var overallGoldCurrentQty = goldCategoryItems.Sum(x => x.StockQuantity);
+    var overallGoldCurrentWeight = goldCategoryItems.Sum(x => x.TotalWeight);
+
+    var overallSilverCurrentQty = silverCategoryItems.Sum(x => x.StockQuantity);
+    var overallSilverCurrentWeight = silverCategoryItems.Sum(x => x.TotalWeight);
 }
 
 <header>
@@ -14,6 +31,46 @@
         <button onclick="window.print()" class="btn btn-dark no-print"><i class="fas fa-print"></i> Print Ledger</button>
     </div>
 </header>
+
+<div class="overall-balance-grid mb-4 no-print">
+    <!-- Gold Overall Card -->
+    <div class="overall-card glass-gold">
+        <div class="overall-icon">
+            <i class="fas fa-coins text-gold-icon"></i>
+        </div>
+        <div class="overall-info">
+            <span class="overall-label">Overall Gold Opening</span>
+            <div class="overall-value">
+                <span>@overallGoldOpeningQty <small>Pcs</small></span>
+                <span class="divider">|</span>
+                <span>@overallGoldOpeningWeight.ToString("N3")<small>g</small></span>
+            </div>
+            <div class="overall-sub-text mt-2">
+                <span class="text-muted">Current Stock:</span>
+                <span class="value-highlight">@overallGoldCurrentQty Pcs | @overallGoldCurrentWeight.ToString("N3")g</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Silver Overall Card -->
+    <div class="overall-card glass-silver">
+        <div class="overall-icon">
+            <i class="fas fa-gem text-silver-icon"></i>
+        </div>
+        <div class="overall-info">
+            <span class="overall-label">Overall Silver Opening</span>
+            <div class="overall-value">
+                <span>@overallSilverOpeningQty <small>Pcs</small></span>
+                <span class="divider">|</span>
+                <span>@overallSilverOpeningWeight.ToString("N3")<small>g</small></span>
+            </div>
+            <div class="overall-sub-text mt-2">
+                <span class="text-muted">Current Stock:</span>
+                <span class="value-highlight">@overallSilverCurrentQty Pcs | @overallSilverCurrentWeight.ToString("N3")g</span>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="form-card glass mb-4 mt-4 no-print">
     <form asp-action="Ledger" method="get">
@@ -123,6 +180,109 @@
 }
 
 <style>
+    .overall-balance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 25px;
+    }
+    .overall-card {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 24px 30px;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .overall-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+        pointer-events: none;
+    }
+    .overall-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+    }
+    .glass-gold {
+        background: rgba(212, 175, 55, 0.08);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        border-left: 6px solid #D4AF37;
+    }
+    .glass-silver {
+        background: rgba(192, 192, 192, 0.1);
+        border: 1px solid rgba(192, 192, 192, 0.3);
+        border-left: 6px solid #A0A0A0;
+    }
+    .overall-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        background: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    }
+    .text-gold-icon {
+        color: #D4AF37;
+    }
+    .text-silver-icon {
+        color: #8A8D8F;
+    }
+    .overall-info {
+        flex: 1;
+    }
+    .overall-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 4px;
+    }
+    .overall-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--secondary-charcoal);
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+    .overall-value small {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #777;
+    }
+    .overall-value .divider {
+        color: rgba(0,0,0,0.15);
+        font-weight: 300;
+        font-size: 1.4rem;
+        margin: 0 2px;
+    }
+    .overall-sub-text {
+        font-size: 0.88rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px dashed rgba(0, 0, 0, 0.08);
+        padding-top: 8px;
+    }
+    .value-highlight {
+        font-weight: 600;
+        color: var(--secondary-charcoal-light);
+    }
+
     .stock-summary-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
