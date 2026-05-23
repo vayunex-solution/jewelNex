@@ -1,0 +1,242 @@
+@{
+    Layout = null; // Clean registration screen
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Activate License - Jain Jewellers ERP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-gold: #BF953F;
+            --primary-gold-light: #FCF6BA;
+            --primary-gold-dark: #AA771C;
+        }
+
+        body {
+            background: radial-gradient(circle at top right, #1a1a1a, #0d0d0d);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            color: #fff;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 500px;
+            padding: 50px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 30px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .logo-circle-lg {
+            background: var(--primary-gold);
+            color: white;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 auto 30px;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #fff, #BF953F);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 40px;
+        }
+
+        .machine-id-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px dashed rgba(212, 175, 55, 0.4);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .machine-id-box label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--primary-gold);
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .machine-id-value {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 25px;
+        }
+
+        .form-control-dark {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 1.1rem;
+            text-align: center;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control-dark:focus {
+            outline: none;
+            border-color: var(--primary-gold);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+        }
+
+        .btn-activate {
+            background: var(--primary-gold);
+            color: #000;
+            border: none;
+            width: 100%;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+        }
+
+        .btn-activate:hover {
+            transform: translateY(-2px);
+            background: #f1c40f;
+            box-shadow: 0 15px 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        .alert-danger {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
+
+        .footer-note {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="logo-circle-lg">JJ</div>
+        <h2>License Activation</h2>
+        <p>This software is protected per installation. Enter your key to continue.</p>
+
+        @if (ViewBag.Status == "expired")
+        {
+            <div class="alert alert-danger" style="background: rgba(220, 53, 69, 0.2); border: 2px solid #dc3545; color: #ff6b6b; margin-bottom: 25px; padding: 20px; border-radius: 15px;">
+                <h4 style="margin: 0 0 10px 0;"><i class="fas fa-history"></i> License Expired!</h4>
+                <p style="margin: 0; font-size: 0.95rem; opacity: 1;">Your trial or subscription period has ended. Please contact the administrator for a new security key.</p>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+            </div>
+        }
+
+        <div class="machine-id-box" id="copy-box">
+            <label>Current Machine Fingerprint</label>
+            <span class="machine-id-value" id="machine-id">@ViewBag.MachineId</span>
+            <i class="fas fa-copy" style="position: absolute; right: 15px; top: 15px; color: var(--primary-gold);"></i>
+        </div>
+
+        <form action="/Registration/Activate" method="post">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label style="color: rgba(255,255,255,0.7);"><i class="fas fa-key"></i> Security Key</label>
+                <input type="text" name="licenseKey" class="form-control-dark" placeholder="XXXX-XXXX-XXXX-XXXX-VD" required>
+            </div>
+            
+            <button type="submit" class="btn btn-activate">
+                <i class="fas fa-shield-check"></i> Activate My ERP
+            </button>
+        </form>
+
+        <div style="margin: 25px 0; display: flex; align-items: center; justify-content: center; gap: 15px; opacity: 0.5;">
+            <div style="height: 1px; background: rgba(255,255,255,0.2); flex: 1;"></div>
+            <span style="font-size: 0.8rem;">OR</span>
+            <div style="height: 1px; background: rgba(255,255,255,0.2); flex: 1;"></div>
+        </div>
+
+        <button type="button" class="btn-activate" id="btn-default-key" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: none;">
+            <i class="fas fa-magic"></i> Login with Default Key
+        </button>
+
+        <div class="footer-note">
+            © 2026 Jain Jewellers. Hardware ID Protection Enabled.<br>
+            <a href="/Database" style="color: rgba(212, 175, 55, 0.4); text-decoration: none; margin-top: 10px; display: inline-block; font-size: 0.7rem;">
+                <i class="fas fa-lock-open"></i> Admin Tools
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_KEY = "JKS-7777-8888-9999-0000-15";
+
+        document.getElementById('btn-default-key').onclick = function() {
+            const input = document.getElementsByName('licenseKey')[0];
+            input.value = DEFAULT_KEY;
+            input.style.borderColor = "#BF953F";
+            input.style.boxShadow = "0 0 20px rgba(212, 175, 55, 0.4)";
+            
+            setTimeout(() => {
+                input.closest('form').submit();
+            }, 500);
+        };
+
+        document.getElementById('copy-box').onclick = function() {
+            const id = document.getElementById('machine-id').innerText;
+            navigator.clipboard.writeText(id).then(() => {
+                alert("✨ Machine ID copied to clipboard!");
+            });
+        };
+    </script>
+</body>
+</html>

@@ -139,6 +139,12 @@ using (var scope = app.Services.CreateScope())
     try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN CustomerCode TEXT NOT NULL DEFAULT '';"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE Customers ADD COLUMN StateCode TEXT;"); } catch { }
 
+    // ShopSettings schema updates (Licensing)
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN LicenseKey TEXT;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN LastKnownMachineId TEXT;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN ActivationDate TEXT;"); } catch { }
+    try { context.Database.ExecuteSqlRaw("ALTER TABLE ShopSettings ADD COLUMN ExpiryDays INTEGER DEFAULT 0;"); } catch { }
+
     // InvoiceItem schema updates
     try { context.Database.ExecuteSqlRaw("ALTER TABLE InvoiceItems ADD COLUMN RI TEXT DEFAULT 'I';"); } catch { }
     try { context.Database.ExecuteSqlRaw("ALTER TABLE InvoiceItems ADD COLUMN FineWt DECIMAL(10, 3) DEFAULT 0;"); } catch { }
@@ -217,7 +223,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-
+app.UseMiddleware<JewelleryApp.Utilities.LicenseMiddleware>();
 app.UseAuthorization();
 
 app.MapStaticAssets();

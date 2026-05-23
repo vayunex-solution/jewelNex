@@ -6,6 +6,12 @@ namespace JewelleryApp.Models.Jewellery
     {
         public int Id { get; set; }
 
+        // Licensing Properties
+        public string? LicenseKey { get; set; }
+        public string? LastKnownMachineId { get; set; }
+        public DateTime? ActivationDate { get; set; }
+        public int ExpiryDays { get; set; } // 0 = Unlimited
+
         [Required]
         [Display(Name = "Shop Name")]
         public string ShopName { get; set; } = "JAIN JEWELLERS";

@@ -86,6 +86,53 @@ namespace JewelleryApp.Controllers
                 await transaction.RollbackAsync();
                 TempData["Error"] = "Error cleaning database: " + ex.Message;
             }
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateKey(string targetMachineId, int validityDays, string adminPassword)
+        {
+            if (adminPassword != "jks1988@1122")
+            {
+                TempData["Error"] = "Unauthorized. Admin password required for key generation.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrEmpty(targetMachineId))
+            {
+                TempData["Error"] = "Please provide a valid Machine ID.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var generatedKey = JewelleryApp.Utilities.SecurityKeys.GenerateLicenseKey(targetMachineId, validityDays);
+            TempData["GeneratedKey"] = generatedKey;
+            TempData["KeyForId"] = targetMachineId;
+            TempData["Success"] = "Key generated successfully for Machine ID: " + targetMachineId;
+            
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearLicense(string adminPassword)
+        {
+            if (adminPassword != "jks1988@1122")
+            {
+                TempData["Error"] = "Unauthorized. Admin password required to clear license.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var settings = await _context.ShopSettings.FirstOrDefaultAsync();
+            if (settings != null)
+            {
+                settings.LicenseKey = null;
+                settings.LastKnownMachineId = null;
+                settings.ActivationDate = null;
+                settings.ExpiryDays = 0;
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "License cleared successfully! The application is now locked.";
+            }
 
             return RedirectToAction(nameof(Index));
         }
