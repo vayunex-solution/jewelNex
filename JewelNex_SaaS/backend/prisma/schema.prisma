@@ -1,0 +1,451 @@
+// JewelNex SaaS - Prisma Schema
+// Database: MySQL | ORM: Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// ROLES TABLE
+// ─────────────────────────────────────────
+model Role {
+  id        String   @id @default(uuid())
+  name      String   @unique // "superadmin" | "admin" | "manager" | "staff"
+  createdAt DateTime @default(now())
+  users     User[]
+
+  @@map("roles")
+}
+
+// ─────────────────────────────────────────
+// USERS TABLE
+// ─────────────────────────────────────────
+model User {
+  id                      String    @id @default(uuid())
+  name                    String
+  email                   String    @unique
+  password                String
+  roleId                  String
+  role                    Role      @relation(fields: [roleId], references: [id])
+  isVerified              Boolean   @default(false)
+  verificationToken       String?
+  verificationTokenExpiry DateTime?
+  resetToken              String?
+  resetTokenExpiry        DateTime?
+  isActive                Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  activityLogs    ActivityLog[]
+  movements       StockMovement[]
+  auditTrails     AuditTrail[]
+  invoices        Invoice[]
+  invoicePayments InvoicePayment[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// ACTIVITY LOGS TABLE
+// ─────────────────────────────────────────
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String // e.g., "LOGIN", "SIGNUP", "PASSWORD_RESET", "VERIFY_EMAIL"
+  metadata  Json? // optional extra info (IP, user-agent, etc.)
+  createdAt DateTime @default(now())
+
+  @@map("activity_logs")
+}
+
+// ─────────────────────────────────────────
+// PHASE C: INVENTORY ARCHITECTURE
+// ─────────────────────────────────────────
+
+model Location {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   @default("WAREHOUSE") // WAREHOUSE, STORE, SUPPLIER, CUSTOMER
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movementsFrom StockMovement[] @relation("FromLocation")
+  movementsTo   StockMovement[] @relation("ToLocation")
+  inventoryLots InventoryLot[]
+
+  @@map("locations")
+}
+
+model Product {
+  id          String  @id @default(uuid())
+  sku         String  @unique
+  name        String
+  description String?
+
+  // Weight Structure
+  grossWeight Decimal @default(0.000) @db.Decimal(10, 3)
+  stoneWeight Decimal @default(0.000) @db.Decimal(10, 3)
+  netWeight   Decimal @default(0.000) @db.Decimal(10, 3)
+  purity      Decimal @default(1.000) @db.Decimal(5, 3)
+  fineWeight  Decimal @default(0.000) @db.Decimal(10, 3)
+
+  // Costs
+  wastagePercent Decimal @default(0.00) @db.Decimal(5, 2)
+  makingCharge   Decimal @default(0.00) @db.Decimal(10, 2)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lots        InventoryLot[]
+  movements   StockMovement[]
+  InvoiceItem InvoiceItem[]
+
+  @@map("products")
+}
+
+model InventoryLot {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  barcode String? @unique
+  rfid    String? @unique
+
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
+
+  quantity Int     @default(0) // Usually 1 for unique pieces, >1 for bulk lots
+  weight   Decimal @default(0.000) @db.Decimal(10, 3) // Specific weight for this lot if differs from product
+
+  status String @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD, IN_TRANSIT
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements   StockMovement[]
+  InvoiceItem InvoiceItem[]
+
+  @@map("inventory_lots")
+}
+
+model TransactionReference {
+  id            String  @id @default(uuid())
+  referenceCode String  @unique // e.g. INV-2026-001
+  type          String // PURCHASE, SALE, TRANSFER, ADJUSTMENT
+  status        String  @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements StockMovement[]
+  invoice   Invoice?
+
+  @@map("transaction_references")
+}
+
+model StockMovement {
+  id String @id @default(uuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  lotId String?
+  lot   InventoryLot? @relation(fields: [lotId], references: [id])
+
+  transactionId String?
+  transaction   TransactionReference? @relation(fields: [transactionId], references: [id])
+
+  type String // OPENING, PURCHASE, SALE, RETURN, ADJUSTMENT, TRANSFER
+
+  fromLocationId String?
+  fromLocation   Location? @relation("FromLocation", fields: [fromLocationId], references: [id])
+
+  toLocationId String?
+  toLocation   Location? @relation("ToLocation", fields: [toLocationId], references: [id])
+
+  quantityDelta Int
+  weightDelta   Decimal @db.Decimal(10, 3)
+
+  isReversed    Boolean @default(false)
+  reversalForId String? // If this movement is a reversal of another movement
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("stock_movements")
+}
+
+model AuditTrail {
+  id         String   @id @default(uuid())
+  entityType String   // 'PRODUCT', 'LOT', 'MOVEMENT', 'TRANSACTION', 'invoice', 'customer', etc.
+  entityId   String?
+  action     String   // 'CREATED', 'UPDATED', 'DELETED', 'REVERSED', 'POST', 'EXPORT'
+  oldValues  Json?
+  newValues  Json?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_trails")
+}
+
+// ─────────────────────────────────────────
+// PHASE D: INVOICING & ACCOUNTING CORE
+// ─────────────────────────────────────────
+
+enum InvoiceStatus {
+  DRAFT
+  POSTED
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+  REVERSED
+}
+
+enum InvoiceType {
+  SALE
+  PURCHASE
+  ESTIMATE
+}
+
+enum PaymentMode {
+  CASH
+  BANK_TRANSFER
+  CARD
+  CREDIT
+  UPI
+  CHEQUE
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?  @unique
+  gstNumber String?
+  address   String?  @db.Text
+  panNumber String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoices    Invoice[]
+  accountHead AccountHead? // Link to accounting ledger
+
+  @@map("customers")
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique // Format: FY-LOC-SEQ (e.g., 2026-HQ-0001)
+  type          InvoiceType
+  status        InvoiceStatus @default(DRAFT)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  // Tax & Totals
+  subTotal   Decimal @default(0.00) @db.Decimal(12, 2)
+  taxTotal   Decimal @default(0.00) @db.Decimal(12, 2) // GST
+  discount   Decimal @default(0.00) @db.Decimal(12, 2)
+  grandTotal Decimal @default(0.00) @db.Decimal(12, 2)
+
+  transactionId String?               @unique // Link to TransactionReference
+  transaction   TransactionReference? @relation(fields: [transactionId], references: [id])
+
+  notes       String? @db.Text
+  createdById String
+  user        User    @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items    InvoiceItem[]
+  payments InvoicePayment[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product       @relation(fields: [productId], references: [id])
+  lotId     String?
+  lot       InventoryLot? @relation(fields: [lotId], references: [id])
+
+  // Base Quantities
+  quantity Int
+  weight   Decimal @db.Decimal(10, 3)
+
+  // Immutable Transaction Snapshots
+  rate         Decimal @db.Decimal(10, 2) // Metal Rate at time of sale
+  purity       Decimal @db.Decimal(5, 3)
+  makingCharge Decimal @db.Decimal(10, 2)
+  wastage      Decimal @db.Decimal(5, 2)
+  hsn          String?
+
+  // Item Level Pricing
+  discountPercent Decimal @default(0.00) @db.Decimal(5, 2)
+  gstPercent      Decimal @default(3.00) @db.Decimal(5, 2)
+  amount          Decimal @db.Decimal(12, 2) // Final item total including tax
+
+  @@map("invoice_items")
+}
+
+model InvoicePayment {
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  amount      Decimal     @db.Decimal(12, 2)
+  mode        PaymentMode
+  referenceId String? // Cheque No, UTR, etc.
+  status      String      @default("COMPLETED") // COMPLETED, REFUNDED
+
+  processedById String
+  user          User   @relation(fields: [processedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("invoice_payments")
+}
+
+// ─────────────────────────────────────────
+// ACCOUNTING FOUNDATION HOOKS
+// ─────────────────────────────────────────
+
+model AccountGroup {
+  id            String         @id @default(uuid())
+  name          String         @unique // e.g., 'Sundry Debtors', 'Current Assets'
+  type          String // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  parentGroupId String?
+  parentGroup   AccountGroup?  @relation("GroupHierarchy", fields: [parentGroupId], references: [id])
+  subGroups     AccountGroup[] @relation("GroupHierarchy")
+
+  heads AccountHead[]
+
+  @@map("account_groups")
+}
+
+model AccountHead {
+  id            String    @id @default(uuid())
+  name          String    // e.g., 'John Doe (Customer)', 'HDFC Bank'
+  groupId       String
+  group         AccountGroup @relation(fields: [groupId], references: [id])
+  
+  customerId    String?   @unique // If head belongs to a customer
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  
+  openingBal    Decimal   @default(0.00) @db.Decimal(12,2)
+  balanceType   String    // 'DR', 'CR'
+  
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  voucherEntries VoucherEntry[]
+
+  @@map("account_heads")
+}
+
+enum VoucherType {
+  JOURNAL
+  SALES
+  PURCHASE
+  PAYMENT
+  RECEIPT
+  CONTRA
+}
+
+enum EntryType {
+  DR
+  CR
+}
+
+model Voucher {
+  id            String         @id @default(uuid())
+  voucherNumber String         @unique // e.g. VCH-2026-0001
+  type          VoucherType
+  date          DateTime       @default(now())
+  reference     String?        // invoiceId, paymentId
+  narration     String?        @db.Text
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  entries       VoucherEntry[]
+
+  @@map("vouchers")
+}
+
+model VoucherEntry {
+  id        String      @id @default(uuid())
+  voucherId String
+  voucher   Voucher     @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  
+  accountId String
+  account   AccountHead @relation(fields: [accountId], references: [id])
+  
+  amount    Decimal     @db.Decimal(12, 2)
+  type      EntryType   // DR (Debit) or CR (Credit)
+  
+  createdAt DateTime    @default(now())
+
+  @@map("voucher_entries")
+}
+
+// ─────────────────────────────────────────
+// SYSTEM SETTINGS & SEQUENCES
+// ─────────────────────────────────────────
+model Sequence {
+  id          String   @id @default(uuid())
+  type        String   @unique // e.g., 'SALE_INVOICE_FY26', 'PURCHASE_INVOICE_FY26'
+  prefix      String
+  lastNumber  Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@map("sequences")
+}
+
+// Singleton company settings row (id = 'default')
+model CompanySettings {
+  id             String   @id @default("default")
+  name           String   @default("My Jewellery Shop")
+  tagline        String?
+  gstin          String?
+  panNumber      String?
+  address        String?  @db.Text
+  city           String?
+  state          String   @default("Gujarat")
+  pincode        String?
+  phone          String?
+  email          String?
+  website        String?
+  logoBase64     String?  @db.LongText // base64 encoded logo image
+  gstType        String   @default("CGST_SGST") // CGST_SGST | IGST
+  currencySymbol String   @default("₹")
+  invoicePrefix  String?
+  invoiceFooter  String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("company_settings")
+}

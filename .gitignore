@@ -33,3 +33,12 @@ _ReSharper*/
 *.DotSettings.user
 node_modules/
 wwwroot/lib/
+
+# Tool / Agent files
+.agent/
+god-graph/
+god-graph.zip
+graphify-out/
+run_graphify_ast.py
+.graphifyignore
+GRAPHIFY_ZERO_TOKEN_GUIDE.md

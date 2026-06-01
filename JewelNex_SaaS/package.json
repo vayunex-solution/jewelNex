@@ -1,0 +1,24 @@
+{
+  "name": "jewelnex_saas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run test --prefix backend && npm run test --prefix frontend",
+    "test:e2e": "npx playwright test",
+    "test:ui": "npx playwright test --ui",
+    "test:coverage": "npm run test:coverage --prefix backend",
+    "db:seed": "npm run db:seed --prefix backend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.9.1"
+  }
+}
