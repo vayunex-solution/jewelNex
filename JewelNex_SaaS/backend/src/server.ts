@@ -3,7 +3,8 @@ import app from './app';
 import { env } from './config/env';
 import prisma from './config/database';
 
-const PORT = Number(env.PORT) || 5000;
+// Support Phusion Passenger sockets (string) or standard port numbers
+const PORT: string | number = isNaN(Number(env.PORT)) ? env.PORT : (Number(env.PORT) || 5000);
 
 const startServer = async () => {
   try {

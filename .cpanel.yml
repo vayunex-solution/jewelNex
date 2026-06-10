@@ -1,0 +1,16 @@
+# .cpanel.yml
+# cPanel deployment configuration file for JewelNex SaaS
+# Automatically deploys frontend build and backend code to their respective subdomains.
+
+---
+deployment:
+  tasks:
+    # 1. Deploy Frontend (Only compiled build)
+    - export FRONTEND_PATH=/home/vayunexs/app.jewelnex.vayunexsolution.com
+    - /bin/mkdir -p $FRONTEND_PATH
+    - /bin/rsync -ar --delete JewelNex_SaaS/frontend/dist/ $FRONTEND_PATH/
+
+    # 2. Deploy Backend (Express API)
+    - export BACKEND_PATH=/home/vayunexs/api.jewelnex.vayunexsolution.com
+    - /bin/mkdir -p $BACKEND_PATH
+    - /bin/rsync -ar --delete JewelNex_SaaS/backend/ $BACKEND_PATH/ --exclude node_modules --exclude .env --exclude .env.test* --exclude tests --exclude src --exclude tsconfig.json --exclude .gitignore --exclude README.md

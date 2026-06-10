@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const accounting_controller_1 = require("../controllers/accounting.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticate);
+router.post('/initialize', accounting_controller_1.AccountingController.initializeCOA);
+router.get('/groups', accounting_controller_1.AccountingController.getGroups);
+router.get('/heads', accounting_controller_1.AccountingController.getHeads);
+router.get('/ledger/:accountId', accounting_controller_1.AccountingController.getLedger);
+router.get('/customer/:customerId/balance', accounting_controller_1.AccountingController.getCustomerBalance);
+router.get('/reports/daybook', accounting_controller_1.AccountingController.getDayBookReport);
+router.get('/reports/ledger/:accountId', accounting_controller_1.AccountingController.getGeneralLedgerReport);
+router.get('/reports/cashbook', accounting_controller_1.AccountingController.getCashBookReport);
+router.get('/reports/bankbook', accounting_controller_1.AccountingController.getBankBookReport);
+router.get('/reports/trial-balance', accounting_controller_1.AccountingController.getTrialBalanceReport);
+router.get('/reports/profit-loss', accounting_controller_1.AccountingController.getProfitLossReport);
+router.get('/reports/balance-sheet', accounting_controller_1.AccountingController.getBalanceSheetReport);
+exports.default = router;
+//# sourceMappingURL=accounting.routes.js.map
