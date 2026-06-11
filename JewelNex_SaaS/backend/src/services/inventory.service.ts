@@ -6,17 +6,21 @@ export class InventoryService {
   /**
    * Prisma CRUD: Create a new product
    */
-  static async createProduct(data: any) {
+  static async createProduct(data: any, companyId: string) {
     return prisma.product.create({
-      data,
+      data: {
+        ...data,
+        companyId,
+      },
     });
   }
 
   /**
    * Prisma CRUD: Get all products
    */
-  static async getProducts(skip = 0, take = 50) {
+  static async getProducts(skip = 0, take = 50, companyId?: string) {
     return prisma.product.findMany({
+      where: companyId ? { companyId } : undefined,
       skip,
       take,
       include: {
@@ -28,8 +32,9 @@ export class InventoryService {
   /**
    * Prisma CRUD: Get stock ledger audit trail
    */
-  static async getMovements(skip = 0, take = 100) {
+  static async getMovements(skip = 0, take = 100, companyId?: string) {
     return prisma.stockMovement.findMany({
+      where: companyId ? { product: { companyId } } : undefined,
       skip,
       take,
       orderBy: { createdAt: 'desc' },
@@ -130,16 +135,20 @@ export class InventoryService {
   /**
    * Dashboard Stats: Calculate summary metrics
    */
-  static async getDashboardStats() {
+  static async getDashboardStats(companyId?: string) {
     const [totalProducts, totalLots, recentMovements] = await Promise.all([
-      prisma.product.count(),
+      prisma.product.count({
+        where: companyId ? { companyId } : undefined,
+      }),
       prisma.inventoryLot.aggregate({
+        where: companyId ? { product: { companyId } } : undefined,
         _sum: {
           quantity: true,
           weight: true,
         },
       }),
       prisma.stockMovement.findMany({
+        where: companyId ? { product: { companyId } } : undefined,
         take: 5,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -150,7 +159,10 @@ export class InventoryService {
     ]);
 
     const lowStockItems = await prisma.inventoryLot.findMany({
-      where: { quantity: { lte: 10 } }, // Hardcoded threshold for now
+      where: {
+        quantity: { lte: 10 },
+        product: companyId ? { companyId } : undefined,
+      },
       include: { product: true },
       take: 5,
     });

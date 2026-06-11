@@ -76,25 +76,9 @@ test.describe('Phase F: Production Readiness & Business Outputs UI Validation', 
 
     // 3. Seed Company Settings, Customer, Product, Invoice, Payment, Audit Trail
     // Get default company settings or create it
-    const companySettings = await prisma.companySettings.upsert({
-      where: { id: 'default' },
-      update: {
-        name: 'JewelNex Premium Boutique',
-        tagline: 'Crafting Elegance Since 2026',
-        gstin: '24AAAAB1111A1Z1',
-        panNumber: 'AAAAB1111A',
-        address: '101, Gold Plaza, Jewel Road',
-        city: 'Surat',
-        state: 'Gujarat',
-        pincode: '395003',
-        phone: '+91 98765 43210',
-        email: 'info@jewelnex.com',
-        website: 'www.jewelnex.com',
-        invoiceFooter: 'Thank you for buying from JewelNex. All disputes subject to Surat jurisdiction.',
-        gstType: 'CGST_SGST',
-      },
-      create: {
-        id: 'default',
+    const companySettings = await prisma.companySettings.update({
+      where: { companyId: dbUser.companyId as string },
+      data: {
         name: 'JewelNex Premium Boutique',
         tagline: 'Crafting Elegance Since 2026',
         gstin: '24AAAAB1111A1Z1',
@@ -116,6 +100,7 @@ test.describe('Phase F: Production Readiness & Business Outputs UI Validation', 
         name: 'Main Showroom',
         type: 'STORE',
         isActive: true,
+        companyId: dbUser.companyId,
       }
     });
 
@@ -127,6 +112,7 @@ test.describe('Phase F: Production Readiness & Business Outputs UI Validation', 
         gstNumber: '24BBBBB2222B2Z2',
         address: '202 Emerald Residency, Surat',
         isActive: true,
+        companyId: dbUser.companyId,
       }
     });
 
@@ -142,6 +128,7 @@ test.describe('Phase F: Production Readiness & Business Outputs UI Validation', 
         fineWeight: 5.267,
         makingCharge: 650.00,
         wastagePercent: 3.50,
+        companyId: dbUser.companyId,
       }
     });
 
@@ -166,6 +153,7 @@ test.describe('Phase F: Production Readiness & Business Outputs UI Validation', 
         discount: 1500.00,
         grandTotal: 34035.00,
         createdById: dbUser.id,
+        companyId: dbUser.companyId,
         notes: 'Wedding purchase. Urgent delivery.',
       }
     });

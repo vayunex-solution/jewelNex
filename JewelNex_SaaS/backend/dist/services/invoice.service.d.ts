@@ -32,14 +32,15 @@ export declare class InvoiceService {
      * Generates a sequential, location/financial-year aware invoice number.
      * Format: FY26-HQ-0001
      */
-    static generateInvoiceNumber(type: InvoiceType): Promise<string>;
+    static generateInvoiceNumber(type: InvoiceType, companyId: string): Promise<string>;
     /**
      * Posts an invoice ATOMICALLY. Uses JSON and Stored Procedure for absolute integrity.
      */
-    static postInvoice(dto: CreateInvoiceDTO, userId: string): Promise<({
+    static postInvoice(dto: CreateInvoiceDTO, userId: string, companyId: string): Promise<({
         customer: {
             id: string;
             name: string;
+            companyId: string | null;
             email: string | null;
             phone: string | null;
             gstNumber: string | null;
@@ -80,6 +81,7 @@ export declare class InvoiceService {
         invoiceNumber: string;
         type: import(".prisma/client").$Enums.InvoiceType;
         status: import(".prisma/client").$Enums.InvoiceStatus;
+        companyId: string | null;
         customerId: string;
         subTotal: import("@prisma/client/runtime/library").Decimal;
         taxTotal: import("@prisma/client/runtime/library").Decimal;
@@ -101,10 +103,11 @@ export declare class InvoiceService {
     /**
      * Saves a new invoice as a DRAFT. No stock locking or deductions occur.
      */
-    static saveDraft(dto: CreateInvoiceDTO, userId: string): Promise<{
+    static saveDraft(dto: CreateInvoiceDTO, userId: string, companyId: string): Promise<{
         customer: {
             id: string;
             name: string;
+            companyId: string | null;
             email: string | null;
             phone: string | null;
             gstNumber: string | null;
@@ -145,6 +148,7 @@ export declare class InvoiceService {
         invoiceNumber: string;
         type: import(".prisma/client").$Enums.InvoiceType;
         status: import(".prisma/client").$Enums.InvoiceStatus;
+        companyId: string | null;
         customerId: string;
         subTotal: import("@prisma/client/runtime/library").Decimal;
         taxTotal: import("@prisma/client/runtime/library").Decimal;
@@ -163,6 +167,7 @@ export declare class InvoiceService {
         customer: {
             id: string;
             name: string;
+            companyId: string | null;
             email: string | null;
             phone: string | null;
             gstNumber: string | null;
@@ -203,6 +208,7 @@ export declare class InvoiceService {
         invoiceNumber: string;
         type: import(".prisma/client").$Enums.InvoiceType;
         status: import(".prisma/client").$Enums.InvoiceStatus;
+        companyId: string | null;
         customerId: string;
         subTotal: import("@prisma/client/runtime/library").Decimal;
         taxTotal: import("@prisma/client/runtime/library").Decimal;
@@ -225,6 +231,7 @@ export declare class InvoiceService {
         customer: {
             id: string;
             name: string;
+            companyId: string | null;
             email: string | null;
             phone: string | null;
             gstNumber: string | null;
@@ -265,6 +272,7 @@ export declare class InvoiceService {
         invoiceNumber: string;
         type: import(".prisma/client").$Enums.InvoiceType;
         status: import(".prisma/client").$Enums.InvoiceStatus;
+        companyId: string | null;
         customerId: string;
         subTotal: import("@prisma/client/runtime/library").Decimal;
         taxTotal: import("@prisma/client/runtime/library").Decimal;
@@ -279,10 +287,11 @@ export declare class InvoiceService {
     /**
      * Lists all draft invoices.
      */
-    static listDrafts(): Promise<({
+    static listDrafts(companyId?: string): Promise<({
         customer: {
             id: string;
             name: string;
+            companyId: string | null;
             email: string | null;
             phone: string | null;
             gstNumber: string | null;
@@ -313,6 +322,7 @@ export declare class InvoiceService {
         invoiceNumber: string;
         type: import(".prisma/client").$Enums.InvoiceType;
         status: import(".prisma/client").$Enums.InvoiceStatus;
+        companyId: string | null;
         customerId: string;
         subTotal: import("@prisma/client/runtime/library").Decimal;
         taxTotal: import("@prisma/client/runtime/library").Decimal;

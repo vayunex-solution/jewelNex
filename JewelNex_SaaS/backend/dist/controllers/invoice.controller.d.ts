@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 export declare class InvoiceController {
-    static createInvoice(req: Request, res: Response, next: NextFunction): Promise<void>;
+    static createInvoice(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
     static reverseInvoice(req: Request, res: Response, next: NextFunction): Promise<void>;
-    static saveDraft(req: Request, res: Response, next: NextFunction): Promise<void>;
+    static saveDraft(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
     static editDraft(req: Request, res: Response, next: NextFunction): Promise<void>;
     static postDraft(req: Request, res: Response, next: NextFunction): Promise<void>;
     static listDrafts(req: Request, res: Response, next: NextFunction): Promise<void>;

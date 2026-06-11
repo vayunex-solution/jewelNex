@@ -22,6 +22,7 @@ export declare class SettingsService {
      */
     static getSettings(): Promise<{
         id: string;
+        companyId: string | null;
         name: string;
         tagline: string | null;
         gstin: string | null;
@@ -46,6 +47,7 @@ export declare class SettingsService {
      */
     static updateSettings(dto: CompanySettingsDTO): Promise<{
         id: string;
+        companyId: string | null;
         name: string;
         tagline: string | null;
         gstin: string | null;

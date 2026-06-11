@@ -6,26 +6,32 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LocationService = void 0;
 const database_1 = __importDefault(require("../config/database"));
 class LocationService {
-    static async createLocation(data) {
+    static async createLocation(data, companyId) {
         return database_1.default.location.create({
-            data,
+            data: {
+                ...data,
+                companyId,
+            },
         });
     }
-    static async getLocations() {
+    static async getLocations(companyId) {
         return database_1.default.location.findMany({
-            where: { isActive: true },
+            where: {
+                isActive: true,
+                companyId: companyId || undefined,
+            },
             orderBy: { name: 'asc' },
         });
     }
-    static async updateLocation(id, data) {
+    static async updateLocation(id, data, companyId) {
         return database_1.default.location.update({
-            where: { id },
+            where: companyId ? { id, companyId } : { id },
             data,
         });
     }
-    static async deleteLocation(id) {
+    static async deleteLocation(id, companyId) {
         return database_1.default.location.update({
-            where: { id },
+            where: companyId ? { id, companyId } : { id },
             data: { isActive: false },
         });
     }

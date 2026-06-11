@@ -14,6 +14,7 @@ export interface VoucherDTO {
   reference?: string;
   narration?: string;
   entries: VoucherEntryDTO[];
+  companyId?: string | null;
 }
 
 export class AccountingService {
@@ -111,10 +112,11 @@ export class AccountingService {
   /**
    * Generates a unique, transaction-safe voucher number.
    */
-  static async generateVoucherNumber(type: VoucherType, tx: any): Promise<string> {
+  static async generateVoucherNumber(type: VoucherType, companyId: string | null | undefined, tx: any): Promise<string> {
     const year = new Date().getFullYear().toString().slice(-2);
-    const prefix = `V-${type.slice(0, 3)}-FY${year}`;
-    const seqType = `VOUCHER_${type}_FY${year}`;
+    const companySuffix = companyId ? `-${companyId.slice(-6)}` : '';
+    const prefix = `V-${type.slice(0, 3)}-FY${year}${companySuffix}`;
+    const seqType = companyId ? `VOUCHER_${type}_FY${year}_${companyId}` : `VOUCHER_${type}_FY${year}`;
 
     const seqRecords = await tx.$queryRaw<any[]>`
       SELECT id, lastNumber FROM sequences WHERE type = ${seqType} FOR UPDATE
@@ -130,10 +132,17 @@ export class AccountingService {
     } else {
       try {
         const id = uuidv4();
-        await tx.$executeRaw`
-          INSERT INTO sequences (id, type, prefix, lastNumber, updatedAt)
-          VALUES (${id}, ${seqType}, ${prefix}, 1, NOW(3))
-        `;
+        if (companyId) {
+          await tx.$executeRaw`
+            INSERT INTO sequences (id, type, prefix, lastNumber, companyId, updatedAt)
+            VALUES (${id}, ${seqType}, ${prefix}, 1, ${companyId}, NOW(3))
+          `;
+        } else {
+          await tx.$executeRaw`
+            INSERT INTO sequences (id, type, prefix, lastNumber, updatedAt)
+            VALUES (${id}, ${seqType}, ${prefix}, 1, NOW(3))
+          `;
+        }
         nextNum = 1;
       } catch (e) {
         const retryRecords = await tx.$queryRaw<any[]>`
@@ -178,7 +187,7 @@ export class AccountingService {
     }
 
     const runInTx = async (tx: any) => {
-      const voucherNumber = await this.generateVoucherNumber(dto.type, tx);
+      const voucherNumber = await this.generateVoucherNumber(dto.type, dto.companyId, tx);
       const voucherId = uuidv4();
 
       return await tx.voucher.create({
@@ -295,6 +304,7 @@ export class AccountingService {
         type: 'SALES',
         reference: invoice.id,
         narration: `Sales Invoice ${invoice.invoiceNumber} posted.`,
+        companyId: invoice.companyId,
         entries
       }, tx);
 
@@ -310,6 +320,7 @@ export class AccountingService {
             type: 'RECEIPT',
             reference: invoice.id,
             narration: `Payment received via ${payment.mode} against Invoice ${invoice.invoiceNumber}. Ref: ${payment.referenceId || 'N/A'}`,
+            companyId: invoice.companyId,
             entries: [
               { accountId: debitAccountId, amount: payAmount, type: 'DR' },
               { accountId: customerHead.id, amount: payAmount, type: 'CR' }
@@ -338,6 +349,7 @@ export class AccountingService {
         type: 'PURCHASE',
         reference: invoice.id,
         narration: `Purchase Invoice ${invoice.invoiceNumber} posted.`,
+        companyId: invoice.companyId,
         entries
       }, tx);
 
@@ -353,6 +365,7 @@ export class AccountingService {
             type: 'PAYMENT',
             reference: invoice.id,
             narration: `Payment made via ${payment.mode} against Purchase Invoice ${invoice.invoiceNumber}. Ref: ${payment.referenceId || 'N/A'}`,
+            companyId: invoice.companyId,
             entries: [
               { accountId: customerHead.id, amount: payAmount, type: 'DR' },
               { accountId: creditAccountId, amount: payAmount, type: 'CR' }
@@ -367,6 +380,12 @@ export class AccountingService {
    * Automatically generates compensating reversal Vouchers.
    */
   static async generateReversalVoucher(invoiceId: string, tx: any) {
+    const invoice = await tx.invoice.findUnique({
+      where: { id: invoiceId },
+      select: { companyId: true }
+    });
+    const companyId = invoice?.companyId;
+
     const originalVouchers = await tx.voucher.findMany({
       where: { reference: invoiceId },
       include: { entries: true }
@@ -383,6 +402,7 @@ export class AccountingService {
         type: 'JOURNAL',
         reference: invoiceId,
         narration: `Reversal of Voucher ${voucher.voucherNumber} (Invoice reversal compensation).`,
+        companyId,
         entries: reversedEntries
       }, tx);
     }

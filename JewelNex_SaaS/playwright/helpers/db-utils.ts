@@ -37,7 +37,11 @@ export async function cleanupTestUser(email: string): Promise<void> {
   const user = await prisma.user.findUnique({ where: { email } });
   if (user) {
     await prisma.activityLog.deleteMany({ where: { userId: user.id } });
-    await prisma.user.delete({ where: { id: user.id } });
+    if (user.companyId) {
+      await prisma.company.delete({ where: { id: user.companyId } });
+    } else {
+      await prisma.user.delete({ where: { id: user.id } });
+    }
   }
 }
 

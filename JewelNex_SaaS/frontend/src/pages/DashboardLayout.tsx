@@ -4,8 +4,10 @@ import {
   Gem, LayoutDashboard, Package, FileText, Users,
   Settings, LogOut, BarChart3, Menu, X, ChevronRight, MapPin,
   Bell, Search, Sparkles, ArrowLeftRight, Receipt, ClipboardList, Activity, Building2,
+  Sun, Moon,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useThemeStore } from '../store/themeStore';
 import { toast } from 'sonner';
 
 const navGroups = [
@@ -47,6 +49,7 @@ const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { theme, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -214,6 +217,15 @@ const DashboardLayout: React.FC = () => {
             <button className="relative p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-xl border border-transparent hover:border-dark-700 transition-all">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-gold-400 rounded-full" />
+            </button>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-xl border border-transparent hover:border-dark-700 transition-all flex items-center justify-center"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5 text-gold-400" /> : <Moon className="w-5 h-5 text-gold-600" />}
             </button>
 
             {/* User badge */}

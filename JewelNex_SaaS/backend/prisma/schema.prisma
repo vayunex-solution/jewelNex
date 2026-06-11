@@ -6,6 +6,21 @@ generator client {
   binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  users     User[]
+  products  Product[]
+  locations Location[]
+  customers Customer[]
+  invoices  Invoice[]
+  sequences Sequence[]
+  settings  CompanySettings?
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -33,6 +48,8 @@ model User {
   password                String
   roleId                  String
   role                    Role      @relation(fields: [roleId], references: [id])
+  companyId               String?
+  company                 Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   isVerified              Boolean   @default(false)
   verificationToken       String?
   verificationTokenExpiry DateTime?
@@ -73,6 +90,8 @@ model Location {
   id        String   @id @default(uuid())
   name      String
   type      String   @default("WAREHOUSE") // WAREHOUSE, STORE, SUPPLIER, CUSTOMER
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -88,6 +107,8 @@ model Product {
   id          String  @id @default(uuid())
   sku         String  @unique
   name        String
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   description String?
 
   // Weight Structure
@@ -237,6 +258,8 @@ enum PaymentMode {
 model Customer {
   id        String   @id @default(uuid())
   name      String
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   email     String?
   phone     String?  @unique
   gstNumber String?
@@ -257,6 +280,8 @@ model Invoice {
   invoiceNumber String        @unique // Format: FY-LOC-SEQ (e.g., 2026-HQ-0001)
   type          InvoiceType
   status        InvoiceStatus @default(DRAFT)
+  companyId     String?
+  company       Company?      @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id])
@@ -420,6 +445,8 @@ model Sequence {
   id          String   @id @default(uuid())
   type        String   @unique // e.g., 'SALE_INVOICE_FY26', 'PURCHASE_INVOICE_FY26'
   prefix      String
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   lastNumber  Int      @default(0)
   updatedAt   DateTime @updatedAt
 
@@ -428,7 +455,9 @@ model Sequence {
 
 // Singleton company settings row (id = 'default')
 model CompanySettings {
-  id             String   @id @default("default")
+  id             String   @id @default(uuid())
+  companyId      String?  @unique
+  company        Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name           String   @default("My Jewellery Shop")
   tagline        String?
   gstin          String?

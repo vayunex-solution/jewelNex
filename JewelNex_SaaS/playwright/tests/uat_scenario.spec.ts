@@ -167,7 +167,10 @@ test.describe('JewelNex SaaS — Final E2E UAT Acceptance Testing', () => {
     if (!authDataStr) throw new Error('Failed to find auth storage');
     const authData = JSON.parse(authDataStr);
     const token = authData.state.token;
-    const dbUser = authData.state.user;
+
+    // Fetch user directly from DB to get the reliable companyId
+    const dbUser = await prisma.user.findUnique({ where: { email: TEST_EMAIL } });
+    if (!dbUser) throw new Error('User not found in DB after registration');
 
     const requestHeaders = {
       'Authorization': `Bearer ${token}`,
@@ -180,25 +183,14 @@ test.describe('JewelNex SaaS — Final E2E UAT Acceptance Testing', () => {
         name: 'UAT Main Showroom',
         type: 'STORE',
         isActive: true,
+        companyId: dbUser.companyId,
       }
     });
 
     // Seed UAT Company Settings for invoice header branding
-    await prisma.companySettings.upsert({
-      where: { id: 'default' },
-      update: {
-        name: 'JewelNex UAT Shop',
-        tagline: 'Precision Auditing v1.0',
-        gstin: '24UATIN1111U1Z1',
-        address: '505, Quality Assurance Road',
-        city: 'Surat',
-        state: 'Gujarat',
-        pincode: '395007',
-        phone: '+91 99999 99999',
-        gstType: 'CGST_SGST',
-      },
-      create: {
-        id: 'default',
+    await prisma.companySettings.update({
+      where: { companyId: dbUser.companyId },
+      data: {
         name: 'JewelNex UAT Shop',
         tagline: 'Precision Auditing v1.0',
         gstin: '24UATIN1111U1Z1',

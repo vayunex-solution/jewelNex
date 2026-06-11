@@ -4,6 +4,36 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --text-white: #ffffff;
+    --text-dark-50: #f8f8f8;
+    --text-dark-100: #e8e8e8;
+    --text-dark-200: #c8c8c8;
+    --text-dark-300: #a0a0a0;
+    --text-dark-400: #707070;
+    --text-dark-500: #404040;
+    --bg-dark-600: #2a2a2a;
+    --bg-dark-700: #1e1e1e;
+    --bg-dark-800: #141414;
+    --bg-dark-900: #0a0a0a;
+    --bg-dark-950: #050505;
+  }
+
+  .light {
+    --text-white: #111827;
+    --text-dark-50: #1f2937;
+    --text-dark-100: #374151;
+    --text-dark-200: #4b5563;
+    --text-dark-300: #6b7280;
+    --text-dark-400: #9ca3af;
+    --text-dark-500: #d1d5db;
+    --bg-dark-600: #f3f4f6;
+    --bg-dark-700: #e5e7eb;
+    --bg-dark-800: #f9fafb;
+    --bg-dark-900: #ffffff;
+    --bg-dark-950: #f3f4f6;
+  }
+
   * { @apply box-border; }
   html { @apply scroll-smooth; }
   body {
@@ -74,7 +104,14 @@
 
   /* ─── Premium Glass ──────────────────── */
   .glass {
-    @apply bg-dark-900/40 backdrop-blur-xl border border-white/5;
+    background-color: rgba(10, 10, 10, 0.4);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .light .glass {
+    background-color: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(17, 24, 39, 0.05);
   }
 
   .premium-border {

@@ -5,7 +5,12 @@ const inventory_service_1 = require("../services/inventory.service");
 class InventoryController {
     static async createProduct(req, res) {
         try {
-            const product = await inventory_service_1.InventoryService.createProduct(req.body);
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            if (!companyId) {
+                return res.status(401).json({ success: false, message: 'Unauthorized: No company associated.' });
+            }
+            const product = await inventory_service_1.InventoryService.createProduct(req.body, companyId);
             res.status(201).json({ success: true, data: product });
         }
         catch (error) {
@@ -16,7 +21,9 @@ class InventoryController {
         try {
             const skip = parseInt(req.query.skip) || 0;
             const take = parseInt(req.query.take) || 50;
-            const products = await inventory_service_1.InventoryService.getProducts(skip, take);
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            const products = await inventory_service_1.InventoryService.getProducts(skip, take, companyId);
             res.status(200).json({ success: true, data: products });
         }
         catch (error) {
@@ -27,7 +34,9 @@ class InventoryController {
         try {
             const skip = parseInt(req.query.skip) || 0;
             const take = parseInt(req.query.take) || 100;
-            const movements = await inventory_service_1.InventoryService.getMovements(skip, take);
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            const movements = await inventory_service_1.InventoryService.getMovements(skip, take, companyId);
             res.status(200).json({ success: true, data: movements });
         }
         catch (error) {
@@ -71,7 +80,9 @@ class InventoryController {
     }
     static async getDashboardStats(req, res) {
         try {
-            const stats = await inventory_service_1.InventoryService.getDashboardStats();
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            const stats = await inventory_service_1.InventoryService.getDashboardStats(companyId);
             res.status(200).json({ success: true, data: stats });
         }
         catch (error) {

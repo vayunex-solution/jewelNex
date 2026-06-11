@@ -3,10 +3,11 @@ export declare class InventoryService {
     /**
      * Prisma CRUD: Create a new product
      */
-    static createProduct(data: any): Promise<{
+    static createProduct(data: any, companyId: string): Promise<{
         id: string;
         sku: string;
         name: string;
+        companyId: string | null;
         description: string | null;
         grossWeight: Prisma.Decimal;
         stoneWeight: Prisma.Decimal;
@@ -22,7 +23,7 @@ export declare class InventoryService {
     /**
      * Prisma CRUD: Get all products
      */
-    static getProducts(skip?: number, take?: number): Promise<({
+    static getProducts(skip?: number, take?: number, companyId?: string): Promise<({
         lots: {
             id: string;
             productId: string;
@@ -39,6 +40,7 @@ export declare class InventoryService {
         id: string;
         sku: string;
         name: string;
+        companyId: string | null;
         description: string | null;
         grossWeight: Prisma.Decimal;
         stoneWeight: Prisma.Decimal;
@@ -54,7 +56,7 @@ export declare class InventoryService {
     /**
      * Prisma CRUD: Get stock ledger audit trail
      */
-    static getMovements(skip?: number, take?: number): Promise<({
+    static getMovements(skip?: number, take?: number, companyId?: string): Promise<({
         user: {
             name: string;
             email: string;
@@ -63,6 +65,7 @@ export declare class InventoryService {
             id: string;
             sku: string;
             name: string;
+            companyId: string | null;
             description: string | null;
             grossWeight: Prisma.Decimal;
             stoneWeight: Prisma.Decimal;
@@ -147,7 +150,7 @@ export declare class InventoryService {
     /**
      * Dashboard Stats: Calculate summary metrics
      */
-    static getDashboardStats(): Promise<{
+    static getDashboardStats(companyId?: string): Promise<{
         totalProducts: number;
         totalQuantity: number;
         totalWeight: number | Prisma.Decimal;
@@ -179,6 +182,7 @@ export declare class InventoryService {
                 id: string;
                 sku: string;
                 name: string;
+                companyId: string | null;
                 description: string | null;
                 grossWeight: Prisma.Decimal;
                 stoneWeight: Prisma.Decimal;

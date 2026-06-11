@@ -11,8 +11,13 @@ export class InvoiceController {
     try {
       const dto: CreateInvoiceDTO = req.body;
       const userId = req.user!.userId; // From authenticate middleware
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized: No company associated.' });
+      }
 
-      const invoice = await InvoiceService.postInvoice(dto, userId);
+      const invoice = await InvoiceService.postInvoice(dto, userId, companyId);
 
       res.status(201).json({
         success: true,
@@ -41,8 +46,13 @@ export class InvoiceController {
     try {
       const dto: CreateInvoiceDTO = req.body;
       const userId = req.user!.userId;
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized: No company associated.' });
+      }
 
-      const invoice = await InvoiceService.saveDraft(dto, userId);
+      const invoice = await InvoiceService.saveDraft(dto, userId, companyId);
 
       res.status(201).json({
         success: true,
@@ -92,7 +102,9 @@ export class InvoiceController {
 
   static async listDrafts(req: Request, res: Response, next: NextFunction) {
     try {
-      const drafts = await InvoiceService.listDrafts();
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      const drafts = await InvoiceService.listDrafts(companyId);
 
       res.status(200).json({
         success: true,
@@ -107,8 +119,11 @@ export class InvoiceController {
     try {
       const { type, start, end, page = '1', limit = '20' } = req.query as Record<string, string>;
       const skip = (parseInt(page) - 1) * parseInt(limit);
+      // @ts-ignore
+      const companyId = req.user?.companyId;
 
       const where: any = { status: { not: 'DRAFT' } };
+      if (companyId) where.companyId = companyId;
       if (type) where.type = type;
       if (start || end) {
         where.createdAt = {};
@@ -140,8 +155,10 @@ export class InvoiceController {
   static async getInvoiceById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params as Record<string, string>;
+      // @ts-ignore
+      const companyId = req.user?.companyId;
       const invoice = await prisma.invoice.findUnique({
-        where: { id },
+        where: companyId ? { id, companyId } : { id },
         include: { customer: true, items: { include: { product: true } }, payments: true }
       });
       if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });

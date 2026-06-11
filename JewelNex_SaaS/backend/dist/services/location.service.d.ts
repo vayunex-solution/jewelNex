@@ -2,34 +2,38 @@ export declare class LocationService {
     static createLocation(data: {
         name: string;
         type: string;
-    }): Promise<{
+    }, companyId: string): Promise<{
         id: string;
         name: string;
         type: string;
+        companyId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
     }>;
-    static getLocations(): Promise<{
+    static getLocations(companyId?: string): Promise<{
         id: string;
         name: string;
         type: string;
+        companyId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
     }[]>;
-    static updateLocation(id: string, data: any): Promise<{
+    static updateLocation(id: string, data: any, companyId?: string): Promise<{
         id: string;
         name: string;
         type: string;
+        companyId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
     }>;
-    static deleteLocation(id: string): Promise<{
+    static deleteLocation(id: string, companyId?: string): Promise<{
         id: string;
         name: string;
         type: string;
+        companyId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;

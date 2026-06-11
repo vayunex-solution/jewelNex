@@ -5,7 +5,12 @@ const customer_service_1 = require("../services/customer.service");
 class CustomerController {
     static async createCustomer(req, res, next) {
         try {
-            const customer = await customer_service_1.CustomerService.createCustomer(req.body);
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            if (!companyId) {
+                return res.status(401).json({ success: false, message: 'Unauthorized: No company associated.' });
+            }
+            const customer = await customer_service_1.CustomerService.createCustomer(req.body, companyId);
             res.status(201).json({ success: true, data: customer });
         }
         catch (error) {
@@ -15,7 +20,9 @@ class CustomerController {
     static async searchCustomers(req, res, next) {
         try {
             const { q } = req.query;
-            const customers = await customer_service_1.CustomerService.searchCustomers(String(q || ''));
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            const customers = await customer_service_1.CustomerService.searchCustomers(String(q || ''), companyId);
             res.status(200).json({ success: true, data: customers });
         }
         catch (error) {

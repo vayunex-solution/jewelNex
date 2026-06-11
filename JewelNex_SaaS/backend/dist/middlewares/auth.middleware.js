@@ -25,13 +25,13 @@ const authenticate = async (req, res, next) => {
         // Verify user still exists and is active
         const user = await database_1.default.user.findUnique({
             where: { id: decoded.id },
-            select: { id: true, email: true, isActive: true, role: { select: { name: true } } },
+            select: { id: true, email: true, isActive: true, companyId: true, role: { select: { name: true } } },
         });
         if (!user || !user.isActive) {
             res.status(401).json((0, apiResponse_1.errorResponse)('Unauthorized: Account not found or inactive'));
             return;
         }
-        req.user = { id: user.id, userId: user.id, email: user.email, role: user.role.name };
+        req.user = { id: user.id, userId: user.id, email: user.email, role: user.role.name, companyId: user.companyId };
         next();
     }
     catch {

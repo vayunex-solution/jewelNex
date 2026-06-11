@@ -4,7 +4,12 @@ import { CustomerService } from '../services/customer.service';
 export class CustomerController {
   static async createCustomer(req: Request, res: Response, next: NextFunction) {
     try {
-      const customer = await CustomerService.createCustomer(req.body);
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized: No company associated.' });
+      }
+      const customer = await CustomerService.createCustomer(req.body, companyId);
       res.status(201).json({ success: true, data: customer });
     } catch (error) {
       next(error);
@@ -14,7 +19,9 @@ export class CustomerController {
   static async searchCustomers(req: Request, res: Response, next: NextFunction) {
     try {
       const { q } = req.query;
-      const customers = await CustomerService.searchCustomers(String(q || ''));
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      const customers = await CustomerService.searchCustomers(String(q || ''), companyId);
       res.status(200).json({ success: true, data: customers });
     } catch (error) {
       next(error);

@@ -2,7 +2,7 @@ import prisma from '../config/database';
 import { AccountingService } from './accounting.service';
 
 export class CustomerService {
-  static async createCustomer(data: { name: string; phone?: string; email?: string; gstNumber?: string; address?: string }) {
+  static async createCustomer(data: { name: string; phone?: string; email?: string; gstNumber?: string; address?: string }, companyId: string) {
     return await prisma.$transaction(async (tx) => {
       const customer = await tx.customer.create({
         data: {
@@ -10,7 +10,8 @@ export class CustomerService {
           phone: data.phone,
           email: data.email,
           gstNumber: data.gstNumber,
-          address: data.address
+          address: data.address,
+          companyId
         }
       });
 
@@ -21,9 +22,10 @@ export class CustomerService {
     });
   }
 
-  static async searchCustomers(query: string) {
+  static async searchCustomers(query: string, companyId?: string) {
     return await prisma.customer.findMany({
       where: {
+        companyId: companyId || undefined,
         OR: [
           { name: { contains: query } },
           { phone: { contains: query } }

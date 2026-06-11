@@ -37,15 +37,16 @@ export class InvoiceService {
    * Generates a sequential, location/financial-year aware invoice number.
    * Format: FY26-HQ-0001
    */
-  static async generateInvoiceNumber(type: InvoiceType): Promise<string> {
+  static async generateInvoiceNumber(type: InvoiceType, companyId: string): Promise<string> {
     const year = new Date().getFullYear().toString().slice(-2);
-    const prefix = type === 'SALE' ? `S${year}` : type === 'PURCHASE' ? `P${year}` : `E${year}`;
-    const seqType = `${type}_INVOICE_FY${year}`;
+    const companySuffix = companyId.slice(-4).toUpperCase();
+    const prefix = type === 'SALE' ? `S${year}-${companySuffix}` : type === 'PURCHASE' ? `P${year}-${companySuffix}` : `E${year}-${companySuffix}`;
+    const seqType = `${type}_INVOICE_FY${year}_${companyId}`;
 
     const lastNumber = await prisma.$transaction(async (tx) => {
       // 1. Lock sequence row for update if it exists
       const seqRecords = await tx.$queryRaw<any[]>`
-        SELECT id, lastNumber FROM sequences WHERE type = ${seqType} FOR UPDATE
+        SELECT id, lastNumber FROM sequences WHERE type = ${seqType} AND companyId = ${companyId} FOR UPDATE
       `;
 
       if (seqRecords && seqRecords.length > 0) {
@@ -61,14 +62,14 @@ export class InvoiceService {
         try {
           const id = uuidv4();
           await tx.$executeRaw`
-            INSERT INTO sequences (id, type, prefix, lastNumber, updatedAt)
-            VALUES (${id}, ${seqType}, ${prefix}, 1, NOW(3))
+            INSERT INTO sequences (id, type, prefix, lastNumber, companyId, updatedAt)
+            VALUES (${id}, ${seqType}, ${prefix}, 1, ${companyId}, NOW(3))
           `;
           return 1;
         } catch (insertErr: any) {
           // If insert failed due to duplicate key, select it with lock and increment
           const retryRecords = await tx.$queryRaw<any[]>`
-            SELECT id, lastNumber FROM sequences WHERE type = ${seqType} FOR UPDATE
+            SELECT id, lastNumber FROM sequences WHERE type = ${seqType} AND companyId = ${companyId} FOR UPDATE
           `;
           if (retryRecords && retryRecords.length > 0) {
             const retrySeq = retryRecords[0];
@@ -90,9 +91,9 @@ export class InvoiceService {
   /**
    * Posts an invoice ATOMICALLY. Uses JSON and Stored Procedure for absolute integrity.
    */
-  static async postInvoice(dto: CreateInvoiceDTO, userId: string) {
+  static async postInvoice(dto: CreateInvoiceDTO, userId: string, companyId: string) {
     const invoiceId = uuidv4();
-    const invoiceNumber = await this.generateInvoiceNumber(dto.type);
+    const invoiceNumber = await this.generateInvoiceNumber(dto.type, companyId);
 
     // Pre-process items to ensure valid JSON structure for SP
     const itemsJson = dto.items.map(item => ({
@@ -123,6 +124,12 @@ export class InvoiceService {
             ${paymentsJson ? JSON.stringify(paymentsJson) : null}
           )
         `;
+
+        // Update the invoice with the correct companyId atomically inside the transaction
+        await tx.invoice.update({
+          where: { id: invoiceId },
+          data: { companyId }
+        });
 
         // 2. Generate double-entry vouchers
         await AccountingService.generateInvoiceVoucher(invoiceId, tx);
@@ -163,9 +170,9 @@ export class InvoiceService {
   /**
    * Saves a new invoice as a DRAFT. No stock locking or deductions occur.
    */
-  static async saveDraft(dto: CreateInvoiceDTO, userId: string) {
+  static async saveDraft(dto: CreateInvoiceDTO, userId: string, companyId: string) {
     const invoiceId = uuidv4();
-    const invoiceNumber = await this.generateInvoiceNumber(dto.type);
+    const invoiceNumber = await this.generateInvoiceNumber(dto.type, companyId);
 
     const invoice = await prisma.invoice.create({
       data: {
@@ -173,6 +180,7 @@ export class InvoiceService {
         invoiceNumber,
         type: dto.type,
         status: 'DRAFT',
+        companyId,
         customerId: dto.customerId,
         subTotal: dto.subTotal,
         taxTotal: dto.taxTotal,
@@ -296,9 +304,9 @@ export class InvoiceService {
   /**
    * Lists all draft invoices.
    */
-  static async listDrafts() {
+  static async listDrafts(companyId?: string) {
     return await prisma.invoice.findMany({
-      where: { status: 'DRAFT' },
+      where: { status: 'DRAFT', companyId: companyId || undefined },
       include: { items: true, customer: true },
       orderBy: { createdAt: 'desc' }
     });

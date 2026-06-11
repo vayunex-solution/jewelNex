@@ -10,6 +10,7 @@ export interface VoucherDTO {
     reference?: string;
     narration?: string;
     entries: VoucherEntryDTO[];
+    companyId?: string | null;
 }
 export declare class AccountingService {
     /**
@@ -19,7 +20,7 @@ export declare class AccountingService {
     /**
      * Generates a unique, transaction-safe voucher number.
      */
-    static generateVoucherNumber(type: VoucherType, tx: any): Promise<string>;
+    static generateVoucherNumber(type: VoucherType, companyId: string | null | undefined, tx: any): Promise<string>;
     /**
      * Creates a journal Voucher atomically. Enforces double-entry balance check.
      */

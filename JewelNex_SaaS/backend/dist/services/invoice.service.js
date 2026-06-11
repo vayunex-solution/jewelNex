@@ -12,14 +12,15 @@ class InvoiceService {
      * Generates a sequential, location/financial-year aware invoice number.
      * Format: FY26-HQ-0001
      */
-    static async generateInvoiceNumber(type) {
+    static async generateInvoiceNumber(type, companyId) {
         const year = new Date().getFullYear().toString().slice(-2);
-        const prefix = type === 'SALE' ? `S${year}` : type === 'PURCHASE' ? `P${year}` : `E${year}`;
-        const seqType = `${type}_INVOICE_FY${year}`;
+        const companySuffix = companyId.slice(-4).toUpperCase();
+        const prefix = type === 'SALE' ? `S${year}-${companySuffix}` : type === 'PURCHASE' ? `P${year}-${companySuffix}` : `E${year}-${companySuffix}`;
+        const seqType = `${type}_INVOICE_FY${year}_${companyId}`;
         const lastNumber = await database_1.default.$transaction(async (tx) => {
             // 1. Lock sequence row for update if it exists
             const seqRecords = await tx.$queryRaw `
-        SELECT id, lastNumber FROM sequences WHERE type = ${seqType} FOR UPDATE
+        SELECT id, lastNumber FROM sequences WHERE type = ${seqType} AND companyId = ${companyId} FOR UPDATE
       `;
             if (seqRecords && seqRecords.length > 0) {
                 const seq = seqRecords[0];
@@ -35,15 +36,15 @@ class InvoiceService {
                 try {
                     const id = (0, uuid_1.v4)();
                     await tx.$executeRaw `
-            INSERT INTO sequences (id, type, prefix, lastNumber, updatedAt)
-            VALUES (${id}, ${seqType}, ${prefix}, 1, NOW(3))
+            INSERT INTO sequences (id, type, prefix, lastNumber, companyId, updatedAt)
+            VALUES (${id}, ${seqType}, ${prefix}, 1, ${companyId}, NOW(3))
           `;
                     return 1;
                 }
                 catch (insertErr) {
                     // If insert failed due to duplicate key, select it with lock and increment
                     const retryRecords = await tx.$queryRaw `
-            SELECT id, lastNumber FROM sequences WHERE type = ${seqType} FOR UPDATE
+            SELECT id, lastNumber FROM sequences WHERE type = ${seqType} AND companyId = ${companyId} FOR UPDATE
           `;
                     if (retryRecords && retryRecords.length > 0) {
                         const retrySeq = retryRecords[0];
@@ -63,9 +64,9 @@ class InvoiceService {
     /**
      * Posts an invoice ATOMICALLY. Uses JSON and Stored Procedure for absolute integrity.
      */
-    static async postInvoice(dto, userId) {
+    static async postInvoice(dto, userId, companyId) {
         const invoiceId = (0, uuid_1.v4)();
-        const invoiceNumber = await this.generateInvoiceNumber(dto.type);
+        const invoiceNumber = await this.generateInvoiceNumber(dto.type, companyId);
         // Pre-process items to ensure valid JSON structure for SP
         const itemsJson = dto.items.map(item => ({
             id: (0, uuid_1.v4)(),
@@ -93,6 +94,11 @@ class InvoiceService {
             ${paymentsJson ? JSON.stringify(paymentsJson) : null}
           )
         `;
+                // Update the invoice with the correct companyId atomically inside the transaction
+                await tx.invoice.update({
+                    where: { id: invoiceId },
+                    data: { companyId }
+                });
                 // 2. Generate double-entry vouchers
                 await accounting_service_1.AccountingService.generateInvoiceVoucher(invoiceId, tx);
                 // 3. Fetch the created invoice to return
@@ -129,15 +135,16 @@ class InvoiceService {
     /**
      * Saves a new invoice as a DRAFT. No stock locking or deductions occur.
      */
-    static async saveDraft(dto, userId) {
+    static async saveDraft(dto, userId, companyId) {
         const invoiceId = (0, uuid_1.v4)();
-        const invoiceNumber = await this.generateInvoiceNumber(dto.type);
+        const invoiceNumber = await this.generateInvoiceNumber(dto.type, companyId);
         const invoice = await database_1.default.invoice.create({
             data: {
                 id: invoiceId,
                 invoiceNumber,
                 type: dto.type,
                 status: 'DRAFT',
+                companyId,
                 customerId: dto.customerId,
                 subTotal: dto.subTotal,
                 taxTotal: dto.taxTotal,
@@ -250,9 +257,9 @@ class InvoiceService {
     /**
      * Lists all draft invoices.
      */
-    static async listDrafts() {
+    static async listDrafts(companyId) {
         return await database_1.default.invoice.findMany({
-            where: { status: 'DRAFT' },
+            where: { status: 'DRAFT', companyId: companyId || undefined },
             include: { items: true, customer: true },
             orderBy: { createdAt: 'desc' }
         });

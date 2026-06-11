@@ -24,6 +24,7 @@ const toUserDto = (user) => ({
     email: user.email,
     role: user.role.name,
     isVerified: user.isVerified,
+    companyId: user.companyId,
 });
 // Custom Error class to carry codes
 class AuthError extends Error {
@@ -63,12 +64,26 @@ const signupService = async (data) => {
     }
     const verificationToken = (0, tokenGenerator_1.generateOTP)();
     const verificationTokenExpiry = (0, tokenGenerator_1.generateTokenExpiry)(24);
+    // Automatically create a new Company for the new admin registration
+    const company = await database_1.default.company.create({
+        data: {
+            name: `${data.name}'s Store`,
+        },
+    });
+    // Seed default settings for the company
+    await database_1.default.companySettings.create({
+        data: {
+            companyId: company.id,
+            name: `${data.name}'s Store`,
+        },
+    });
     const user = await database_1.default.user.create({
         data: {
             name: data.name,
             email: data.email,
             password: hashedPassword,
             roleId: role.id,
+            companyId: company.id,
             verificationToken,
             verificationTokenExpiry,
         },
@@ -174,7 +189,7 @@ const loginService = async (data) => {
     if (!isMatch) {
         throw new AuthError('Invalid email or password');
     }
-    const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role.name }, env_1.env.JWT_SECRET, { expiresIn: env_1.env.JWT_EXPIRES_IN });
+    const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role.name, companyId: user.companyId }, env_1.env.JWT_SECRET, { expiresIn: env_1.env.JWT_EXPIRES_IN });
     await database_1.default.activityLog.create({
         data: { userId: user.id, action: 'LOGIN' },
     });

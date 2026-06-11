@@ -13,7 +13,12 @@ class InvoiceController {
         try {
             const dto = req.body;
             const userId = req.user.userId; // From authenticate middleware
-            const invoice = await invoice_service_1.InvoiceService.postInvoice(dto, userId);
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            if (!companyId) {
+                return res.status(401).json({ success: false, message: 'Unauthorized: No company associated.' });
+            }
+            const invoice = await invoice_service_1.InvoiceService.postInvoice(dto, userId, companyId);
             res.status(201).json({
                 success: true,
                 message: 'Invoice posted successfully',
@@ -39,7 +44,12 @@ class InvoiceController {
         try {
             const dto = req.body;
             const userId = req.user.userId;
-            const invoice = await invoice_service_1.InvoiceService.saveDraft(dto, userId);
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            if (!companyId) {
+                return res.status(401).json({ success: false, message: 'Unauthorized: No company associated.' });
+            }
+            const invoice = await invoice_service_1.InvoiceService.saveDraft(dto, userId, companyId);
             res.status(201).json({
                 success: true,
                 message: 'Draft invoice saved successfully',
@@ -84,7 +94,9 @@ class InvoiceController {
     }
     static async listDrafts(req, res, next) {
         try {
-            const drafts = await invoice_service_1.InvoiceService.listDrafts();
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            const drafts = await invoice_service_1.InvoiceService.listDrafts(companyId);
             res.status(200).json({
                 success: true,
                 data: drafts
@@ -98,7 +110,11 @@ class InvoiceController {
         try {
             const { type, start, end, page = '1', limit = '20' } = req.query;
             const skip = (parseInt(page) - 1) * parseInt(limit);
+            // @ts-ignore
+            const companyId = req.user?.companyId;
             const where = { status: { not: 'DRAFT' } };
+            if (companyId)
+                where.companyId = companyId;
             if (type)
                 where.type = type;
             if (start || end) {
@@ -131,8 +147,10 @@ class InvoiceController {
     static async getInvoiceById(req, res, next) {
         try {
             const { id } = req.params;
+            // @ts-ignore
+            const companyId = req.user?.companyId;
             const invoice = await database_1.default.invoice.findUnique({
-                where: { id },
+                where: companyId ? { id, companyId } : { id },
                 include: { customer: true, items: { include: { product: true } }, payments: true }
             });
             if (!invoice)

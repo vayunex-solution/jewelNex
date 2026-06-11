@@ -25,12 +25,13 @@ import type {
 const SALT_ROUNDS = 12;
 
 // Helper: Map user+role to safe UserResponseDto
-const toUserDto = (user: { id: string; name: string; email: string; isVerified: boolean; role: { name: string } }): UserResponseDto => ({
+const toUserDto = (user: { id: string; name: string; email: string; isVerified: boolean; role: { name: string }; companyId: string | null }): UserResponseDto => ({
   id: user.id,
   name: user.name,
   email: user.email,
   role: user.role.name,
   isVerified: user.isVerified,
+  companyId: user.companyId,
 });
 
 // Custom Error class to carry codes
@@ -81,12 +82,28 @@ export const signupService = async (data: SignupRequestDto): Promise<{ message: 
   const verificationToken = generateOTP();
   const verificationTokenExpiry = generateTokenExpiry(24);
 
+  // Automatically create a new Company for the new admin registration
+  const company = await prisma.company.create({
+    data: {
+      name: `${data.name}'s Store`,
+    },
+  });
+
+  // Seed default settings for the company
+  await prisma.companySettings.create({
+    data: {
+      companyId: company.id,
+      name: `${data.name}'s Store`,
+    },
+  });
+
   const user = await prisma.user.create({
     data: {
       name: data.name,
       email: data.email,
       password: hashedPassword,
       roleId: role.id,
+      companyId: company.id,
       verificationToken,
       verificationTokenExpiry,
     },
@@ -212,7 +229,7 @@ export const loginService = async (data: LoginRequestDto): Promise<LoginResponse
   }
 
   const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role.name },
+    { id: user.id, email: user.email, role: user.role.name, companyId: user.companyId },
     env.JWT_SECRET,
     { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
   );

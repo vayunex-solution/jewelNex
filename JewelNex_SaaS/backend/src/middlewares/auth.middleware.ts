@@ -13,6 +13,7 @@ export interface AuthRequest extends Request {
     userId: string;
     email: string;
     role: string;
+    companyId?: string | null;
   };
 }
 
@@ -44,7 +45,7 @@ export const authenticate = async (
     // Verify user still exists and is active
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, email: true, isActive: true, role: { select: { name: true } } },
+      select: { id: true, email: true, isActive: true, companyId: true, role: { select: { name: true } } },
     });
 
     if (!user || !user.isActive) {
@@ -52,7 +53,7 @@ export const authenticate = async (
       return;
     }
 
-    req.user = { id: user.id, userId: user.id, email: user.email, role: user.role.name };
+    req.user = { id: user.id, userId: user.id, email: user.email, role: user.role.name, companyId: user.companyId };
     next();
   } catch {
     res.status(401).json(errorResponse('Unauthorized: Invalid or expired token'));

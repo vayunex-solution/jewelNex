@@ -5,6 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        white: 'var(--text-white)',
         gold: {
           50: '#fefce8',
           100: '#fef9c3',
@@ -18,17 +19,17 @@ export default {
           900: '#4a3606',
         },
         dark: {
-          50: '#f8f8f8',
-          100: '#e8e8e8',
-          200: '#c8c8c8',
-          300: '#a0a0a0',
-          400: '#707070',
-          500: '#404040',
-          600: '#2a2a2a',
-          700: '#1e1e1e',
-          800: '#141414',
-          900: '#0a0a0a',
-          950: '#050505',
+          50: 'var(--text-dark-50)',
+          100: 'var(--text-dark-100)',
+          200: 'var(--text-dark-200)',
+          300: 'var(--text-dark-300)',
+          400: 'var(--text-dark-400)',
+          500: 'var(--text-dark-500)',
+          600: 'var(--bg-dark-600)',
+          700: 'var(--bg-dark-700)',
+          800: 'var(--bg-dark-800)',
+          900: 'var(--bg-dark-900)',
+          950: 'var(--bg-dark-950)',
         },
       },
       fontFamily: {

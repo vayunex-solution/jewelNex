@@ -7,7 +7,7 @@ exports.CustomerService = void 0;
 const database_1 = __importDefault(require("../config/database"));
 const accounting_service_1 = require("./accounting.service");
 class CustomerService {
-    static async createCustomer(data) {
+    static async createCustomer(data, companyId) {
         return await database_1.default.$transaction(async (tx) => {
             const customer = await tx.customer.create({
                 data: {
@@ -15,7 +15,8 @@ class CustomerService {
                     phone: data.phone,
                     email: data.email,
                     gstNumber: data.gstNumber,
-                    address: data.address
+                    address: data.address,
+                    companyId
                 }
             });
             // Automatically register Customer's AccountHead
@@ -23,9 +24,10 @@ class CustomerService {
             return customer;
         });
     }
-    static async searchCustomers(query) {
+    static async searchCustomers(query, companyId) {
         return await database_1.default.customer.findMany({
             where: {
+                companyId: companyId || undefined,
                 OR: [
                     { name: { contains: query } },
                     { phone: { contains: query } }

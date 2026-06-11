@@ -28,6 +28,7 @@ export interface UserResponseDto {
     email: string;
     role: string;
     isVerified: boolean;
+    companyId: string | null;
 }
 export interface LoginResponseDto {
     token: string;

@@ -14,6 +14,12 @@ vi.mock('../src/config/database', () => ({
       findFirst: vi.fn(),
       create: vi.fn(),
     },
+    company: {
+      create: vi.fn(),
+    },
+    companySettings: {
+      create: vi.fn(),
+    },
     activityLog: {
       create: vi.fn(),
     },
@@ -30,8 +36,8 @@ describe('Auth Service', () => {
   });
 
   describe('signupService', () => {
-    it('should throw error if user already exists', async () => {
-      (prisma.user.findUnique as any).mockResolvedValue({ id: '1' });
+    it('should throw error if user already exists and is verified', async () => {
+      (prisma.user.findUnique as any).mockResolvedValue({ id: '1', isVerified: true });
 
       await expect(authService.signupService({
         name: 'Test',
@@ -40,9 +46,26 @@ describe('Auth Service', () => {
       })).rejects.toThrow('An account with this email already exists');
     });
 
+    it('should return resend message if user exists but is not verified', async () => {
+      (prisma.user.findUnique as any).mockResolvedValue({ id: '1', name: 'Test', isVerified: false });
+      (prisma.user.update as any).mockResolvedValue({ id: '1' });
+
+      const result = await authService.signupService({
+        name: 'Test',
+        email: 'exists@test.com',
+        password: 'password'
+      });
+
+      expect(result.message).toContain('Account exists but is not verified');
+    });
+
     it('should create user and send email on valid signup', async () => {
       (prisma.user.findUnique as any).mockResolvedValue(null);
       (prisma.role.findFirst as any).mockResolvedValue({ id: 'role-1' });
+      // @ts-ignore
+      (prisma.company.create as any).mockResolvedValue({ id: 'company-1', name: "Test's Store" });
+      // @ts-ignore
+      (prisma.companySettings.create as any).mockResolvedValue({ id: 'settings-1' });
       (prisma.user.create as any).mockResolvedValue({ id: 'user-1', name: 'Test', email: 'test@test.com' });
 
       const result = await authService.signupService({

@@ -5,9 +5,10 @@ export declare class CustomerService {
         email?: string;
         gstNumber?: string;
         address?: string;
-    }): Promise<{
+    }, companyId: string): Promise<{
         id: string;
         name: string;
+        companyId: string | null;
         email: string | null;
         phone: string | null;
         gstNumber: string | null;
@@ -17,9 +18,10 @@ export declare class CustomerService {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    static searchCustomers(query: string): Promise<{
+    static searchCustomers(query: string, companyId?: string): Promise<{
         id: string;
         name: string;
+        companyId: string | null;
         email: string | null;
         phone: string | null;
         gstNumber: string | null;

@@ -4,7 +4,12 @@ import { LocationService } from '../services/location.service';
 export class LocationController {
   static async createLocation(req: Request, res: Response) {
     try {
-      const location = await LocationService.createLocation(req.body);
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized: No company associated.' });
+      }
+      const location = await LocationService.createLocation(req.body, companyId);
       res.status(201).json({ success: true, data: location });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
@@ -13,7 +18,9 @@ export class LocationController {
 
   static async getLocations(req: Request, res: Response) {
     try {
-      const locations = await LocationService.getLocations();
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      const locations = await LocationService.getLocations(companyId);
       res.status(200).json({ success: true, data: locations });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
@@ -23,7 +30,9 @@ export class LocationController {
   static async updateLocation(req: Request, res: Response) {
     try {
       const { id } = req.params as Record<string, string>;
-      const location = await LocationService.updateLocation(id, req.body);
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      const location = await LocationService.updateLocation(id, req.body, companyId);
       res.status(200).json({ success: true, data: location });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
@@ -33,7 +42,9 @@ export class LocationController {
   static async deleteLocation(req: Request, res: Response) {
     try {
       const { id } = req.params as Record<string, string>;
-      await LocationService.deleteLocation(id);
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      await LocationService.deleteLocation(id, companyId);
       res.status(200).json({ success: true, message: 'Location deactivated' });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
