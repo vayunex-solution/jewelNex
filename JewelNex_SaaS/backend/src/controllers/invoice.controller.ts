@@ -123,7 +123,7 @@ export class InvoiceController {
       const companyId = req.user?.companyId;
 
       const where: any = { status: { not: 'DRAFT' } };
-      if (companyId) where.companyId = companyId;
+      where.companyId = companyId || 'NO_COMPANY_ACCESS';
       if (type) where.type = type;
       if (start || end) {
         where.createdAt = {};
@@ -158,7 +158,7 @@ export class InvoiceController {
       // @ts-ignore
       const companyId = req.user?.companyId;
       const invoice = await prisma.invoice.findUnique({
-        where: companyId ? { id, companyId } : { id },
+        where: { id, companyId: companyId || 'NO_COMPANY_ACCESS' },
         include: { customer: true, items: { include: { product: true } }, payments: true }
       });
       if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
@@ -171,6 +171,14 @@ export class InvoiceController {
   static async downloadInvoicePDF(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params as Record<string, string>;
+      // @ts-ignore
+      const companyId = req.user?.companyId;
+      const invoice = await prisma.invoice.findUnique({
+        where: { id, companyId: companyId || 'NO_COMPANY_ACCESS' },
+        select: { id: true }
+      });
+      if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+
       const stream = await PDFService.generateInvoicePDF(id);
 
       res.setHeader('Content-Type', 'application/pdf');

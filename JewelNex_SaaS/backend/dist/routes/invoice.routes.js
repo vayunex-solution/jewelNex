@@ -9,7 +9,7 @@ router.post('/', invoice_controller_1.InvoiceController.createInvoice);
 router.get('/', invoice_controller_1.InvoiceController.listPostedInvoices);
 router.get('/:id', invoice_controller_1.InvoiceController.getInvoiceById);
 router.get('/:id/pdf', invoice_controller_1.InvoiceController.downloadInvoicePDF);
-router.post('/:id/reverse', invoice_controller_1.InvoiceController.reverseInvoice);
+router.post('/:id/reverse', (0, auth_middleware_1.authorize)('admin', 'manager'), invoice_controller_1.InvoiceController.reverseInvoice);
 // Draft endpoints
 router.get('/drafts', invoice_controller_1.InvoiceController.listDrafts);
 router.post('/draft', invoice_controller_1.InvoiceController.saveDraft);

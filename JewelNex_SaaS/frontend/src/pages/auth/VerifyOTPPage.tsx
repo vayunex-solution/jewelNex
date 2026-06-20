@@ -106,7 +106,7 @@ const VerifyOTPPage: React.FC = () => {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="0 0 0 0 0 0"
-                    className="block w-full text-center tracking-[0.75em] text-3xl font-mono appearance-none rounded-xl border border-dark-700 bg-dark-900/50 px-3 py-4 text-white placeholder-dark-800 focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500 transition-all"
+                    className="block w-full text-center tracking-[0.75em] text-3xl font-mono appearance-none rounded-xl border border-dark-600 bg-dark-800 px-3 py-4 text-dark-50 placeholder-dark-400 focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500 transition-all"
                   />
                 </div>
               </div>

@@ -74,6 +74,26 @@ test.describe('JewelNex Auth & Dashboard Flow', () => {
     await page.click('a[href="/dashboard/inventory/ledger"]');
     await expect(page).toHaveURL('/dashboard/inventory/ledger');
     await page.screenshot({ path: 'tests/e2e/screenshots/ledger-desktop.png' });
+
+    // 9. Navigate to Customers
+    await page.click('a[href="/dashboard/customers"]');
+    await expect(page).toHaveURL('/dashboard/customers');
+    await page.waitForLoadState('networkidle');
+    await page.screenshot({ path: 'tests/e2e/screenshots/customers-empty.png' });
+
+    // 10. Register a customer
+    await page.click('button:has-text("Add Customer")');
+    await page.waitForSelector('text=Register New Customer');
+    await page.fill('input[placeholder="e.g. Palak Shah"]', 'Customer Palak');
+    await page.fill('input[placeholder="e.g. +91 9876543210"]', `+91${Date.now().toString().slice(-10)}`);
+    await page.fill('input[placeholder="e.g. client@example.com"]', `palak_${Date.now()}@example.com`);
+    await page.fill('textarea[placeholder="Enter complete postal address..."]', '123 Golden Street, Zaveri Bazaar, Mumbai');
+    await page.click('button[type="submit"]:has-text("Register Client")');
+
+    // Wait for modal to close and customer list to refresh
+    await expect(page.locator('text=Register New Customer')).toBeHidden();
+    await page.waitForSelector('text=Customer Palak');
+    await page.screenshot({ path: 'tests/e2e/screenshots/customers-list.png' });
   });
 
   test('Route protection: unauthenticated redirect', async ({ page }) => {

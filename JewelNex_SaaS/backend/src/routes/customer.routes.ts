@@ -8,5 +8,6 @@ router.use(authenticate);
 
 router.post('/', CustomerController.createCustomer);
 router.get('/search', CustomerController.searchCustomers);
+router.get('/', CustomerController.searchCustomers);
 
 export default router;

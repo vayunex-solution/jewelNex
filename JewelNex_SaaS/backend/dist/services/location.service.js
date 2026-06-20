@@ -18,20 +18,20 @@ class LocationService {
         return database_1.default.location.findMany({
             where: {
                 isActive: true,
-                companyId: companyId || undefined,
+                companyId: companyId || 'NO_COMPANY_ACCESS',
             },
             orderBy: { name: 'asc' },
         });
     }
     static async updateLocation(id, data, companyId) {
         return database_1.default.location.update({
-            where: companyId ? { id, companyId } : { id },
+            where: { id, companyId: companyId || 'NO_COMPANY_ACCESS' },
             data,
         });
     }
     static async deleteLocation(id, companyId) {
         return database_1.default.location.update({
-            where: companyId ? { id, companyId } : { id },
+            where: { id, companyId: companyId || 'NO_COMPANY_ACCESS' },
             data: { isActive: false },
         });
     }

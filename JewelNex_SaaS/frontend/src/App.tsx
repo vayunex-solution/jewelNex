@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ProtectedRoute, GuestRoute } from './components/ProtectedRoute';
+import { useThemeStore } from './store/themeStore';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -18,21 +19,16 @@ import ThermalReceiptPage from './pages/business/ThermalReceiptPage';
 import AccountingModulePage from './pages/business/AccountingModulePage';
 import CompanySettingsPage from './pages/settings/CompanySettingsPage';
 import AuditLogPage from './pages/settings/AuditLogPage';
+import CustomersPage from './pages/business/CustomersPage';
 
 function App() {
+  const theme = useThemeStore((s) => s.theme);
   return (
     <BrowserRouter>
       <Toaster
         position="top-right"
         richColors
-        theme="dark"
-        toastOptions={{
-          style: {
-            background: '#1e1e1e',
-            border: '1px solid #2a2a2a',
-            color: '#fff',
-          },
-        }}
+        theme={theme}
       />
       <Routes>
         {/* Root redirect */}
@@ -61,13 +57,17 @@ function App() {
             <Route path="invoices/drafts" element={<DraftInvoicesPage />} />
             <Route path="invoices/list" element={<PostedInvoicesPage />} />
             <Route path="invoices/:id/thermal" element={<ThermalReceiptPage />} />
-            {/* Real route for Accounting Reports */}
-            <Route path="accounting" element={<AccountingModulePage />} />
-            {/* Placeholder routes for future modules */}
-            <Route path="customers" element={<ComingSoon label="Customers Module" />} />
-            {/* Settings & Admin */}
-            <Route path="settings" element={<CompanySettingsPage />} />
-            <Route path="audit-log" element={<AuditLogPage />} />
+            {/* Real route for Accounting Reports (restricted to admin & manager) */}
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
+              <Route path="accounting" element={<AccountingModulePage />} />
+            </Route>
+            {/* Real route for Customers (available to all logged-in roles) */}
+            <Route path="customers" element={<CustomersPage />} />
+            {/* Settings & Admin (restricted to admin only) */}
+            <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="settings" element={<CompanySettingsPage />} />
+              <Route path="audit-log" element={<AuditLogPage />} />
+            </Route>
           </Route>
         </Route>
 

@@ -22,6 +22,7 @@ export class CustomerController {
       // @ts-ignore
       const companyId = req.user?.companyId;
       const customers = await CustomerService.searchCustomers(String(q || ''), companyId);
+      console.log('DEBUG [searchCustomers]: q =', q, 'companyId =', companyId, 'resultsCount =', customers.length);
       res.status(200).json({ success: true, data: customers });
     } catch (error) {
       next(error);

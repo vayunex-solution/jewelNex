@@ -207,6 +207,7 @@ export declare class InventoryService {
             createdAt: Date;
             updatedAt: Date;
         })[];
+        locationsCount: number;
     }>;
 }
 //# sourceMappingURL=inventory.service.d.ts.map

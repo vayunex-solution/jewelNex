@@ -8,6 +8,6 @@ export declare class InvoiceController {
     static listDrafts(req: Request, res: Response, next: NextFunction): Promise<void>;
     static listPostedInvoices(req: Request, res: Response, next: NextFunction): Promise<void>;
     static getInvoiceById(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
-    static downloadInvoicePDF(req: Request, res: Response, next: NextFunction): Promise<void>;
+    static downloadInvoicePDF(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
 }
 //# sourceMappingURL=invoice.controller.d.ts.map

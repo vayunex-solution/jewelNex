@@ -14,7 +14,7 @@ export class LocationService {
     return prisma.location.findMany({
       where: {
         isActive: true,
-        companyId: companyId || undefined,
+        companyId: companyId || 'NO_COMPANY_ACCESS',
       },
       orderBy: { name: 'asc' },
     });
@@ -22,14 +22,14 @@ export class LocationService {
 
   static async updateLocation(id: string, data: any, companyId?: string) {
     return prisma.location.update({
-      where: companyId ? { id, companyId } : { id },
+      where: { id, companyId: companyId || 'NO_COMPANY_ACCESS' },
       data,
     });
   }
 
   static async deleteLocation(id: string, companyId?: string) {
     return prisma.location.update({
-      where: companyId ? { id, companyId } : { id },
+      where: { id, companyId: companyId || 'NO_COMPANY_ACCESS' },
       data: { isActive: false },
     });
   }

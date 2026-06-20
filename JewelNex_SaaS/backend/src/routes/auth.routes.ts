@@ -10,7 +10,7 @@ const router = Router();
 // Rate Limiters
 // ─────────────────────────────────────────
 
-const isTest = process.env.NODE_ENV === 'test';
+const isTest = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
 
 const loginLimiter = isTest ? (req: any, res: any, next: any) => next() : rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

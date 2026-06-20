@@ -25,7 +25,7 @@ export class CustomerService {
   static async searchCustomers(query: string, companyId?: string) {
     return await prisma.customer.findMany({
       where: {
-        companyId: companyId || undefined,
+        companyId: companyId || 'NO_COMPANY_ACCESS',
         OR: [
           { name: { contains: query } },
           { phone: { contains: query } }

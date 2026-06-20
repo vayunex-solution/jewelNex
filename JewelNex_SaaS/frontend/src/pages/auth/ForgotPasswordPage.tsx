@@ -22,8 +22,8 @@ const ForgotPasswordPage: React.FC = () => {
       await authService.forgotPassword(data);
       toast.success('An OTP has been sent to your email.');
       navigate(`/reset-password?email=${encodeURIComponent(data.email)}`);
-    } catch {
-      toast.error('Something went wrong. Please try again.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Something went wrong. Please try again.');
     }
   };
 
@@ -66,9 +66,15 @@ const ForgotPasswordPage: React.FC = () => {
             </button>
           </form>
 
-          <Link to="/login" className="btn-ghost mt-6 justify-center">
-            <ArrowLeft className="w-4 h-4" /> Back to Sign In
-          </Link>
+          <div className="mt-6 flex flex-col items-center gap-4 border-t border-dark-800 pt-4">
+            <Link to="/reset-password" className="text-sm text-gold-500 hover:text-gold-400 font-semibold transition-colors">
+              Already have an OTP? Enter it here
+            </Link>
+            
+            <Link to="/login" className="btn-ghost justify-center">
+              <ArrowLeft className="w-4 h-4" /> Back to Sign In
+            </Link>
+          </div>
         </div>
       </div>
     </div>

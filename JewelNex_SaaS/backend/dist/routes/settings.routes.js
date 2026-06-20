@@ -8,6 +8,6 @@ router.use(auth_middleware_1.authenticate);
 // GET /api/v1/settings/company
 router.get('/company', settings_controller_1.SettingsController.getSettings);
 // PUT /api/v1/settings/company
-router.put('/company', settings_controller_1.SettingsController.updateSettings);
+router.put('/company', (0, auth_middleware_1.authorize)('admin'), settings_controller_1.SettingsController.updateSettings);
 exports.default = router;
 //# sourceMappingURL=settings.routes.js.map

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   TrendingUp, 
   Package, 
@@ -24,6 +25,7 @@ interface DashboardStats {
   totalWeight: number;
   recentMovements: any[];
   lowStockItems: any[];
+  locationsCount?: number;
 }
 
 const DashboardHome: React.FC = () => {
@@ -78,7 +80,7 @@ const DashboardHome: React.FC = () => {
     },
     { 
       label: 'Active Locations', 
-      value: '4', 
+      value: stats?.locationsCount ?? 0, 
       icon: Users, 
       color: 'text-purple-400', 
       bg: 'bg-purple-400/10',
@@ -114,14 +116,22 @@ const DashboardHome: React.FC = () => {
         
         {/* Quick Actions */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-          <button className="flex items-center gap-2 bg-gold-600 hover:bg-gold-500 text-dark-950 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-gold-600/20 whitespace-nowrap">
+          <Link 
+            to="/dashboard/inventory" 
+            state={{ openAddModal: true }}
+            className="flex items-center gap-2 bg-gold-600 hover:bg-gold-500 text-dark-950 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-gold-600/20 whitespace-nowrap"
+          >
             <PlusCircle className="w-4 h-4" />
             Stock Inward
-          </button>
-          <button className="flex items-center gap-2 bg-dark-800 hover:bg-dark-700 text-white border border-dark-700 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap">
+          </Link>
+          <Link 
+            to="/dashboard/inventory" 
+            state={{ openMovementModal: true }}
+            className="flex items-center gap-2 bg-dark-800 hover:bg-dark-700 text-white border border-dark-700 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap"
+          >
             <ArrowRightLeft className="w-4 h-4" />
             Transfer
-          </button>
+          </Link>
         </div>
       </div>
 

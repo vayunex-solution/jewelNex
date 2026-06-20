@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { InvoiceController } from '../controllers/invoice.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, authorize } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -10,7 +10,7 @@ router.post('/', InvoiceController.createInvoice);
 router.get('/', InvoiceController.listPostedInvoices);
 router.get('/:id', InvoiceController.getInvoiceById);
 router.get('/:id/pdf', InvoiceController.downloadInvoicePDF);
-router.post('/:id/reverse', InvoiceController.reverseInvoice);
+router.post('/:id/reverse', authorize('admin', 'manager'), InvoiceController.reverseInvoice);
 
 // Draft endpoints
 router.get('/drafts', InvoiceController.listDrafts);

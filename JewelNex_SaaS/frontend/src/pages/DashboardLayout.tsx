@@ -53,6 +53,20 @@ const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const filteredNavGroups = navGroups.map(group => {
+    const items = group.items.filter(item => {
+      const role = user?.role?.toLowerCase();
+      if (item.to === '/dashboard/accounting') {
+        return role === 'admin' || role === 'manager';
+      }
+      if (item.to === '/dashboard/settings' || item.to === '/dashboard/audit-log') {
+        return role === 'admin';
+      }
+      return true;
+    });
+    return { ...group, items };
+  }).filter(group => group.items.length > 0);
+
   const handleLogout = () => {
     logout();
     toast.success('Signed out successfully');
@@ -93,7 +107,7 @@ const DashboardLayout: React.FC = () => {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-5 scrollbar-hide">
-        {navGroups.map((group) => (
+        {filteredNavGroups.map((group) => (
           <div key={group.label}>
             <p className="text-dark-600 text-[9px] uppercase tracking-[0.2em] font-bold px-3 mb-2">{group.label}</p>
             <div className="space-y-0.5">

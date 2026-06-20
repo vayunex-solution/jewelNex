@@ -306,7 +306,7 @@ export class InvoiceService {
    */
   static async listDrafts(companyId?: string) {
     return await prisma.invoice.findMany({
-      where: { status: 'DRAFT', companyId: companyId || undefined },
+      where: { status: 'DRAFT', companyId: companyId || 'NO_COMPANY_ACCESS' },
       include: { items: true, customer: true },
       orderBy: { createdAt: 'desc' }
     });

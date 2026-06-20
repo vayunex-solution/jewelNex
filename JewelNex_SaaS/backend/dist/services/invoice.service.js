@@ -259,7 +259,7 @@ class InvoiceService {
      */
     static async listDrafts(companyId) {
         return await database_1.default.invoice.findMany({
-            where: { status: 'DRAFT', companyId: companyId || undefined },
+            where: { status: 'DRAFT', companyId: companyId || 'NO_COMPANY_ACCESS' },
             include: { items: true, customer: true },
             orderBy: { createdAt: 'desc' }
         });

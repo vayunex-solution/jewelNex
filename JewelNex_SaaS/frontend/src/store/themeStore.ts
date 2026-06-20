@@ -10,7 +10,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: 'dark', // Default to dark mode as it is premium
+      theme: 'light', // Default to light mode
       setTheme: (theme) => {
         set({ theme });
         applyTheme(theme);
@@ -26,9 +26,7 @@ export const useThemeStore = create<ThemeState>()(
     {
       name: 'jewelnex-theme',
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          applyTheme(state.theme);
-        }
+        applyTheme(state?.theme || 'light');
       },
     }
   )

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Gem, ArrowRight, Loader2, CheckCircle2, Lock, ArrowLeft } from 'lucide-react';
+import { Gem, ArrowRight, Loader2, CheckCircle2, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { authService } from '../../services/authService';
 
@@ -29,6 +29,20 @@ const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Timer for Resend OTP (120 seconds = 2 mins)
+  const [timeLeft, setTimeLeft] = useState(120);
+  const [isResending, setIsResending] = useState(false);
+
+  useEffect(() => {
+    if (timeLeft <= 0 || success) return;
+    const timerId = setInterval(() => {
+      setTimeLeft(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, [timeLeft, success]);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ResetFormValues>({
     resolver: zodResolver(resetSchema)
@@ -48,6 +62,20 @@ const ResetPasswordPage: React.FC = () => {
     );
   }
 
+  const handleResendOTP = async () => {
+    if (timeLeft > 0) return;
+    setIsResending(true);
+    try {
+      await authService.forgotPassword({ email });
+      toast.success('A new OTP has been sent to your email.');
+      setTimeLeft(120); // Reset timer to 2 minutes
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to resend OTP. Please try again.');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const onSubmit = async (data: ResetFormValues) => {
     try {
       await authService.resetPassword({
@@ -57,10 +85,17 @@ const ResetPasswordPage: React.FC = () => {
       });
       setSuccess(true);
       toast.success('Password reset successfully! 💎');
-      setTimeout(() => navigate('/login'), 3000);
+      // Navigate to login after a shorter delay
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to reset password. Please check your OTP.');
     }
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -87,8 +122,8 @@ const ResetPasswordPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Password Reset!</h3>
               <p className="text-dark-400 mb-6">Your password has been changed successfully.</p>
-              <div className="flex items-center justify-center gap-2 text-dark-600 text-xs">
-                <Loader2 className="h-4 w-4 animate-spin" /> Redirecting to login...
+              <div className="flex items-center justify-center gap-2 text-dark-600 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" /> Redirecting to sign in page...
               </div>
             </div>
           ) : (
@@ -103,38 +138,72 @@ const ResetPasswordPage: React.FC = () => {
                 </div>
               </div>
 
-              <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+              <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
                 <div>
-                  <label className="form-label text-xs uppercase tracking-wider font-bold text-dark-500">6-Digit OTP</label>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-xs font-semibold text-dark-300 uppercase tracking-wider block">6-Digit OTP</label>
+                    {timeLeft > 0 ? (
+                      <span className="text-xs text-dark-400 font-medium">Resend in {formatTime(timeLeft)}</span>
+                    ) : (
+                      <button 
+                        type="button" 
+                        onClick={handleResendOTP}
+                        disabled={isResending}
+                        className="text-xs font-bold text-gold-500 hover:text-gold-400 transition-colors disabled:opacity-50"
+                      >
+                        {isResending ? 'Sending...' : 'Resend OTP'}
+                      </button>
+                    )}
+                  </div>
                   <input
                     {...register('otp')}
                     type="text"
                     maxLength={6}
                     placeholder="0 0 0 0 0 0"
-                    className="block w-full text-center tracking-[0.5em] text-2xl font-mono appearance-none rounded-xl border border-dark-700 bg-dark-900/50 px-3 py-3 text-white placeholder-dark-800 focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500 transition-all"
+                    className="block w-full text-center tracking-[0.5em] text-2xl font-mono appearance-none rounded-xl border border-dark-600 bg-dark-800 px-3 py-3 text-dark-50 placeholder-dark-400 focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500 transition-all"
                   />
                   {errors.otp && <p className="form-error">⚠ {errors.otp.message}</p>}
                 </div>
 
                 <div>
                   <label className="form-label text-xs uppercase tracking-wider font-bold text-dark-500">New Password</label>
-                  <input
-                    {...register('password')}
-                    type="password"
-                    placeholder="••••••••"
-                    className="input-field"
-                  />
+                  <div className="relative">
+                    <input
+                      {...register('password')}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="input-field pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-dark-200 transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {errors.password && <p className="form-error">⚠ {errors.password.message}</p>}
                 </div>
 
                 <div>
                   <label className="form-label text-xs uppercase tracking-wider font-bold text-dark-500">Confirm Password</label>
-                  <input
-                    {...register('confirmPassword')}
-                    type="password"
-                    placeholder="••••••••"
-                    className="input-field"
-                  />
+                  <div className="relative">
+                    <input
+                      {...register('confirmPassword')}
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="input-field pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-dark-200 transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {errors.confirmPassword && <p className="form-error">⚠ {errors.confirmPassword.message}</p>}
                 </div>
 

@@ -18,7 +18,16 @@ export const customerService = {
   },
 
   createCustomer: async (data: Partial<Customer>) => {
-    const response = await api.post('/customers', data);
+    // Sanitize optional fields to avoid composite unique index conflicts for empty strings
+    const sanitized = {
+      ...data,
+      phone: data.phone?.trim() || null,
+      email: data.email?.trim() || null,
+      gstNumber: data.gstNumber?.trim() || null,
+      address: data.address?.trim() || null,
+      panNumber: data.panNumber?.trim() || null,
+    };
+    const response = await api.post('/customers', sanitized);
     return response.data;
   },
 };

@@ -23,7 +23,7 @@ class InventoryService {
      */
     static async getProducts(skip = 0, take = 50, companyId) {
         return database_1.default.product.findMany({
-            where: companyId ? { companyId } : undefined,
+            where: { companyId: companyId || 'NO_COMPANY_ACCESS' },
             skip,
             take,
             include: {
@@ -36,7 +36,7 @@ class InventoryService {
      */
     static async getMovements(skip = 0, take = 100, companyId) {
         return database_1.default.stockMovement.findMany({
-            where: companyId ? { product: { companyId } } : undefined,
+            where: { product: { companyId: companyId || 'NO_COMPANY_ACCESS' } },
             skip,
             take,
             orderBy: { createdAt: 'desc' },
@@ -109,19 +109,20 @@ class InventoryService {
      * Dashboard Stats: Calculate summary metrics
      */
     static async getDashboardStats(companyId) {
-        const [totalProducts, totalLots, recentMovements] = await Promise.all([
+        const cmpId = companyId || 'NO_COMPANY_ACCESS';
+        const [totalProducts, totalLots, recentMovements, locationsCount] = await Promise.all([
             database_1.default.product.count({
-                where: companyId ? { companyId } : undefined,
+                where: { companyId: cmpId },
             }),
             database_1.default.inventoryLot.aggregate({
-                where: companyId ? { product: { companyId } } : undefined,
+                where: { product: { companyId: cmpId } },
                 _sum: {
                     quantity: true,
                     weight: true,
                 },
             }),
             database_1.default.stockMovement.findMany({
-                where: companyId ? { product: { companyId } } : undefined,
+                where: { product: { companyId: cmpId } },
                 take: 5,
                 orderBy: { createdAt: 'desc' },
                 include: {
@@ -129,11 +130,14 @@ class InventoryService {
                     user: { select: { name: true } },
                 },
             }),
+            database_1.default.location.count({
+                where: { isActive: true, companyId: cmpId },
+            }),
         ]);
         const lowStockItems = await database_1.default.inventoryLot.findMany({
             where: {
                 quantity: { lte: 10 },
-                product: companyId ? { companyId } : undefined,
+                product: { companyId: cmpId },
             },
             include: { product: true },
             take: 5,
@@ -144,6 +148,7 @@ class InventoryService {
             totalWeight: totalLots._sum.weight || 0,
             recentMovements,
             lowStockItems,
+            locationsCount,
         };
     }
 }

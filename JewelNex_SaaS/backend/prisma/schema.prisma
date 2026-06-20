@@ -105,7 +105,7 @@ model Location {
 
 model Product {
   id          String  @id @default(uuid())
-  sku         String  @unique
+  sku         String
   name        String
   companyId   String?
   company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -131,6 +131,7 @@ model Product {
   InvoiceItem InvoiceItem[]
 
   @@map("products")
+  @@unique([sku, companyId])
 }
 
 model InventoryLot {
@@ -261,7 +262,7 @@ model Customer {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   email     String?
-  phone     String?  @unique
+  phone     String?
   gstNumber String?
   address   String?  @db.Text
   panNumber String?
@@ -273,6 +274,7 @@ model Customer {
   accountHead AccountHead? // Link to accounting ledger
 
   @@map("customers")
+  @@unique([phone, companyId])
 }
 
 model Invoice {

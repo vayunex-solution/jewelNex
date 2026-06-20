@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Package, Plus, Search, Filter, Loader2, ArrowRightLeft, Activity, Gem, ArrowUpRight, ChevronRight } from 'lucide-react';
 import { inventoryService, Product } from '../../services/inventoryService';
 import { AddProductModal } from './components/AddProductModal';
@@ -11,6 +12,18 @@ const InventoryPage: React.FC = () => {
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      setIsAddModalOpen(true);
+      window.history.replaceState({}, document.title);
+    } else if (location.state?.openMovementModal) {
+      setIsMovementModalOpen(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const fetchProducts = async () => {
     try {

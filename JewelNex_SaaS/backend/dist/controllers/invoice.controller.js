@@ -113,8 +113,7 @@ class InvoiceController {
             // @ts-ignore
             const companyId = req.user?.companyId;
             const where = { status: { not: 'DRAFT' } };
-            if (companyId)
-                where.companyId = companyId;
+            where.companyId = companyId || 'NO_COMPANY_ACCESS';
             if (type)
                 where.type = type;
             if (start || end) {
@@ -150,7 +149,7 @@ class InvoiceController {
             // @ts-ignore
             const companyId = req.user?.companyId;
             const invoice = await database_1.default.invoice.findUnique({
-                where: companyId ? { id, companyId } : { id },
+                where: { id, companyId: companyId || 'NO_COMPANY_ACCESS' },
                 include: { customer: true, items: { include: { product: true } }, payments: true }
             });
             if (!invoice)
@@ -164,6 +163,14 @@ class InvoiceController {
     static async downloadInvoicePDF(req, res, next) {
         try {
             const { id } = req.params;
+            // @ts-ignore
+            const companyId = req.user?.companyId;
+            const invoice = await database_1.default.invoice.findUnique({
+                where: { id, companyId: companyId || 'NO_COMPANY_ACCESS' },
+                select: { id: true }
+            });
+            if (!invoice)
+                return res.status(404).json({ success: false, message: 'Invoice not found' });
             const stream = await pdf_service_1.PDFService.generateInvoicePDF(id);
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `inline; filename="invoice_${id.slice(0, 8)}.pdf"`);
