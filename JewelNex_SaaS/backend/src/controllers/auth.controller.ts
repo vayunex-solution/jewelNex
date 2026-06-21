@@ -46,10 +46,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('Verify OTP Request Body:', req.body);
     const result = await verifyOTPService(req.body as VerifyOTPRequestDto);
     res.status(200).json(successResponse(result.message));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Verification failed';
+    console.error('Verify OTP Error:', message);
     res.status(400).json(errorResponse(message));
   }
 };

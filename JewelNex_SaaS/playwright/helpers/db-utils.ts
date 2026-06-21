@@ -36,11 +36,46 @@ export async function getLatestResetToken(email: string): Promise<string | null>
 export async function cleanupTestUser(email: string): Promise<void> {
   const user = await prisma.user.findUnique({ where: { email } });
   if (user) {
-    await prisma.activityLog.deleteMany({ where: { userId: user.id } }).catch(() => {});
     const companyId = user.companyId;
-    await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
     if (companyId) {
+      // 1. Delete Activity logs, Audit Trails
+      await prisma.activityLog.deleteMany({ where: { userId: user.id } }).catch(() => {});
+      await prisma.auditTrail.deleteMany({ where: { userId: user.id } }).catch(() => {});
+
+      // 2. Delete VoucherEntries and Vouchers
+      const invoices = await prisma.invoice.findMany({ where: { companyId } });
+      const invoiceIds = invoices.map(i => i.id);
+      await prisma.voucherEntry.deleteMany({ where: { voucher: { reference: { in: invoiceIds } } } }).catch(() => {});
+      await prisma.voucher.deleteMany({ where: { reference: { in: invoiceIds } } }).catch(() => {});
+
+      // 3. Delete InvoicePayments, InvoiceItems, Invoices
+      await prisma.invoicePayment.deleteMany({ where: { invoiceId: { in: invoiceIds } } }).catch(() => {});
+      await prisma.invoiceItem.deleteMany({ where: { invoiceId: { in: invoiceIds } } }).catch(() => {});
+      await prisma.invoice.deleteMany({ where: { companyId } }).catch(() => {});
+
+      // 4. Delete StockMovements, InventoryLots, Products
+      await prisma.stockMovement.deleteMany({ where: { userId: user.id } }).catch(() => {});
+      await prisma.stockMovement.deleteMany({ where: { product: { companyId } } }).catch(() => {});
+      await prisma.inventoryLot.deleteMany({ where: { product: { companyId } } }).catch(() => {});
+      await prisma.product.deleteMany({ where: { companyId } }).catch(() => {});
+
+      // 5. Delete Locations
+      await prisma.location.deleteMany({ where: { companyId } }).catch(() => {});
+
+      // 6. Delete AccountHeads, Customers
+      await prisma.accountHead.deleteMany({ where: { customer: { companyId } } }).catch(() => {});
+      await prisma.customer.deleteMany({ where: { companyId } }).catch(() => {});
+
+      // 7. Delete Sequences, CompanySettings
+      await prisma.sequence.deleteMany({ where: { companyId } }).catch(() => {});
+      await prisma.companySettings.deleteMany({ where: { companyId } }).catch(() => {});
+
+      // 8. Finally delete User and Company
+      await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
       await prisma.company.delete({ where: { id: companyId } }).catch(() => {});
+    } else {
+      await prisma.activityLog.deleteMany({ where: { userId: user.id } }).catch(() => {});
+      await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
     }
   }
 }

@@ -42,3 +42,8 @@ graphify-out/
 run_graphify_ast.py
 .graphifyignore
 GRAPHIFY_ZERO_TOKEN_GUIDE.md
+
+# Playwright Test Results & Temp Scripts
+JewelNex_SaaS/test-results/
+JewelNex_SaaS/backend/scripts/check-*.ts
+
