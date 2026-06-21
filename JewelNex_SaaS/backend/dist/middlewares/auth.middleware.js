@@ -13,7 +13,7 @@ const database_1 = __importDefault(require("../config/database"));
 // ─────────────────────────────────────────
 const authenticate = async (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
+        const authHeader = req.headers.authorization || req.headers['x-authorization'];
         // Also accept ?token= query param for browser-triggered file downloads (PDF, XLSX, CSV)
         const queryToken = req.query?.token;
         if (!authHeader?.startsWith('Bearer ') && !queryToken) {

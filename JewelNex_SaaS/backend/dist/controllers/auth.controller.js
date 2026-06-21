@@ -33,11 +33,13 @@ const login = async (req, res) => {
 exports.login = login;
 const verifyOTP = async (req, res) => {
     try {
+        console.log('Verify OTP Request Body:', req.body);
         const result = await (0, auth_service_1.verifyOTPService)(req.body);
         res.status(200).json((0, apiResponse_1.successResponse)(result.message));
     }
     catch (err) {
         const message = err instanceof Error ? err.message : 'Verification failed';
+        console.error('Verify OTP Error:', message);
         res.status(400).json((0, apiResponse_1.errorResponse)(message));
     }
 };

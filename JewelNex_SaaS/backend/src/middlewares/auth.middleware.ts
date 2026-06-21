@@ -26,7 +26,7 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader = req.headers.authorization || (req.headers['x-authorization'] as string | undefined);
     // Also accept ?token= query param for browser-triggered file downloads (PDF, XLSX, CSV)
     const queryToken = req.query?.token as string | undefined;
 
