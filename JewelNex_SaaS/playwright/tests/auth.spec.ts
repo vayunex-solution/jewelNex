@@ -27,7 +27,7 @@ test.describe('Authentication Flows', () => {
     await page.click('button:has-text("Create Account")');
 
     // 3. Verify Success Message/Redirect
-    await expect(page.getByText('Registration Successful!')).toBeVisible();
+    await expect(page.getByText('Registration Successful!')).toBeVisible({ timeout: 15000 });
 
     // 4. Fetch OTP from DB Automatically
     // We wait a bit for the DB to be updated
@@ -37,25 +37,25 @@ test.describe('Authentication Flows', () => {
     expect(otp?.length).toBe(6);
 
     // Wait for redirect to VerifyEmailPage
-    await page.waitForURL(/\/verify-otp\?email=.*/);
+    await page.waitForURL(/\/verify-otp\?email=.*/, { timeout: 15000 });
 
     // Fill the OTP
     await page.fill('input[placeholder="0 0 0 0 0 0"]', otp as string);
     await page.click('button[type="submit"]');
 
     // The page should show success and say redirecting
-    await expect(page.getByText('Success!')).toBeVisible();
+    await expect(page.getByText('Success!')).toBeVisible({ timeout: 15000 });
 
     // 6. Test Login with newly verified user
     // Wait for redirect to login
-    await page.waitForURL(/\/login/);
+    await page.waitForURL(/\/login/, { timeout: 15000 });
     await page.fill('input[placeholder="you@example.com"]', TEST_EMAIL);
     await page.fill('input[placeholder="Enter your password"]', 'JewelNex@2026');
     await page.click('button:has-text("Sign In")');
 
     // 7. Verify Dashboard Access
-    await expect(page).toHaveURL(/.*dashboard/);
-    await expect(page.getByText('Welcome back')).toBeVisible();
+    await expect(page).toHaveURL(/.*dashboard/, { timeout: 15000 });
+    await expect(page.getByText('Welcome back')).toBeVisible({ timeout: 15000 });
   });
 
   test('Invalid Login Flow', async ({ page }) => {

@@ -36,11 +36,11 @@ export async function getLatestResetToken(email: string): Promise<string | null>
 export async function cleanupTestUser(email: string): Promise<void> {
   const user = await prisma.user.findUnique({ where: { email } });
   if (user) {
-    await prisma.activityLog.deleteMany({ where: { userId: user.id } });
-    if (user.companyId) {
-      await prisma.company.delete({ where: { id: user.companyId } });
-    } else {
-      await prisma.user.delete({ where: { id: user.id } });
+    await prisma.activityLog.deleteMany({ where: { userId: user.id } }).catch(() => {});
+    const companyId = user.companyId;
+    await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    if (companyId) {
+      await prisma.company.delete({ where: { id: companyId } }).catch(() => {});
     }
   }
 }

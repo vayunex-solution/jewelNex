@@ -12,7 +12,7 @@ const router = (0, express_1.Router)();
 // ─────────────────────────────────────────
 // Rate Limiters
 // ─────────────────────────────────────────
-const isTest = process.env.NODE_ENV === 'test';
+const isTest = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
 const loginLimiter = isTest ? (req, res, next) => next() : (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5,

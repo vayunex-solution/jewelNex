@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { PrismaClient } from '@prisma/client';
 import { AccountingService } from '../src/services/accounting.service';
 import { CustomerService } from '../src/services/customer.service';
@@ -58,6 +59,7 @@ async function runReportingTest() {
 
   const admin = await prisma.user.findFirst({ where: { role: { name: 'admin' } } });
   if (!admin) throw new Error("Admin user not found");
+  if (!admin.companyId) throw new Error("Admin company ID not found");
 
   const location = await prisma.location.findFirst({ where: { type: 'WAREHOUSE' } });
 
@@ -65,12 +67,12 @@ async function runReportingTest() {
   const customerA = await CustomerService.createCustomer({
     name: 'Customer A (Debtor)',
     phone: `91${Math.random().toString().slice(2, 10)}`,
-  });
+  }, admin.companyId);
 
   const customerB = await CustomerService.createCustomer({
     name: 'Customer B (Creditor/Supplier)',
     phone: `92${Math.random().toString().slice(2, 10)}`,
-  });
+  }, admin.companyId);
 
   console.log(`✅ Customers/Suppliers registered.`);
 
@@ -113,7 +115,7 @@ async function runReportingTest() {
     payments: [{ amount: 40700, mode: 'BANK_TRANSFER' as const }] // Paid via Bank
   };
 
-  const purchaseInvoice = await InvoiceService.postInvoice(purchaseDto, admin.id);
+  const purchaseInvoice = await InvoiceService.postInvoice(purchaseDto, admin.id, admin.companyId);
   console.log(`✅ Purchase Invoice posted: ${purchaseInvoice?.invoiceNumber}`);
 
   // WAC should be exactly 4000
@@ -146,7 +148,7 @@ async function runReportingTest() {
     payments: [{ amount: 7260, mode: 'CASH' as const }] // Received 7260 Cash, remaining 5000 as Receivable
   };
 
-  const saleInvoice = await InvoiceService.postInvoice(saleDto, admin.id);
+  const saleInvoice = await InvoiceService.postInvoice(saleDto, admin.id, admin.companyId);
   console.log(`✅ Sale Invoice posted: ${saleInvoice?.invoiceNumber}`);
 
   // 5. Generate Reports and Verify

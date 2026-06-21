@@ -171,6 +171,7 @@ test.describe('JewelNex SaaS — Final E2E UAT Acceptance Testing', () => {
     // Fetch user directly from DB to get the reliable companyId
     const dbUser = await prisma.user.findUnique({ where: { email: TEST_EMAIL } });
     if (!dbUser) throw new Error('User not found in DB after registration');
+    if (!dbUser.companyId) throw new Error('User companyId not found in DB');
 
     const requestHeaders = {
       'Authorization': `Bearer ${token}`,
